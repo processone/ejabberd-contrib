@@ -171,9 +171,9 @@ muc_online_rooms(ServerHost) ->
       fun({_, {Roomname, Host}, _}, Results) ->
 	      case MUCHost of
 		  global ->
-		      [Roomname ++ "@" ++ Host | Results];
+		      [str:join([Roomname, Host], "@") | Results];
 		  Host ->
-		      [Roomname ++ "@" ++ Host | Results];
+		      [str:join([Roomname, Host], "@") | Results];
 		  _ ->
 		      Results
 	      end
@@ -634,7 +634,7 @@ act_on_room(destroy, {N, H, Pid}, SH) ->
     gen_fsm:send_all_state_event(
       Pid, {destroy, "Room destroyed by rooms_unused_destroy."}),
     mod_muc:room_destroyed(H, N, Pid, SH),
-    mod_muc:forget_room(H, N);
+    mod_muc:forget_room(SH, H, N);
 
 act_on_room(list, _, _) ->
     ok.
@@ -876,6 +876,8 @@ find_host(global) ->
     global;
 find_host("global") ->
     global;
+find_host(ServerHost) when is_list(ServerHost) ->
+    find_host(list_to_binary(ServerHost));
 find_host(ServerHost) ->
-    gen_mod:get_module_opt_host(ServerHost, mod_muc, "conference.@HOST@").
+    gen_mod:get_module_opt_host(ServerHost, mod_muc, <<"conference.@HOST@">>).
 
