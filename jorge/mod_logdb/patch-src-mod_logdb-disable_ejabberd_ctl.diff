@@ -1,0 +1,65 @@
+Index: mod_logdb.erl
+===================================================================
+--- mod_logdb.erl	(revision 1273)
++++ mod_logdb.erl	(working copy)
+@@ -126,7 +126,7 @@
+                 purge_older_days=gen_mod:get_opt(purge_older_days, Opts, never),
+                 poll_users_settings=PollUsersSettings}}.
+ 
+-cleanup(#state{vhost=VHost} = State) ->
++cleanup(#state{vhost=VHost} = _State) ->
+     ?MYDEBUG("Stopping ~s for ~p", [?MODULE, VHost]),
+ 
+     %ets:delete(ets_settings_table(VHost)),
+@@ -153,14 +153,14 @@
+ 
+     ?MYDEBUG("Removed hooks for ~p", [VHost]),
+ 
+-    ejabberd_ctl:unregister_commands(VHost, [{"rebuild_stats", "rebuild mod_logdb module stats for vhost"}], ?MODULE, rebuild_stats),
+-    Supported_backends = lists:flatmap(fun({Backend, _Opts}) ->
+-                                            [atom_to_list(Backend), " "]
+-                                       end, State#state.dbs),
+-    ejabberd_ctl:unregister_commands(
+-                           VHost,
+-                           [{"copy_messages backend", "copy messages from backend to current backend. backends could be: " ++ Supported_backends }],
+-                           ?MODULE, copy_messages_ctl),
++    %ejabberd_ctl:unregister_commands(VHost, [{"rebuild_stats", "rebuild mod_logdb module stats for vhost"}], ?MODULE, rebuild_stats),
++    %Supported_backends = lists:flatmap(fun({Backend, _Opts}) ->
++    %                                        [atom_to_list(Backend), " "]
++    %                                   end, State#state.dbs),
++    %ejabberd_ctl:unregister_commands(
++    %                       VHost,
++    %                       [{"copy_messages backend", "copy messages from backend to current backend. backends could be: " ++ Supported_backends }],
++    %                       ?MODULE, copy_messages_ctl),
+     ?MYDEBUG("Unregistered commands for ~p", [VHost]).
+ 
+ stop(VHost) ->
+@@ -388,17 +388,17 @@
+ 
+            ?MYDEBUG("Added hooks for ~p", [VHost]),
+ 
+-           ejabberd_ctl:register_commands(
+-                           VHost,
+-                           [{"rebuild_stats", "rebuild mod_logdb module stats for vhost"}],
+-                           ?MODULE, rebuild_stats),
+-           Supported_backends = lists:flatmap(fun({Backend, _Opts}) ->
+-                                                  [atom_to_list(Backend), " "]
+-                                              end, State#state.dbs),
+-           ejabberd_ctl:register_commands(
+-                           VHost,
+-                           [{"copy_messages backend", "copy messages from backend to current backend. backends could be: " ++ Supported_backends }],
+-                           ?MODULE, copy_messages_ctl),
++           %ejabberd_ctl:register_commands(
++           %                VHost,
++           %                [{"rebuild_stats", "rebuild mod_logdb module stats for vhost"}],
++           %                ?MODULE, rebuild_stats),
++           %Supported_backends = lists:flatmap(fun({Backend, _Opts}) ->
++           %                                       [atom_to_list(Backend), " "]
++           %                                   end, State#state.dbs),
++           %ejabberd_ctl:register_commands(
++           %                VHost,
++           %                [{"copy_messages backend", "copy messages from backend to current backend. backends could be: " ++ Supported_backends }],
++           %                ?MODULE, copy_messages_ctl),
+            ?MYDEBUG("Registered commands for ~p", [VHost]),
+ 
+            NewState=State#state{monref = MonRef, backendPid=SPid, purgeRef=TrefPurge, pollRef=TrefPoll},

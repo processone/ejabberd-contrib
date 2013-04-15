@@ -1,0 +1,60 @@
+2009-11-24  Badlop  <badlop@process-one.net>
+
+	* src/mod_statsdx.erl: Add getstatsdx ejabberd commands.
+
+2009-02-04  Badlop  <badlop@process-one.net>
+
+	* src/mod_statsdx.erl: Fix a few stats
+
+2009-02-03  Badlop  <badlop@process-one.net>
+
+	* src/mod_statsdx.erl: New configuration {hooks, traffic}. In
+	addition to hooks for client versions, in this case also tracks
+	stanza traffic. Show in WebAdmin of the virtual host.
+	* README.txt: Document traffic hooks
+
+2009-02-02  Badlop  <badlop@process-one.net>
+
+	* src/mod_statsdx.erl: New stats for erlang memory. Show new stats
+	in node page. Show big integers with separation for easy reading.
+
+2008-09-16  Badlop  <badlop@process-one.net>
+
+	* src/mod_statsdx.erl: Fixed code indentation and
+	trailing-whitespace. Catch table creation. Improved hooks
+	feature. Remove the unused hook webadmin_user. Disable code for
+	traffic stats and don't show empty section 'Ratios' in
+	webadmin. Create an ETS table for the whole server, and a table
+	for each vhost. Add subpages in WebAdmin to view filtered
+	sessions.
+
+2008-09-03  Badlop  <badlop@process-one.net>
+
+	* src/mod_statsdx.erl: If client answers with unexpected response,
+	forget stanza instead of crashing.
+
+	* src/mod_statsdx.erl: The option 'hooks' in mod_statsdx is
+	disabled by default.
+	* README.txt: Likewise
+
+	* README.txt: Several cosmetic changes.
+
+2007-12-26  Badlop  <badlop@process-one.net>
+
+	* src/mod_statsdx.erl: Translate menu items of webadmin hooks in
+	each module (EJAB-485)
+
+2007-08-31  Badlop  <badlop@ono.com>
+
+	* src/mod_statsdx.erl: Added pages to Web Admin. Apply Emacs-mode
+	indentation.
+	* src/ejabberd_web_admin.erl: No need to patch core web admin file.
+	* Emakefile: Idem.
+
+2007-08-21  Badlop  <badlop@ono.com>
+
+	* src/*.erl: Removed authusers statistic.
+	
+	* src/*.erl: Fixed credits.
+
+	* ChangeLog: New file to track changes.

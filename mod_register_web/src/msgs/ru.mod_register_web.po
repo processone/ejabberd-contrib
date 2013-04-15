@@ -1,0 +1,126 @@
+# translation of ru.mod_register_web.po to Russian
+# Header entry was created by KBabel!
+#
+# rain <linuxoid.rain@gmail.com>, 2010.
+# xmpp:rain@jabberworld.info
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Mime-Version: 1.0\n"
+"Last-Translator: rain <linuxoid.rain@gmail.com>\n"
+"PO-Revision-Date: 2010-11-17 18:00+0200\n"
+"Project-Id-Version: ru.mod_register_web\n"
+"Language-Team: Russian\n"
+"X-Generator: KBabel 1.11.4\n"
+"MIME-Version: 1.0\n"
+"Last-Translator: rain <linuxoid.rain@gmail.com>\n"
+
+#: mod_register_web.erl:66
+msgid "Your Jabber account was succesfully created."
+msgstr "Ваш Jabber-аккаунт был успешно создан."
+
+#: mod_register_web.erl:69
+msgid "There was an error creating the account: "
+msgstr "Ошибка при создании аккаунта:"
+
+#: mod_register_web.erl:79
+msgid "Your Jabber account was succesfully deleted."
+msgstr "Ваш Jabber-аккаунт был успешно удален."
+
+#: mod_register_web.erl:82
+msgid "There was an error deleting the account: "
+msgstr "Ошибка при удалении аккаунта:"
+
+#: mod_register_web.erl:92
+msgid "The password of your Jabber account was succesfully changed."
+msgstr "Пароль Вашего Jabber-аккаунта был успешно изменен."
+
+#: mod_register_web.erl:95
+msgid "There was an error changing the password: "
+msgstr "Ошибка при смене пароля:"
+
+#: mod_register_web.erl:129 mod_register_web.erl:138
+msgid "Jabber Account Registration"
+msgstr "Регистрация Jabber-аккаунта"
+
+#: mod_register_web.erl:140 mod_register_web.erl:165 mod_register_web.erl:174
+msgid "Register a Jabber account"
+msgstr "Зарегистрировать Jabber-аккаунт"
+
+#: mod_register_web.erl:142 mod_register_web.erl:408 mod_register_web.erl:417
+msgid "Unregister a Jabber account"
+msgstr "Удалить Jabber-аккаунт"
+
+#: mod_register_web.erl:176
+msgid ""
+"This page allows to create a Jabber account in this Jabber server. Your JID "
+"(Jabber IDentifier) will be of the form: username@server. Please read "
+"carefully the instructions to fill correctly the fields."
+msgstr ""
+"Здесь Вы можете создать Jabber-аккаунт на этом Jabber-сервере. Ваш JID (Jabber-идентификатор) будет в виде: \"пользователь@сервер\". "
+"Пожалуйста, внимательно читайте инструкции для правильного заполнения полей."
+
+#: mod_register_web.erl:185 mod_register_web.erl:299 mod_register_web.erl:424
+msgid "Username:"
+msgstr "Имя пользователя:"
+
+#: mod_register_web.erl:190
+msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
+msgstr "Регистр не имеет значения: \"маша\" и \"МАША\" будет считаться одним и тем же именем."
+
+#: mod_register_web.erl:191
+msgid "Characters not allowed: @ : ' \" < > &"
+msgstr "Недопустимые символы: @ : ' \" < > &"
+
+#: mod_register_web.erl:195 mod_register_web.erl:304 mod_register_web.erl:429
+msgid "Server:"
+msgstr "Сервер:"
+
+#: mod_register_web.erl:205
+msgid ""
+"Don't tell your password to anybody, not even the administrators of the "
+"Jabber server."
+msgstr "Не говорите никому свой пароль, даже администраторам сервера."
+
+#: mod_register_web.erl:207
+msgid "You can later change your password using a Jabber client."
+msgstr "Позже Вы можете изменить пароль через Jabber-клиент."
+
+#: mod_register_web.erl:208
+msgid ""
+"Some Jabber clients can store your password in your computer. Use that "
+"feature only if you trust your computer is safe."
+msgstr "Некоторые Jabber-клиенты могут сохранять пароль на Вашем компьютере. Используйте эту функцию только в том случае, если считаете это безопасным."
+
+#: mod_register_web.erl:210
+msgid ""
+"Memorize your password, or write it in a paper placed in a safe place. In "
+"Jabber there isn't an automated way to recover your password if you forget "
+"it."
+msgstr "Запомните пароль или запишите его на бумаге, которую сохраните в безопасном месте. В Jabber'е нет автоматизированного средства восстановления пароля в том случае, если Вы его забудете."
+
+#: mod_register_web.erl:215 mod_register_web.erl:319
+msgid "Password Verification:"
+msgstr "Проверка пароля:"
+
+#: mod_register_web.erl:232
+msgid "Register"
+msgstr "Зарегистрироваться"
+
+#: mod_register_web.erl:309
+msgid "Old Password:"
+msgstr "Старый пароль:"
+
+#: mod_register_web.erl:314
+msgid "New Password:"
+msgstr "Новый пароль:"
+
+#: mod_register_web.erl:419
+msgid "This page allows to unregister a Jabber account in this Jabber server."
+msgstr "Здесь Вы можете удалить Jabber-аккаунт с этого сервера."
+
+#: mod_register_web.erl:439
+msgid "Unregister"
+msgstr "Удалить"
+

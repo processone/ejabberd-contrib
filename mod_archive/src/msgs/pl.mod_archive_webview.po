@@ -1,0 +1,226 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: 2.1.x\n"
+"X-Language: Language Name\n"
+"Last-Translator: Andrzej Smyk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: mod_archive_webview.erl:69 mod_archive_webview.erl:83
+#: mod_archive_webview.erl:171
+msgid "Config"
+msgstr "Konfiguracja"
+
+#: mod_archive_webview.erl:70 mod_archive_webview.erl:84
+msgid "Global Settings"
+msgstr "Ustawienia globalne"
+
+#: mod_archive_webview.erl:71 mod_archive_webview.erl:85
+msgid "Specific Contact Settings"
+msgstr "Specyficzne ustawienia kontaktu"
+
+#: mod_archive_webview.erl:72
+msgid "Advanced settings"
+msgstr "Ustawienia zaawansowane"
+
+#: mod_archive_webview.erl:86
+msgid "Simple settings"
+msgstr "Ustawienia podstawowe"
+
+#: mod_archive_webview.erl:93
+msgid "Contact List"
+msgstr "Lista kontaktów"
+
+#: mod_archive_webview.erl:102 mod_archive_webview.erl:112
+msgid "Chat with "
+msgstr "Rozmowa z "
+
+#: mod_archive_webview.erl:112
+msgid " : "
+msgstr " : "
+
+#: mod_archive_webview.erl:112
+msgid " on "
+msgstr " na "
+
+#: mod_archive_webview.erl:116
+msgid "Edit subject: "
+msgstr "Edycja tematu: "
+
+#: mod_archive_webview.erl:118
+msgid "Ok"
+msgstr ""
+
+#: mod_archive_webview.erl:120
+msgid "Do you realy want to delete this chat"
+msgstr "Czy na pewno chcesz usunąć ten chat"
+
+#: mod_archive_webview.erl:139 mod_archive_webview.erl:143
+#: mod_archive_webview.erl:173 mod_archive_webview.erl:369
+msgid "Search"
+msgstr "Szukaj"
+
+#: mod_archive_webview.erl:146
+msgid "Archives viewer"
+msgstr "Przeglądarka archiwów"
+
+#: mod_archive_webview.erl:149
+msgid "404 File not found"
+msgstr "404 Pliku nie znaleziono"
+
+#: mod_archive_webview.erl:159
+msgid " - ejabberd Web Archive Viewer"
+msgstr ""
+
+#: mod_archive_webview.erl:168
+msgid "Archives Viewer"
+msgstr "Przeglądarka Archiwów"
+
+#: mod_archive_webview.erl:172
+msgid "Browse"
+msgstr "Przeglądaj"
+
+#: mod_archive_webview.erl:235
+msgid "Disable or enable automatic archiving globaly: "
+msgstr "Włącz lub wyłącz automatyczne archiwizowanie globalnie: "
+
+#: mod_archive_webview.erl:236 mod_archive_webview.erl:239
+msgid "--Server Default--"
+msgstr "--Domyślne ustawienia serwera--"
+
+#: mod_archive_webview.erl:236 mod_archive_webview.erl:239
+#: mod_archive_webview.erl:256 mod_archive_webview.erl:269
+#: mod_archive_webview.erl:283
+msgid "Disabled"
+msgstr "Włączone"
+
+#: mod_archive_webview.erl:236 mod_archive_webview.erl:239
+#: mod_archive_webview.erl:256 mod_archive_webview.erl:269
+#: mod_archive_webview.erl:283
+msgid "Enabled"
+msgstr "Wyłączone"
+
+#: mod_archive_webview.erl:238
+msgid "Default for contact not specified bellow : "
+msgstr "Domyślnie dla kontaktu nie zaznaczonego poniżej : "
+
+#: mod_archive_webview.erl:240
+msgid "Default expiration time: "
+msgstr "Domyślny czas wygaśnięcia: "
+
+#: mod_archive_webview.erl:241
+msgid "(number of seconds before deleting message, '-1' = server default)"
+msgstr "(liczba sekund przed wykasowaniem wiadomości, '-1' = domyślne ustawienie serwera"
+
+#: mod_archive_webview.erl:254 mod_archive_webview.erl:258
+msgid "--Undefined--"
+msgstr "--Niezdefiniowane--"
+
+#: mod_archive_webview.erl:254 mod_archive_webview.erl:260
+msgid "Concede"
+msgstr "Ustępuje"
+
+#: mod_archive_webview.erl:254 mod_archive_webview.erl:261
+msgid "Forbid"
+msgstr "Zabrania"
+
+#: mod_archive_webview.erl:254 mod_archive_webview.erl:263
+msgid "Prefer"
+msgstr "Preferuje"
+
+#: mod_archive_webview.erl:256 mod_archive_webview.erl:269
+msgid "--Default--"
+msgstr "--Domyślnie--"
+
+#: mod_archive_webview.erl:256
+msgid "Save: "
+msgstr "Zachowaj: "
+
+#: mod_archive_webview.erl:257
+msgid "Expire: "
+msgstr "Upływa: "
+
+#: mod_archive_webview.erl:258
+msgid "Otr: "
+msgstr ""
+
+#: mod_archive_webview.erl:259
+msgid "Approve"
+msgstr "Akceptuje"
+
+#: mod_archive_webview.erl:262
+msgid "Oppose"
+msgstr "Oponuje"
+
+#: mod_archive_webview.erl:264
+msgid "Require"
+msgstr "Wymaga"
+
+#: mod_archive_webview.erl:265
+msgid "Auto Method: "
+msgstr "Metoda automatyczna: "
+
+#: mod_archive_webview.erl:266
+msgid "Local Method: "
+msgstr "Metoda lokalna: "
+
+#: mod_archive_webview.erl:267
+msgid "Manual Method: "
+msgstr "Metoda manualna: "
+
+#: mod_archive_webview.erl:268
+msgid "Auto Save "
+msgstr "Automatyczne zachowanie "
+
+#: mod_archive_webview.erl:270
+msgid "Modify"
+msgstr "Modyfikuj"
+
+#: mod_archive_webview.erl:280
+msgid "Auto archive"
+msgstr "Autoarchiwizacja"
+
+#: mod_archive_webview.erl:280
+msgid "Expire"
+msgstr "Upływa"
+
+#: mod_archive_webview.erl:280
+msgid "JID"
+msgstr "JID"
+
+#: mod_archive_webview.erl:283
+msgid "Default"
+msgstr "Domyślnie"
+
+#: mod_archive_webview.erl:352
+msgid "With: "
+msgstr "Z: "
+
+#: mod_archive_webview.erl:360
+msgid "From: "
+msgstr "Od: "
+
+#: mod_archive_webview.erl:361 mod_archive_webview.erl:364
+msgid " (date in SQL format,  may be empty)"
+msgstr ""
+
+#: mod_archive_webview.erl:363
+msgid "To: "
+msgstr "Do: "
+
+#: mod_archive_webview.erl:366
+msgid "Search keyword: "
+msgstr "Szukaj słowa: "
+
+#: mod_archive_webview.erl:407
+msgid "No matches"
+msgstr "Brak wyników"
+
+#: mod_archive_webview.erl:419
+msgid "Previous"
+msgstr "Poprzednie"
+
+#: mod_archive_webview.erl:420
+msgid "Next"
+msgstr "Następne"

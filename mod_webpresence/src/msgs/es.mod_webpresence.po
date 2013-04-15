@@ -1,0 +1,146 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: es.mod_webpresence\n"
+"Last-Translator: Badlop\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Language: Spanish (castellano)\n"
+
+#: mod_webpresence.erl:253 mod_webpresence.erl:311 mod_webpresence.erl:426
+#: mod_webpresence.erl:438 mod_webpresence.erl:821 mod_webpresence.erl:826
+#: mod_webpresence.erl:831 mod_webpresence.erl:893 mod_webpresence.erl:898
+#: mod_webpresence.erl:909 mod_webpresence.erl:917
+msgid "Web Presence"
+msgstr "Web Presence"
+
+#: mod_webpresence.erl:306
+msgid "You need an x:data capable client to register presence"
+msgstr ""
+"Necesitas un cliente que incluya soporte de x:data para poder registrar tu "
+"presencia"
+
+#: mod_webpresence.erl:312
+msgid "What features do you want to enable?"
+msgstr "¿Qué características deseas activar?"
+
+#: mod_webpresence.erl:313 mod_webpresence.erl:316
+msgid "Select one at least"
+msgstr "Selecciona al menos una"
+
+#: mod_webpresence.erl:313 mod_webpresence.erl:975
+msgid "URL Type"
+msgstr "Tipo de URL"
+
+#: mod_webpresence.erl:315 mod_webpresence.erl:948
+msgid "Random ID"
+msgstr "ID Aleatorio"
+
+#: mod_webpresence.erl:316 mod_webpresence.erl:979
+msgid "Output Type"
+msgstr "Tipo de salida"
+
+#: mod_webpresence.erl:317 mod_webpresence.erl:395 mod_webpresence.erl:396
+#: mod_webpresence.erl:825 mod_webpresence.erl:831 mod_webpresence.erl:834
+#: mod_webpresence.erl:949 mod_webpresence.erl:993
+msgid "Icon Theme"
+msgstr "Tema de iconos"
+
+#: mod_webpresence.erl:323
+msgid "XML"
+msgstr "XML"
+
+#: mod_webpresence.erl:324
+msgid "JavaScript"
+msgstr "JavaScript"
+
+#: mod_webpresence.erl:325 mod_webpresence.erl:952
+msgid "Text"
+msgstr "Texto"
+
+#: mod_webpresence.erl:326 mod_webpresence.erl:953
+msgid "Avatar"
+msgstr "Avatar"
+
+#: mod_webpresence.erl:386 mod_webpresence.erl:394 mod_webpresence.erl:396
+msgid "Resource"
+msgstr "Recurso"
+
+#: mod_webpresence.erl:422
+msgid "If you forget your RandomID, register again to receive this message."
+msgstr ""
+"Si olvidas tu ID Aleatorio, regístrate de nuevo para recibir este mensaje."
+
+#: mod_webpresence.erl:423
+msgid "To get a new RandomID, disable the option and register again."
+msgstr ""
+"Para obtener un nuevo ID Aleatorio, desactiva esta opción y regístrate de "
+"nuevo."
+
+#: mod_webpresence.erl:426
+msgid "registered"
+msgstr "registrado"
+
+#: mod_webpresence.erl:427
+msgid "You have registered:"
+msgstr "Te has registrado:"
+
+#: mod_webpresence.erl:428
+msgid "Use URLs like:"
+msgstr "Usar URLs como:"
+
+#: mod_webpresence.erl:433
+msgid "Example:"
+msgstr "Ejemplo:"
+
+#: mod_webpresence.erl:438
+msgid "unregistered"
+msgstr "desregistrado"
+
+#: mod_webpresence.erl:439
+msgid "You have unregistered."
+msgstr "Te has desregistrado."
+
+#: mod_webpresence.erl:668
+msgid "available"
+msgstr "disponible"
+
+#: mod_webpresence.erl:669
+msgid "free for chat"
+msgstr "disponible para charlar"
+
+#: mod_webpresence.erl:670
+msgid "away"
+msgstr "ausente"
+
+#: mod_webpresence.erl:671
+msgid "extended away"
+msgstr "muy ausente"
+
+#: mod_webpresence.erl:672
+msgid "do not disturb"
+msgstr "no molestar"
+
+#: mod_webpresence.erl:673
+msgid "unavailable"
+msgstr "desconectado"
+
+#: mod_webpresence.erl:822
+msgid ""
+"To publish your presence using this system you need a Jabber account in this "
+"Jabber server."
+msgstr ""
+"Para publicar tu presencia usando este sistema necesitas una cuenta Jabber "
+"en este servidor."
+
+#: mod_webpresence.erl:823
+msgid ""
+"Login with a Jabber client, open the Service Discovery and register in Web "
+"Presence."
+msgstr ""
+"Conecta con un cliente Jabber, abre el Descubridor de Servicios y regístrate "
+"de Web Presence."
+
+#: mod_webpresence.erl:824
+msgid "You will receive a message with further instructions."
+msgstr "Recibirás un mensaje con instrucciones adicionales."

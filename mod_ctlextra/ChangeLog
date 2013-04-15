@@ -1,0 +1,92 @@
+2009-06-26  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: Fix load-config call return.
+
+2009-02-09  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: Calculation of 'stats registeredusers'
+	works also with non-internal authentication methods (thanks to
+	Francois de Metz)(EJAB-864)
+
+2008-10-31  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: Remove duplicated command
+	delete-older-messages (EJAB-789)
+
+2008-10-12  Badlop  <badlop@process-one.net>
+
+	* README.txt: Explain that the new mod_admin_extra provides the
+	same features and much more
+
+2008-04-26  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: New command: ban-account
+	* README.txt: Documented new command
+
+2008-04-04  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: Added new command
+	rosteritem-purge [options]
+
+2008-03-19  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: Added two new commands for administration
+	of Shared Roster Groups: "srg-list-groups host" and "srg-get-info
+	group host" (thanks to Taylor Laramie)
+
+2008-03-09  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: Show the result of each table export
+
+2008-03-04  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: New command 'stats
+	onlineusersnode'. Removed old unusued code.
+
+	* README.txt: Updated module page
+
+2008-01-20  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: Allow to define group name with spaces
+	* README.txt: Likewise
+
+2007-11-14  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: Updated to ejabberd SVN.
+
+2007-09-08  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: Bugfix: unregister commands when module 
+	stops. Removed all MUC-related commands. 
+
+2007-08-29  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: Added command: stats uptime-seconds.
+
+2007-08-24  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: Fixed bug in vcard-set command that 
+	forgot second level attributes.
+
+2007-08-23  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: Command add-rosteritem now pushes the 
+	roster item to the client. New command rem-rosteritem.
+
+2007-08-19  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: Now vcard-get and vcard-set are more 
+	compatible with mod_vcard_odbc and mod_vcard_ldap.
+
+2007-08-16  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: add-rosteritem only adds an item in a 
+	roster.
+
+2007-08-07  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: Fixed indentation.
+
+	* ChangeLog: New file to track changes.
+
+	* README.txt: Removed Changelog section.

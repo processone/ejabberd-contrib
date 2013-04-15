@@ -1,0 +1,5 @@
+{'../ejabberd-dev/src/gen_mod', [{outdir, "../ejabberd-dev/ebin"},{i,"../ejabberd-dev/include"}]}.
+{'src/mod_archive',     [{outdir, "ebin"},{i,"../ejabberd-dev/include"}]}.
+{'src/mod_archive_sql',     [{outdir, "ebin"},{i,"../ejabberd-dev/include"}]}.
+{'src/mod_archive_odbc',     [{outdir, "ebin"},{i,"../ejabberd-dev/include"}]}.
+{'src/mod_archive_webview',     [{outdir, "ebin"},{i,"../ejabberd-dev/include"}]}.

@@ -1,0 +1,80 @@
+2009-07-01  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_admin.erl: Fix change_room_option
+
+2009-06-02  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_admin.erl: Destroy the room before forgetting it.
+
+2008-12-02  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_admin.erl: Include mod_muc_room.hrl
+	* README.txt: Likewise
+
+2008-11-17  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_admin.erl: Fix include of web hrl (thanks to Johnny)
+
+2008-10-12  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_admin.erl: Update from ctl to commands (EJAB-694)
+
+2008-09-30  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_admin.erl: Update record definitions to ejabberd
+	trunk SVN
+
+2008-05-16  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_admin.erl: New exported function
+	set_affiliation/4 (thanks to Darren Ferguson)
+
+2008-05-12  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_admin.erl: Added new function: change_room_option/4
+
+2008-05-06  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_admin.erl: New exported functions create_room and
+	destroy_room (thanks to Darren Ferguson)
+
+2008-04-04  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_admin.erl: New command muc-create-file to create the
+	rooms indicated in the file
+
+2008-03-29  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_admin.erl: Improvements in the list of rooms of web
+	admin: show timestamp of last message, sorting by any column.
+
+2008-03-19  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_admin.erl (join): Copied the new function
+	string:join/2 introduced in Erlang R12
+
+	* README.txt: Clarified requirements
+
+	* src/mod_muc_admin.erl (split_roomjid): Small fix
+
+2008-02-01  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_admin.erl: New command: muc-unregister-nick.
+
+2007-12-26  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_admin.erl: Translate menu items of webadmin hooks in
+	each module (EJAB-485)
+
+2007-11-15  Badlop  <badlop@ono.com>
+
+	* src/mod_muc_admin.erl: New command: muc-destroy-file. 
+
+2007-09-09  Badlop  <badlop@ono.com>
+
+	* src/mod_muc_admin.erl: Added Web Admin and List rooms.
+
+2007-09-08  Badlop  <badlop@ono.com>
+
+	* mod_muc_admin: Initial commit.
+

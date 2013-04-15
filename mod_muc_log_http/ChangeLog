@@ -1,0 +1,41 @@
+2009-06-14  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_log_http.erl: Include mod_muc_room.hrl
+
+2009-03-11  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_log_http.erl: Fix capitalization of HTTP headers
+
+2009-02-28  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_log_http.erl: Add support to run in several vhosts
+	* README.txt: Explain that it requires recent ejabberd SVN
+
+2008-09-30  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_log_http.erl: Update record definitions to ejabberd
+	trunk SVN
+
+2008-05-17  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_log_http.erl: Use httpd_util:to_lower when not
+	compiling with Erlang R12 (EJAB-628)
+	* Emakefile: Assumes that Erlang/OTP R11B-4 or newer is used
+	* README.txt: Explain how to compile in older versions
+
+2008-04-12  Badlop  <badlop@process-one.net>
+
+	* src/mod_muc_log_http.erl: Include Last-Modified HTTP
+	header in responses to allow caching (EJAB-546)
+
+2008-03-12  Badlop  <badlop@process-one.net>
+
+	* README.txt: Updated text formatting. Require ejabberd 2.0.0
+
+	* mod_muc_log_http.erl: Updated to ejabberd 2.0.0
+
+	* ChangeLog: New file to log changes
+
+2007-04-13  Badlop  <badlop@ono.com>
+
+	* mod_muc_log_http: New module to serve MUC HTML logs over HTTP

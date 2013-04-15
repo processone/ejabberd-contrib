@@ -1,0 +1,37 @@
+2008-03-18  Badlop  <badlop@process-one.net>
+
+	* README.txt: Disable show_ip in example configuration because it
+	requires ejabberd 2.0.0
+
+	* src/mod_logxml.erl: Fixed indentation
+
+	* ChangeLog.txt: New file to track changes
+
+2007-07-20  Badlop  <badlop@ono.com>
+	
+	* mod_logxml.erl: Added new option: show_ip
+
+2007-03-20  Badlop  <badlop@ono.com>
+	
+	* mod_logxml.erl: The file name respects the timezone option
+
+2007-02-03  Badlop  <badlop@ono.com>
+	
+	* mod_logxml.erl: Added new option: timezone
+
+2006-08-08  Badlop  <badlop@ono.com>
+	
+	* mod_logxml.erl: Fixed small bug on start/2 
+
+2006-03-08  Badlop  <badlop@ono.com>
+	
+	* mod_logxml.erl: Changed some configuration options: rotate_days,
+	rotate_mages and rotate_kpackets can now be set independently
+	
+	* mod_logxml.erl: New format of XML logs: now XMPP packets are
+	enclosed in a 'packet' element with attributes: or, ljid, ts
+
+2005-11-11  Badlop  <badlop@ono.com>
+	
+	* mod_logxml.erl: Initial version
+

@@ -1,0 +1,13 @@
+2009-05-09  Badlop  <badlop@process-one.net>
+
+	* src/mod_shcommands.erl: Fix unused variables and web calls.
+
+2007-12-26  Badlop  <badlop@process-one.net>
+
+	* src/mod_shcommands.erl: Translate menu items of webadmin hooks
+	in each module (EJAB-485)
+
+2007-09-01  Badlop  <badlop@ono.com>
+
+	* mod_shcommands: Initial commit.
+

@@ -1,0 +1,33 @@
+2009-06-09  Badlop  <badlop@process-one.net>
+
+	* src/mod_cron.erl: Fix paths (thanks to Bman)
+
+2008-10-12  Badlop  <badlop@process-one.net>
+
+	* src/mod_cron.erl: Update from ctl to commands (EJAB-694)
+
+2008-07-29  Badlop  <badlop@process-one.net>
+
+	* src/mod_cron.erl: Fix call to ejabberd_hooks:delete
+
+2007-12-26  Badlop  <badlop@process-one.net>
+
+	* src/mod_cron.erl: Translate menu items of webadmin hooks in each
+	module (EJAB-485)
+
+2007-08-31  Badlop  <badlop@ono.com>
+
+	* src/mod_cron.erl (web_page_host): Small improvement on page
+	format.
+
+2007-08-23  Badlop  <badlop@ono.com>
+
+	* src/mod_cron.erl: Added page in Web Admin; currently only tasks
+	view is possible.  * README.txt: Idem.
+
+2007-08-05  Badlop  <badlop@ono.com>
+
+	* ChangeLog: New file to track changes.
+
+	* src/mod_cron.erl: Fixed indentation.
+

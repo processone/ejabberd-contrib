@@ -1,0 +1,169 @@
+2009-11-16  Badlop  <badlop@process-one.net>
+
+	* src/mod_webpresence.erl: New option baseurl, allows to specify
+	the exact base url, useful when using a proxy.
+	* README.txt: Likewise
+
+2009-06-16  Badlop  <badlop@process-one.net>
+
+	* AUTHORS: As mod_webpresence is a rename of mod_presence, Igor
+	Goryachev is the original author and Badlop added new features.
+	* src/mod_webpresence.erl: Likewise
+	* README.txt: Likewise
+
+2009-05-02  Badlop  <badlop@process-one.net>
+
+	* src/mod_webpresence.erl: Minor change in string
+	* src/msgs/*: Likewise 
+
+	* src/msgs/wa.mod_webpresence.po: Added Walon translation (thanks
+	to Pablo Saratxaga)
+
+	* src/msgs/es.mod_webpresence.po: Added Spanish translation
+
+	* src/mod_webpresence.erl: Update translatable strings
+	* src/msgs/mod_webpresence.pot: Likewise
+	
+	* src/msgs/: New directory for module translations (EJAB-925) 
+
+2008-11-08  Badlop  <badlop@process-one.net>
+
+	* src/mod_webpresence.erl (escape): Escape also newlines (thanks
+	to Florian Zeitz)
+
+2008-09-10  Badlop  <badlop@process-one.net>
+
+	* src/mod_webpresence.erl (get_presences): Return only sessions
+	that have presence
+
+2008-07-29  Badlop  <badlop@process-one.net>
+
+	* src/mod_webpresence.erl: Fix calls to supervisor:terminate_child
+	and ejabberd_hooks:delete
+
+2008-07-25  Badlop  <badlop@process-one.net>
+
+	* src/mod_webpresence.erl: Changed the syntax of image request
+	with custom theme: the URI must contain the word "theme" before
+	the theme name.  Allow to request image and avatar providing an
+	additional element in the URI, which is interesting for some
+	restrictive public forums.  Changed category and type in disco
+	queries.  Fix iconset verification.
+	* README.txt: Likewise
+
+2008-01-29  Badlop  <badlop@process-one.net>
+
+	* src/mod_webpresence.erl: Support 'cb' parameter in js requests,
+	which is later added in the result as a callback (thanks to Eric
+	Sessoms)
+	* README.txt: Likewise
+
+2007-12-26  Badlop  <badlop@process-one.net>
+
+	* src/mod_webpresence.erl: Translate menu items of webadmin hooks
+	in each module (EJAB-485)
+
+2007-09-22  Badlop  <badlop@ono.com>
+
+	* src/mod_webpresence.erl: Added new ACCESS for automatic
+	enable. Added image.php URL, useful in some cases.
+
+	* README.txt: Added usage description.
+
+	* TODO.txt: Added feature requests proposed by Pablo Saratxaga.
+
+	* msgs/wa.msg: Added Walloon translation (thanks to Pablo
+	Saratxaga).
+
+	* src/mod_webpresence.erl: Better i18n support (thanks to Pablo
+	Saratxaga).
+
+2007-09-21  Badlop  <badlop@ono.com>
+
+	* src/mod_webpresence.erl: Better i18n support.
+
+2007-08-31  Badlop  <badlop@ono.com>
+
+	* src/mod_webpresence.erl: Escape ' in status message. Fix bug
+	while cheking jidurl and ridurl options. Small fix in PHP example.
+
+2007-08-30  Badlop  <badlop@ono.com>
+
+	* src/mod_webpresence.erl: Support for JavaScript output. Request
+	for image of an unavailable resource results in an unavailable
+	type of image.
+
+2007-08-29  Badlop  <badlop@ono.com>
+
+	* src/mod_webpresence.erl: Set jsf-jabber-text as default icon
+	theme in the registration form. Fixed bug in data forms (thanks to
+	NoAlWin).
+
+	* README.txt: Improved example PHP script (thanks to NoAlWin).
+
+	* data/pixmaps/*: Added many Icon Themes from Elmer NxG (thanks to
+	Zbyszek Zolkiewski).
+
+2007-08-28  Badlop  <badlop@ono.com>
+
+	* AUTHORS: Added Badlop as main author, and mention Igor Goryachev
+	as author of mod_presence.
+	* README.txt: Same.
+	* src/mod_webpresence.erl: Same.
+
+	* LICENSE: Deleted, since all modules are by default published
+	with the GPL license for compatibility with ejabberd.
+
+	* src/mod_webpresence.erl: Added registration and theme
+	statistics. Improved statistics: icon theme, and
+	percentages. Added support for Text output. Changed order of
+	options.
+
+2007-08-27  Badlop  <badlop@ono.com>
+
+	* README.txt: Updated description of configurable options.
+	
+	* src/mod_webpresence.erl: Enforce Hash and JID options in a web
+	request. The Hash is now a pseudo random integer. Added support
+	for avatar output. Added support to show image of a specific
+	resource. Improved Form, Message and Web. Added module options
+	Port and Path. Improved message with instructions. Replaced the
+	misleading term 'Hash' with 'Random ID'. Only show the JID in XML
+	output if JabberID is used in the URI. If user does not select at
+	least an ID and Output, he is unregistered. Added Unregistration
+	message. Remove registration is Jabber account is deleted.
+
+2007-08-26  Badlop  <badlop@ono.com>
+
+	* src/mod_webpresence.erl: Improved table format and conversion
+	from old mod_presence. Small fixes. Replace nested cases with call
+	to funcions.
+
+	* src/mod_webpresence.erl: Renamed mod_presence.erl to
+	mod_webpresence.erl. Updated table format. XForm support for Hash
+	and JID URLs. Added complete support for 'jid' and 'hash' URIs.
+	* README.txt: Document 'jid' and 'hash' type of URIs.
+
+	* Emakefile: Idem.
+	* README.txt: Idem.
+
+	* src/mod_presence.erl: Preliminary support for hashed JIDs. Added
+	support for HOST keyword, and removed unusued Access
+	variables. Added basic page to Web Admin.
+
+2007-08-25  Badlop  <badlop@ono.com>
+
+	* src/mod_presence.erl: Fixed compilation warnings. Fixed two
+	warnings reported by Dialyzer. Renamed Status and Text to Show and
+	Status. Table index key only needs User and Server. Added id table
+	field and update_table function. XML option is stored as atom
+	instead of string. Cleaned process/2 and show_presence/1. New home
+	page, and icon themes quickview.
+
+2007-08-05  Badlop  <badlop@ono.com>
+
+	* ChangeLog: New file to track changes.
+
+	* src/mod_presence.erl: Fix indentation.
+
+	* src/Makefile.in: Removed unusued file.

@@ -1,0 +1,10 @@
+2008-12-12  Badlop  <badlop@process-one.net>
+
+	* src/mod_logsession.erl: Replace the ejabberdctl command with an
+	ejabberd command; requires ejabberd trunk SVN
+	* README.txt: Documented the change and the requirement
+
+2008-04-25  Badlop  <badlop@process-one.net>
+
+	* mod_logsession: New module to log session connections
+

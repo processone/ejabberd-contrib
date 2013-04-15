@@ -1,0 +1,30 @@
+{
+    IBClasses = (
+        {
+            CLASS = NSPreferencePane; 
+            LANGUAGE = ObjC; 
+            OUTLETS = {
+                "_firstKeyView" = id; 
+                "_initialKeyView" = id; 
+                "_lastKeyView" = id; 
+                "_window" = id; 
+            }; 
+            SUPERCLASS = NSObject; 
+        }, 
+        {
+            ACTIONS = {automaticStartAction = id; startStopAction = id; }; 
+            CLASS = ejabberdController; 
+            LANGUAGE = ObjC; 
+            OUTLETS = {
+                actionProgress = NSProgressIndicator; 
+                automaticBox = NSButton; 
+                imagestarted = NSImageView; 
+                imagestopped = NSImageView; 
+                startStopButton = NSButton; 
+                status = NSTextField; 
+            }; 
+            SUPERCLASS = NSObject; 
+        }
+    ); 
+    IBVersion = 1; 
+}

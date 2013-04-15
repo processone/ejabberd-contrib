@@ -1,0 +1,114 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: 2.1.0-alpha\n"
+"X-Language: Language Name\n"
+"Last-Translator: Translator name and contact method\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: mod_register_web.erl:66
+msgid "Your Jabber account was succesfully created."
+msgstr ""
+
+#: mod_register_web.erl:69
+msgid "There was an error creating the account: "
+msgstr ""
+
+#: mod_register_web.erl:79
+msgid "Your Jabber account was succesfully deleted."
+msgstr ""
+
+#: mod_register_web.erl:82
+msgid "There was an error deleting the account: "
+msgstr ""
+
+#: mod_register_web.erl:92
+msgid "The password of your Jabber account was succesfully changed."
+msgstr ""
+
+#: mod_register_web.erl:95
+msgid "There was an error changing the password: "
+msgstr ""
+
+#: mod_register_web.erl:129 mod_register_web.erl:138
+msgid "Jabber Account Registration"
+msgstr ""
+
+#: mod_register_web.erl:140 mod_register_web.erl:165 mod_register_web.erl:174
+msgid "Register a Jabber account"
+msgstr ""
+
+#: mod_register_web.erl:142 mod_register_web.erl:408 mod_register_web.erl:417
+msgid "Unregister a Jabber account"
+msgstr ""
+
+#: mod_register_web.erl:176
+msgid ""
+"This page allows to create a Jabber account in this Jabber server. Your JID "
+"(Jabber IDentifier) will be of the form: username@server. Please read "
+"carefully the instructions to fill correctly the fields."
+msgstr ""
+
+#: mod_register_web.erl:185 mod_register_web.erl:299 mod_register_web.erl:424
+msgid "Username:"
+msgstr ""
+
+#: mod_register_web.erl:190
+msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
+msgstr ""
+
+#: mod_register_web.erl:191
+msgid "Characters not allowed: @ : ' \" < > &"
+msgstr ""
+
+#: mod_register_web.erl:195 mod_register_web.erl:304 mod_register_web.erl:429
+msgid "Server:"
+msgstr ""
+
+#: mod_register_web.erl:205
+msgid ""
+"Don't tell your password to anybody, not even the administrators of the "
+"Jabber server."
+msgstr ""
+
+#: mod_register_web.erl:207
+msgid "You can later change your password using a Jabber client."
+msgstr ""
+
+#: mod_register_web.erl:208
+msgid ""
+"Some Jabber clients can store your password in your computer. Use that "
+"feature only if you trust your computer is safe."
+msgstr ""
+
+#: mod_register_web.erl:210
+msgid ""
+"Memorize your password, or write it in a paper placed in a safe place. In "
+"Jabber there isn't an automated way to recover your password if you forget "
+"it."
+msgstr ""
+
+#: mod_register_web.erl:215 mod_register_web.erl:319
+msgid "Password Verification:"
+msgstr ""
+
+#: mod_register_web.erl:232
+msgid "Register"
+msgstr ""
+
+#: mod_register_web.erl:309
+msgid "Old Password:"
+msgstr ""
+
+#: mod_register_web.erl:314
+msgid "New Password:"
+msgstr ""
+
+#: mod_register_web.erl:419
+msgid "This page allows to unregister a Jabber account in this Jabber server."
+msgstr ""
+
+#: mod_register_web.erl:439
+msgid "Unregister"
+msgstr ""

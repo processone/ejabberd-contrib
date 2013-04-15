@@ -1,0 +1,137 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: 2.1.0-alpha\n"
+"X-Language: Language Name\n"
+"Last-Translator: Translator name and contact method\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: mod_webpresence.erl:253 mod_webpresence.erl:311 mod_webpresence.erl:426
+#: mod_webpresence.erl:438 mod_webpresence.erl:821 mod_webpresence.erl:826
+#: mod_webpresence.erl:831 mod_webpresence.erl:893 mod_webpresence.erl:898
+#: mod_webpresence.erl:909 mod_webpresence.erl:917
+msgid "Web Presence"
+msgstr ""
+
+#: mod_webpresence.erl:306
+msgid "You need an x:data capable client to register presence"
+msgstr ""
+
+#: mod_webpresence.erl:312
+msgid "What features do you want to enable?"
+msgstr ""
+
+#: mod_webpresence.erl:313 mod_webpresence.erl:316
+msgid "Select one at least"
+msgstr ""
+
+#: mod_webpresence.erl:313 mod_webpresence.erl:975
+msgid "URL Type"
+msgstr ""
+
+#: mod_webpresence.erl:315 mod_webpresence.erl:948
+msgid "Random ID"
+msgstr ""
+
+#: mod_webpresence.erl:316 mod_webpresence.erl:979
+msgid "Output Type"
+msgstr ""
+
+#: mod_webpresence.erl:317 mod_webpresence.erl:395 mod_webpresence.erl:396
+#: mod_webpresence.erl:825 mod_webpresence.erl:831 mod_webpresence.erl:834
+#: mod_webpresence.erl:949 mod_webpresence.erl:993
+msgid "Icon Theme"
+msgstr ""
+
+#: mod_webpresence.erl:323
+msgid "XML"
+msgstr ""
+
+#: mod_webpresence.erl:324
+msgid "JavaScript"
+msgstr ""
+
+#: mod_webpresence.erl:325 mod_webpresence.erl:952
+msgid "Text"
+msgstr ""
+
+#: mod_webpresence.erl:326 mod_webpresence.erl:953
+msgid "Avatar"
+msgstr ""
+
+#: mod_webpresence.erl:386 mod_webpresence.erl:394 mod_webpresence.erl:396
+msgid "Resource"
+msgstr ""
+
+#: mod_webpresence.erl:422
+msgid "If you forget your RandomID, register again to receive this message."
+msgstr ""
+
+#: mod_webpresence.erl:423
+msgid "To get a new RandomID, disable the option and register again."
+msgstr ""
+
+#: mod_webpresence.erl:426
+msgid "registered"
+msgstr ""
+
+#: mod_webpresence.erl:427
+msgid "You have registered:"
+msgstr ""
+
+#: mod_webpresence.erl:428
+msgid "Use URLs like:"
+msgstr ""
+
+#: mod_webpresence.erl:433
+msgid "Example:"
+msgstr ""
+
+#: mod_webpresence.erl:438
+msgid "unregistered"
+msgstr ""
+
+#: mod_webpresence.erl:439
+msgid "You have unregistered."
+msgstr ""
+
+#: mod_webpresence.erl:668
+msgid "available"
+msgstr ""
+
+#: mod_webpresence.erl:669
+msgid "free for chat"
+msgstr ""
+
+#: mod_webpresence.erl:670
+msgid "away"
+msgstr ""
+
+#: mod_webpresence.erl:671
+msgid "extended away"
+msgstr ""
+
+#: mod_webpresence.erl:672
+msgid "do not disturb"
+msgstr ""
+
+#: mod_webpresence.erl:673
+msgid "unavailable"
+msgstr ""
+
+#: mod_webpresence.erl:822
+msgid ""
+"To publish your presence using this system you need a Jabber account in this "
+"Jabber server."
+msgstr ""
+
+#: mod_webpresence.erl:823
+msgid ""
+"Login with a Jabber client, open the Service Discovery and register in Web "
+"Presence."
+msgstr ""
+
+#: mod_webpresence.erl:824
+msgid "You will receive a message with further instructions."
+msgstr ""

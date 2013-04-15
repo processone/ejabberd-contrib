@@ -1,0 +1,11 @@
+2008-03-20  Badlop  <badlop@process-one.net>
+
+	* README.txt: Explained requirement of ejabberd SVN 1135 trunk or
+	2.0.x branch
+
+	* ChangeLog: Added file to track changes
+	
+2008-03-14  Mickael Remond <mremond@process-one.net>
+
+	* mod_s2s_log: Initial commit
+

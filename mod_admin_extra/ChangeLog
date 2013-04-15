@@ -1,0 +1,117 @@
+2009-06-15  Badlop  <badlop@process-one.net>
+
+	* src/mod_admin_extra.erl: Added command to check the password by
+	providing a MD5 or SHA hash.
+
+2009-02-16  Badlop  <badlop@process-one.net>
+
+	* src/mod_admin_extra.erl: Fix srg_user_add arguments
+
+2009-02-09  Badlop  <badlop@process-one.net>
+
+	* src/mod_admin_extra.erl: Calculation of 'stats registeredusers'
+	works also with non-internal authentication methods (thanks to
+	Francois de Metz)(EJAB-864)
+
+2009-01-27  Badlop  <badlop@process-one.net>
+
+	* README.txt: Explicitely mention that this module does not work
+	with any ejabberd 2.0.x or older
+
+	* src/mod_admin_extra.erl: In the srg_create command, allow to
+	separate group identifiers in the Display argument with escaped
+	newline character. Explain this possibility in the command long
+	description.
+
+2008-11-10  Badlop  <badlop@process-one.net>
+
+	* src/mod_admin_extra.erl: Renamed command send_message to
+	send_message_headline. New command send_message_chat. (thanks to
+	Xyu)
+
+2008-10-31  Badlop  <badlop@process-one.net>
+
+	* src/mod_admin_extra.erl: Deleted the duplicated command
+	delete_older_messages (EJAB-814). Rename the other delete_older_*
+	commands.
+
+2008-10-12  Badlop  <badlop@process-one.net>
+
+	* README.txt: It requires ejabberd trunk SVN 1635 or newer
+
+	* src/mod_admin_extra.erl: Renamed mod_ctlextra to
+	mod_admin_extra, as it now implements ejabberd commands instead of
+	ejabberdctl commands
+
+2008-04-26  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: New command: ban-account
+	* README.txt: Documented new command
+
+2008-04-04  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: Added new command
+	rosteritem-purge [options]
+
+2008-03-19  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: Added two new commands for administration
+	of Shared Roster Groups: "srg-list-groups host" and "srg-get-info
+	group host" (thanks to Taylor Laramie)
+
+2008-03-09  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: Show the result of each table export
+
+2008-03-04  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: New command 'stats
+	onlineusersnode'. Removed old unusued code.
+
+	* README.txt: Updated module page
+
+2008-01-20  Badlop  <badlop@process-one.net>
+
+	* src/mod_ctlextra.erl: Allow to define group name with spaces
+	* README.txt: Likewise
+
+2007-11-14  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: Updated to ejabberd SVN.
+
+2007-09-08  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: Bugfix: unregister commands when module 
+	stops. Removed all MUC-related commands. 
+
+2007-08-29  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: Added command: stats uptime-seconds.
+
+2007-08-24  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: Fixed bug in vcard-set command that 
+	forgot second level attributes.
+
+2007-08-23  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: Command add-rosteritem now pushes the 
+	roster item to the client. New command rem-rosteritem.
+
+2007-08-19  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: Now vcard-get and vcard-set are more 
+	compatible with mod_vcard_odbc and mod_vcard_ldap.
+
+2007-08-16  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: add-rosteritem only adds an item in a 
+	roster.
+
+2007-08-07  Badlop  <badlop@ono.com>
+
+	* src/mod_ctlextra.erl: Fixed indentation.
+
+	* ChangeLog: New file to track changes.
+
+	* README.txt: Removed Changelog section.

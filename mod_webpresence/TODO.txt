@@ -1,0 +1,25 @@
+
+	Feature requests for mod_webpresence
+
+
+	Internationalization support
+	----------------------------
+
+ - The "text" output returns an empty string if the user doesn't have a status text.
+ Proposal: in such case, return the string "Online", or "Busy" or whatever
+
+ - The special cases in "presence/" and "presence/themes" should return 
+ a header lang=xx with the proper language instead of lang=en
+
+ - The Icon Themes page should show the translated status.
+
+ - Allow translation of separator commas and ending dots in lists of elements, 
+ since some languages may use other separation symbols.
+
+ - Support the HTML attribute dir=(ltr|rtl) for languages that are RTL
+ For example:
+    {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"}, ...
+        {"dir", ltr_or_rtl()}
+ And ltr_or_rtl() ->  ?T("ltr").
+ This way RTL languages can change that string to rtl
+

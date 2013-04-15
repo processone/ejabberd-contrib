@@ -1,0 +1,6 @@
+{'../ejabberd-dev/src/gen_mod', [{outdir, "../ejabberd-dev/ebin"},{i,"../ejabberd-dev/include"}]}.
+{'src/mod_multicast',     [{outdir, "ebin"},{i,"../ejabberd-dev/include"}]}.
+{'src/ejabberd_router_multicast',     [{outdir, "ebin"},{i,"../ejabberd-dev/include"}]}.
+{'src/ejabberd_c2s',     [{outdir, "ebin"},{i,"../ejabberd-dev/include"}]}.
+{'src/mod_muc_room',     [{outdir, "ebin"},{i,"../ejabberd-dev/include"}]}.
+{'src/ejabberd_sup',     [{outdir, "ebin"},{i,"../ejabberd-dev/include"}]}.

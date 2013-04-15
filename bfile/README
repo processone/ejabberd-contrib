@@ -1,0 +1,28 @@
+An interface to fast FILE I/O
+
+It's based on an old and hacked version
+of the BSD FILE*
+
+To install, type make; make install
+and it shuld install itself as an app in your
+erlang dir.
+
+See the source src/bfile.erl for API
+
+Here's an example shell session:
+
+
+2> bfile:load_driver().
+ok
+4> {ok, Fd} = bfile:fopen("Makefile", "r").
+{ok,{bfile,#Port<0.98>}}
+5> bfile:fgets(Fd).
+{line,<<10>>}
+6> bfile:fgets(Fd).
+{line,<<10>>}
+7> bfile:fgets(Fd).
+{line,<<97,108,108,58,32,10>>}
+14> bfile:fread(Fd, 10000).
+{ok,<<10,10,105,110,115,116,97,108,108,58,32,97,108,108,10,9,40,99,100,32,99,95,115,114,99,59,32,...>>}
+15> bfile:fread(Fd, 10000).
+eof

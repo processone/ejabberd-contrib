@@ -1,0 +1,44 @@
+iJorge by Zbyszek Zolkiewski (C) 2009 VERSION 1.5-RC1
+
+About.
+ Jorge is set of php scripts that are front-end for Oleg Palij mod_logdb.
+
+Licensing.
+ Jorge is distributed by GPL License provided in COPYING file as well in parts in all source files.
+Jorge uses jQuery library and some plugins, please read license info at http://docs.jquery.com/Licensing
+
+Bug reporting:
+If you found any bug or have any improvement idea you can contact me at (email/xmpp): zbyszek@jabster.pl
+Patches are most welcome.
+
+Requirements:
+- working ejabberd 2.x (or higher) with mod_logdb (compatibile version is bundled with Jorge)
+- mod_xmlrpc - revision 772
+- mysql5 server
+- any http server supporting PHP (5.2.x or higher) with gd, mcrypt and xmlrpc support
+
+Client Requirements:
+- Jorge is tested and compatibile with: Firefox 2.x, Firefox 3.x, Opera 9.x, Apple Safri 3.x,4.x and Google Chrome (IE7 and IE8+ may work but it is not recomended due to IE standards violations, IE6 is not supported at all)
+- Web-browser _must_ have enabled javascript as Jorge strongly relay on jQuery and other js related scripts
+- Cookies must be enabled
+
+Installing:
+- setup XML-RPC facility (mod_xmlrpc, available at http://svn.process-one.net/ejabberd-modules/mod_xmlrpc/trunk/ - Use rev772!)
+- copy Jorge files into your http server (sugested vhost over SSL connection).
+- set up database for Jorge (install/jorge.sql), see README inside install dir
+- copy config.php.inc to config.php and edit file - READ CAREFULLY
+- that's it!
+
+Archive usage:
+We can say that 1 milion messeges collected by the server consume approx. 65 Megabytes. Depending on number of users that use your server and
+how many will activate logging, you must compute db partitions.
+
+NO WARRANTY
+THE PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT WITHOUT ANY WARRANTY. IT IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU. SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
+
+!!!SECURITY NOTICE!!!
+
+Before use check if you set registered_globals to off. It is *required* for security reasons!
+Jorge is compatibile out of the box with: mod_security2 and php-hardened (suhosin) and easy to chroot.
+It is strongly recomended to use encrypted sessions.
+If you are using Hardened_PHP or Suhosin alter get.max_value_length to some greater value f.e 1024.

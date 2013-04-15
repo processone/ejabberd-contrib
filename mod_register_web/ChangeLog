@@ -1,0 +1,37 @@
+2009-05-02  Badlop  <badlop@process-one.net>
+
+	* src/msgs/es.mod_register_web.po: Update Spanish translation
+	* src/msgs/es.mod_register_web.msg: Likewise
+
+	* src/mod_register_web.erl: Update translatable strings
+	* src/msgs/mod_register_web.pot: Likewise
+
+	* src/msgs/: New directory for module translations (EJAB-925)
+
+2009-03-30  Badlop  <badlop@process-one.net>
+
+	* src/mod_register_web.erl: Use captcha in account registration
+	page, using ejabberd_captcha, requires recent ejabberd
+	version. Fix password change. Hide password text. Show host in
+	forms. Fix vhost support.
+
+	* README.txt: Require ejabberd trunk SVN r2001
+
+2009-03-11  Badlop  <badlop@process-one.net>
+
+	* src/mod_register_web.erl: Fix capitalization of HTTP headers
+
+2009-01-27  Badlop  <badlop@process-one.net>
+
+	* README.txt: Require ejabberd trunk SVN. There is a 2.0.x branch.
+
+2008-05-31  Badlop  <badlop@process-one.net>
+
+	* README.txt: Require ejabberd 2.0.2. Add explanation about last
+	character / in URL
+
+2008-05-18  Badlop  <badlop@process-one.net>
+
+	* mod_register_web: New module that provides web pages to register
+	account and other related tasks
+

@@ -1,0 +1,44 @@
+--- ejabberd_c2s.erl
++++ ejabberd_c2s.erl
+@@ -496,6 +496,11 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
+ 			    fsm_next_state_pack(session_established,
+                                                 NewStateData);
+ 			_ ->
++			    ejabberd_hooks:run(failed_auth_hook,
++					       StateData#state.server,
++					       [legacy, U,
++						StateData#state.server,
++						StateData#state.ip]),
+ 			    ?INFO_MSG(
+ 			       "(~w) Failed legacy authentication for ~s",
+ 			       [StateData#state.socket,
+@@ -586,6 +591,11 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
+ 				   StateData#state{
+ 				     sasl_state = NewSASLState});
+ 		{error, Error, Username} ->
++		    ejabberd_hooks:run(failed_auth_hook,
++				       StateData#state.server,
++				       [sasl_auth, Username,
++					StateData#state.server,
++					StateData#state.ip]),
+ 		    ?INFO_MSG(
+ 		       "(~w) Failed authentication for ~s@~s",
+ 		       [StateData#state.socket,
+@@ -721,10 +731,15 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
+ 		    fsm_next_state(wait_for_sasl_response,
+ 		     StateData#state{sasl_state = NewSASLState});
+ 		{error, Error, Username} ->
++		    ejabberd_hooks:run(failed_auth_hook,
++				       StateData#state.server,
++				       [sasl_resp, Username,
++					StateData#state.server,
++					StateData#state.ip]),
+ 		    ?INFO_MSG(
+-		       "(~w) Failed authentication for ~s@~s",
++		       "(~w) Failed authentication for ~s@~s ~n~p",
+ 		       [StateData#state.socket,
+-			Username, StateData#state.server]),
++			Username, StateData#state.server, StateData]),
+ 		    send_element(StateData,
+ 				 {xmlelement, "failure",
+ 				  [{"xmlns", ?NS_SASL}],

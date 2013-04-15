@@ -1,0 +1,88 @@
+AC_INIT
+
+dnl work out who the cpu, vendor and OS are
+AC_CANONICAL_SYSTEM
+AC_DEFINE_UNQUOTED(CPU_VENDOR_OS, "$target")
+
+dnl Programs
+
+AC_PROG_CC
+AC_PATH_PROG(ERL, erl)
+AC_PATH_PROG(ERLC, erlc)
+ERLBINDIR=`dirname $ERL` ; ERLBINDIR=`dirname $ERLBINDIR`/lib/erlang/bin
+
+ERLDIR=`awk -F= '/ROOTDIR=/ { print [$]2; exit; }' $ERL`
+AC_SUBST(ERL)
+AC_SUBST(ERLC)
+AC_SUBST(ERLBINDIR)
+AC_SUBST(ERLDIR)
+
+if test ! -d "$ERLDIR" ; then
+	AC_MSG_ERROR([Broken Erlang installation, $ERLDIR does not exist!])
+fi
+
+dnl C header files
+
+AC_CONFIG_HEADER(config.h:config.h.in)
+
+AC_CHECK_HEADERS(malloc.h)
+
+BT_MSG_CONTROL
+
+case "$target_os" in
+     *cygwin*)
+	:
+	dnl fix this later
+	;;
+      linux*)
+	AC_DEFINE(LINUX)
+	LD_SHARED="ld -shared"
+	;;
+      *bsd*)
+	AC_DEFINE(BSD)
+        LD_SHARED="ld -Bshareable"
+	;;
+      *solaris*)
+        AC_DEFINE(SOLARIS)
+        LD_SHARED="ld -G"
+	;;
+      *darwin*)
+        AC_DEFINE([DARWIN], [], [Description])
+        LD_SHARED="cc -bundle -flat_namespace -undefined suppress"
+	;;
+      *)
+        LD_SHARED="ld -shared"
+	;;
+esac
+
+AC_SUBST(LD_SHARED)
+
+
+dnl libnsl and libsocket tests borrowed from ethereal's autoconf scheme.
+dnl # msh@cis.ufl.edu says -lnsl (and -lsocket) are needed for his 386/AT,
+dnl # to get the SysV transport functions.
+dnl # chad@anasazi.com says the Pyramid MIS-ES running DC/OSx (SVR4)
+dnl # needs -lnsl.
+dnl # The nsl library prevents programs from opening the X display
+dnl # on Irix 5.2, according to dickey@clark.net.
+AC_CHECK_FUNC(gethostbyname, ,
+    AC_CHECK_LIB(nsl, gethostbyname, NSL_LIBS="-lnsl"))
+AC_SUBST(NSL_LIBS)
+dnl # lieder@skyler.mavd.honeywell.com says without -lsocket,
+dnl # socket/setsockopt and other routines are undefined under SCO ODT
+dnl # 2.0.  But -lsocket is broken on IRIX 5.2 (and is not necessary
+dnl # on later versions), says simon@lia.di.epfl.ch: it contains
+dnl # gethostby* variants that don't use the nameserver (or something).
+dnl # -lsocket must be given before -lnsl if both are needed.
+dnl # We assume that if connect needs -lnsl, so does gethostbyname.
+AC_CHECK_FUNC(connect, ,
+  AC_CHECK_LIB(socket, connect, SOCKET_LIBS="-lsocket",
+            AC_MSG_ERROR(Function 'socket' not found.), $NSL_LIBS))
+AC_SUBST(SOCKET_LIBS)
+
+dnl
+dnl End.
+
+AC_OUTPUT(include.mk)
+
+

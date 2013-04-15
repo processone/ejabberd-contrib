@@ -1,0 +1,4 @@
+{modules,                                                                       
+ [
+  {mod_presence, [{access, local}, {pixmaps_path, "/etc/ejabberd/ebin/pixmaps"}]}
+ ]}.

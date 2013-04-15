@@ -1,0 +1,98 @@
+2008-10-12  Badlop  <badlop@process-one.net>
+
+	* README.txt: Add a note about ejabberd_xmlrpc existence for newer
+	ejabberd trunk SVN 1635
+
+2008-08-31  Badlop  <badlop@process-one.net>
+
+	* README.txt: Added Java example client and fixed the PHP
+	example (thanks to Calder)
+
+2008-07-24  Badlop  <badlop@process-one.net>
+
+	* src/mod_xmlrpc.erl: Fixed typo in get_roster
+
+2008-07-08  Badlop  <badlop@process-one.net>
+
+	* src/mod_xmlrpc.erl: Detect if mod_roster or mod_roster_odbc is
+	enabled. New call send_message (thanks to Darren Ferguson)
+	* README.txt: Likewise
+
+2008-05-20  Badlop  <badlop@process-one.net>
+
+	* src/mod_xmlrpc.erl: New call get_roster; works only with
+	mod_roster_odbc
+	* README.txt: Likewise
+
+2008-05-19  Badlop  <badlop@process-one.net>
+
+	* src/mod_xmlrpc.erl: New function check_account (thanks to
+	Zbyszek Żółkiewski)
+	* README.txt: Likewise
+
+2008-05-18  Badlop  <badlop@process-one.net>
+	
+	* README.txt: Added example client in PHP (thanks to Zbyszek
+	Żółkiewski)
+	
+	* src/mod_xmlrpc.erl: Convert from DOS to Unix line format
+	* README.txt: Likewise
+	* ChangeLog: Likewise
+
+2008-05-16  Badlop  <badlop@process-one.net>
+
+	* src/mod_xmlrpc.erl: New calls muc_room_change_option and
+	muc_room_set_affiliation. Improved calls add_rosteritem and
+	delete_rosteritem: they push the changed roster item to connected
+	resources (thanks to Darren Ferguson). New call check_password.
+	* README.txt: Likewise
+
+2008-05-06  Badlop  <badlop@process-one.net>
+
+	* src/mod_xmlrpc.erl: Added new calls delete_account,
+	delete_rosteritem, create_muc_room and destroy_muc_room (thanks to
+	Darren Ferguson)
+	* README.txt: Likewise
+
+2008-02-29  Badlop  <badlop@process-one.net>
+
+	* src/mod_xmlrpc.erl: Added module options: maxsessions, timeout
+	* README.txt: Likewise
+
+2007-08-24  Badlop  <badlop@ono.com>
+
+	* README.txt: Removed requirement of Xmerl 0.20, since it is
+	included in Erlang/OTP. Instead, require updated XMLRPC-Erlang.
+
+2007-08-21  Badlop  <badlop@ono.com>
+
+	* README.txt: New Ruby example (thanks to Diddek). Patched xmlrpc 
+	Erlang library for Ruby compatibility (thanks to Cstar).
+
+	* mod_xmlrpc/*: Initial commit.
+
+Old Changelog:
+
+0.2.4 - 7 November 2006
+  * Fixed a bug that required clients to provide attributes in a fixed order
+
+0.2.3 - 22 September 2006
+  * New feature: bind to a specific IP address, requires the patched XML-RPC-Erlang-1.13-IP (thanks to Zeank)
+
+0.2.2 - 15 August 2006
+  * Fixed small bug on resource_num (thanks to Flipkick)
+
+0.2.1 - 20 July 2006
+  * Fixed small bug on add_rosteritem (thanks to Leonexis)
+
+0.2.0 - 16 April 2006
+  * Added two new calls: num_resources and resouce_num
+  * Added support for vhosts
+
+0.1.2 - 28 December 2005
+  * Now compatible with ejabberd 1.0.0
+  * The XMLRPC server is started only once, not once for every virtual host
+  * Added comments for handlers. Every available handler must be explained
+
+0.1.0 - 4 April 2005
+  * Initial version
