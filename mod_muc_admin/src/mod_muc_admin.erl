@@ -54,8 +54,7 @@ stop(Host) ->
     ejabberd_hooks:delete(webadmin_menu_main, ?MODULE, web_menu_main, 50),
     ejabberd_hooks:delete(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:delete(webadmin_page_main, ?MODULE, web_page_main, 50),
-    ejabberd_hooks:delete(webadmin_page_host, Host, ?MODULE, web_page_host, 50),
-    ejabberd_hooks:delete(webadmin_user, Host, ?MODULE, web_user, 50).
+    ejabberd_hooks:delete(webadmin_page_host, Host, ?MODULE, web_page_host, 50).
 
 %%%
 %%% Register commands
@@ -207,34 +206,34 @@ muc_unregister_nick(Nick) ->
 %% Web Admin Menu
 
 web_menu_main(Acc, Lang) ->
-    Acc ++ [{"muc", ?T("Multi-User Chat")}].
+    Acc ++ [{<<"muc">>, ?T(<<"Multi-User Chat">>)}].
 
 web_menu_host(Acc, _Host, Lang) ->
-    Acc ++ [{"muc", ?T("Multi-User Chat")}].
+    Acc ++ [{<<"muc">>, ?T(<<"Multi-User Chat">>)}].
 
 
 %%---------------
 %% Web Admin Page
 
 -define(TDTD(L, N),
-	?XE("tr", [?XCT("td", L),
-		   ?XC("td", integer_to_list(N))
-		  ])).
+	?XE(<<"tr">>, [?XCT(<<"td">>, L),
+		       ?XC(<<"td">>, jlib:integer_to_binary(N))
+		      ])).
 
-web_page_main(_, #request{path=["muc"], lang = Lang} = _Request) ->
-    Res = [?XC("h1", "Multi-User Chat"),
-	   ?XC("h3", "Statistics"),
-	   ?XAE("table", [],
-		[?XE("tbody", [?TDTD("Total rooms", ets:info(muc_online_room, size)),
-			       ?TDTD("Permanent rooms", mnesia:table_info(muc_room, size)),
-			       ?TDTD("Registered nicknames", mnesia:table_info(muc_registered, size))
-			      ])
+web_page_main(_, #request{path=[<<"muc">>], lang = Lang} = _Request) ->
+    Res = [?XC(<<"h1">>, <<"Multi-User Chat">>),
+	   ?XC(<<"h3">>, <<"Statistics">>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>, [?TDTD(<<"Total rooms">>, ets:info(muc_online_room, size)),
+				   ?TDTD(<<"Permanent rooms">>, mnesia:table_info(muc_room, size)),
+				   ?TDTD(<<"Registered nicknames">>, mnesia:table_info(muc_registered, size))
+				  ])
 		]),
-	   ?XE("ul", [?LI([?ACT("rooms", "List of rooms")])])
+	   ?XE(<<"ul">>, [?LI([?ACT(<<"rooms">>, <<"List of rooms">>)])])
 	  ],
     {stop, Res};
 
-web_page_main(_, #request{path=["muc", "rooms"], q = Q, lang = Lang} = _Request) ->
+web_page_main(_, #request{path=[<<"muc">>, <<"rooms">>], q = Q, lang = Lang} = _Request) ->
     Sort_query = get_sort_query(Q),
     Res = make_rooms_page(global, Lang, Sort_query),
     {stop, Res};
@@ -242,7 +241,7 @@ web_page_main(_, #request{path=["muc", "rooms"], q = Q, lang = Lang} = _Request)
 web_page_main(Acc, _) -> Acc.
 
 web_page_host(_, Host,
-	      #request{path = ["muc"],
+	      #request{path = [<<"muc">>],
 		       q = Q,
 		       lang = Lang} = _Request) ->
     Sort_query = get_sort_query(Q),
@@ -273,36 +272,36 @@ make_rooms_page(Host, Lang, {Sort_direction, Sort_column}) ->
     Rooms_prepared = prepare_rooms_infos(Rooms_sorted),
     TList = lists:map(
 	      fun(Room) ->
-		      ?XE("tr", [?XC("td", E) || E <- Room])
+		      ?XE(<<"tr">>, [?XC(<<"td">>, E) || E <- Room])
 	      end, Rooms_prepared),
-    Titles = ["Jabber ID",
-	      "# participants",
-	      "Last message",
-	      "Public",
-	      "Persistent",
-	      "Logging",
-	      "Just created",
-	      "Title"],
+    Titles = [<<"Jabber ID">>,
+	      <<"# participants">>,
+	      <<"Last message">>,
+	      <<"Public">>,
+	      <<"Persistent">>,
+	      <<"Logging">>,
+	      <<"Just created">>,
+	      <<"Title">>],
     {Titles_TR, _} =
 	lists:mapfoldl(
 	  fun(Title, Num_column) ->
-		  NCS = integer_to_list(Num_column),
-		  TD = ?XE("td", [?CT(Title),
-				  ?C(" "),
-				  ?ACT("?sort="++NCS, "<"),
-				  ?C(" "),
-				  ?ACT("?sort=-"++NCS, ">")]),
+		  NCS = jlib:integer_to_binary(Num_column),
+		  TD = ?XE(<<"td">>, [?CT(Title),
+				      ?C(<<" ">>),
+				      ?ACT(<<"?sort=", NCS/binary>>, <<"<">>),
+				      ?C(<<" ">>),
+				      ?ACT(<<"?sort=-", NCS/binary>>, <<">">>)]),
 		  {TD, Num_column+1}
 	  end,
 	  1,
 	  Titles),
-    [?XC("h1", "Multi-User Chat"),
-     ?XC("h2", "Rooms"),
-     ?XE("table",
-	 [?XE("thead",
-	      [?XE("tr", Titles_TR)]
+    [?XC(<<"h1">>, <<"Multi-User Chat">>),
+     ?XC(<<"h2">>, <<"Rooms">>),
+     ?XE(<<"table">>,
+	 [?XE(<<"thead">>,
+	      [?XE(<<"tr">>, Titles_TR)]
 	     ),
-	  ?XE("tbody", TList)
+	  ?XE(<<"tbody">>, TList)
 	 ]
 	)
     ].
@@ -332,14 +331,14 @@ build_info_room({Name, Host, Pid}) ->
     Ts_last_message =
 	case queue:is_empty(History) of
 	    true ->
-		"A long time ago";
+		<<"A long time ago">>;
 	    false ->
 		Last_message1 = queue:last(History),
 		{_, _, _, Ts_last, _} = Last_message1,
 		jlib:timestamp_to_iso(Ts_last)
 	end,
 
-    {Name++"@"++Host,
+    {<<Name/binary, "@", Host/binary>>,
      Num_participants,
      Ts_last_message,
      Public,
@@ -360,12 +359,12 @@ prepare_room_info(Room_info) ->
      Just_created,
      Title} = Room_info,
     [NameHost,
-     integer_to_list(Num_participants),
+     jlib:integer_to_binary(Num_participants),
      Ts_last_message,
-     atom_to_list(Public),
-     atom_to_list(Persistent),
-     atom_to_list(Logging),
-     atom_to_list(Just_created),
+     jlib:atom_to_binary(Public),
+     jlib:atom_to_binary(Persistent),
+     jlib:atom_to_binary(Logging),
+     jlib:atom_to_binary(Just_created),
      Title].
 
 
