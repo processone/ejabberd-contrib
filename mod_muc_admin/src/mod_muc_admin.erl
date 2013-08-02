@@ -170,9 +170,9 @@ muc_online_rooms(ServerHost) ->
       fun({_, {Roomname, Host}, _}, Results) ->
 	      case MUCHost of
 		  global ->
-		      [str:join([Roomname, Host], "@") | Results];
+		      [Roomname, <<"@">>, Host | Results];
 		  Host ->
-		      [str:join([Roomname, Host], "@") | Results];
+		      [Roomname, <<"@">>, Host | Results];
 		  _ ->
 		      Results
 	      end
@@ -258,7 +258,7 @@ get_sort_query(Q) ->
     end.
 
 get_sort_query2(Q) ->
-    {value, {_, String}} = lists:keysearch("sort", 1, Q),
+    {value, {_, String}} = lists:keysearch(<<"sort">>, 1, Q),
     Integer = list_to_integer(String),
     case Integer >= 0 of
 	true -> {ok, {normal, Integer}};
@@ -631,7 +631,7 @@ find_serverhost(Host, ServerHosts) ->
 
 act_on_room(destroy, {N, H, Pid}, SH) ->
     gen_fsm:send_all_state_event(
-      Pid, {destroy, "Room destroyed by rooms_unused_destroy."}),
+      Pid, {destroy, <<"Room destroyed by rooms_unused_destroy.">>}),
     mod_muc:room_destroyed(H, N, Pid, SH),
     mod_muc:forget_room(SH, H, N);
 
@@ -697,18 +697,18 @@ get_users_to_invite(RoomJid, UsersString) ->
 build_invitation(Password, Reason, RoomString) ->
     PasswordAttrList = case Password of
 	"none" -> [];
-	_ -> [{"password", Password}]
+	_ -> [{<<"password">>, Password}]
     end,
     ReasonAttrList = case Reason of
 	"none" -> [];
-	_ -> [{"reason", Reason}]
+	_ -> [{<<"reason">>, Reason}]
     end,
-    XAttrs = [{"xmlns", ?NS_XCONFERENCE},
-	      {"jid", RoomString}]
+    XAttrs = [{<<"xmlns">>, ?NS_XCONFERENCE},
+	      {<<"jid">>, RoomString}]
 	++ PasswordAttrList
 	++ ReasonAttrList,
-    XEl = {xmlelement, "x", XAttrs, []},
-    {xmlelement, "message", [], [XEl]}.
+    XEl = {xmlelement, <<"x">>, XAttrs, []},
+    {xmlelement, <<"message">>, [], [XEl]}.
 
 send_direct_invitation(FromJid, UserJid, XmlEl) ->
     ejabberd_router:route(FromJid, UserJid, XmlEl).
@@ -796,7 +796,7 @@ get_room_affiliations(Name, Service) ->
 	      fun({{Uname, Domain, _Res}, {Aff, Reason}}) when is_atom(Aff)->
 		      {Uname, Domain, Aff, Reason};
 		 ({{Uname, Domain, _Res}, Aff}) when is_atom(Aff)->
-		      {Uname, Domain, Aff, ""}
+		      {Uname, Domain, Aff, <<>>}
 	      end, Affiliations);
 	[] ->
 	    throw({error, "The room does not exist."})

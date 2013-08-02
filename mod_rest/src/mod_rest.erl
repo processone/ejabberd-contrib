@@ -56,11 +56,11 @@ process([], #request{method = 'POST',
     catch
 	error:{badmatch, _} = Error ->
 	    ?DEBUG("Error when processing REST request: ~nData: ~p~nError: ~p", [Data, Error]),
-	    {406, [], "Error: REST request is rejected by service."}
+	    {406, [], <<"Error: REST request is rejected by service.">>}
     end;
 process(Path, Request) ->
     ?DEBUG("Got request to ~p: ~p", [Path, Request]),
-    {200, [], "Try POSTing a stanza."}.
+    {200, [], <<"Try POSTing a stanza.">>}.
 
 
 %% If the first character of Data is <, it is considered a stanza to deliver.
@@ -68,8 +68,8 @@ process(Path, Request) ->
 maybe_post_request([$< | _ ] = Data, Host, ClientIp) ->
     try
 	Stanza = xml_stream:parse_element(Data),
-        From = jlib:string_to_jid(xml:get_tag_attr_s("from", Stanza)),
-        To = jlib:string_to_jid(xml:get_tag_attr_s("to", Stanza)),
+        From = jlib:string_to_jid(xml:get_tag_attr_s(<<"from">>, Stanza)),
+        To = jlib:string_to_jid(xml:get_tag_attr_s(<<"to">>, Stanza)),
 	allowed = check_stanza(Stanza, From, To, Host),
 	?INFO_MSG("Got valid request from ~s~nwith IP ~p~nto ~s:~n~p",
 		  [jlib:jid_to_string(From),
@@ -129,8 +129,8 @@ check_member_option(Host, Element, Option) ->
 
 post_request(Stanza, From, To) ->
     case ejabberd_router:route(From, To, Stanza) of
-	ok -> {200, [], "Ok"};
-        _ -> {500, [], "Error"}
+	ok -> {200, [], <<"Ok">>};
+        _ -> {500, [], <<"Error">>}
     end.
 
 %% Split a line into args. Args are splitted by blankspaces. Args can be enclosed in "".
@@ -142,7 +142,7 @@ post_request(Stanza, From, To) ->
 %% 32 is the integer that represents the blankspace
 %% 34 is the integer that represents the double quotes: "
 %% 92 is the integer that represents the backslash: \
-split_line(Line) -> split(Line, "", []).
+split_line(Line) -> list_to_binary(split(binary_to_list(Line), "", [])).
 split("", "", Args) -> lists:reverse(Args);
 split("", Arg, Args) -> split("", "", [lists:reverse(Arg) | Args]);
 split([32 | Line], "", Args) -> split(Line, [], Args);
