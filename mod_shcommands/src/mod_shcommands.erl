@@ -15,6 +15,7 @@
 	 start/2, stop/1]).
 
 -include("ejabberd.hrl").
+-include("jlib.hrl").
 -include("web/ejabberd_http.hrl").
 -include("web/ejabberd_web_admin.hrl").
 
