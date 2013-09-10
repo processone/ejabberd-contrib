@@ -11,12 +11,12 @@
 %%% under the License.
 %%% 
 %%% The Initial Developer of the Original Code is ProcessOne.
-%%% Portions created by ProcessOne are Copyright 2006-2011, ProcessOne
+%%% Portions created by ProcessOne are Copyright 2006-2013, ProcessOne
 %%% All Rights Reserved.''
-%%% This software is copyright 2006-2011, ProcessOne.
+%%% This software is copyright 2006-2013, ProcessOne.
 %%%
 %%%
-%%% copyright 2006-2011 ProcessOne
+%%% copyright 2006-2013 ProcessOne
 %%%
 %%% This file contains pubsub types definition.
 %%% ====================================================================
@@ -136,8 +136,9 @@
   options = []
 }).
 
-%% @type pubsubState() = {pubsub_state, StateId, Items, Affiliation, Subscriptions}
+%% @type pubsubState() = {pubsub_state, StateId, NodeIdx, Items, Affiliation, Subscriptions}
 %%    StateId       = {ljid(), nodeIdx()}
+%%    NodeIdx       = nodeIdx(),
 %%    Items         = [itemId()]
 %%    Affiliation   = affiliation()
 %%    Subscriptions = [{subscription(), subId()}].
@@ -146,6 +147,7 @@
 -record(pubsub_state,
 {
   stateid,
+  nodeidx,
   items         = [],
   affiliation   = 'none',
   subscriptions = []
@@ -161,6 +163,7 @@
 -record(pubsub_item,
 {
   itemid,
+  nodeidx,
   creation     = {'unknown','unknown'},
   modification = {'unknown','unknown'},
   payload      = []
