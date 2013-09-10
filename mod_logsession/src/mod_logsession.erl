@@ -115,7 +115,7 @@ get_process_name(Host) ->
     gen_mod:get_module_proc(Host, ?PROCNAME).
 
 replace_host(Host, Filename) ->
-    element(2, regexp:gsub(Filename, "@HOST@", Host)).
+    re:replace(Filename, "@HOST@", Host, [global, {return, list}]).
 
 open_file(Filename) -> 
     {ok, File} = file:open(Filename, [append]),

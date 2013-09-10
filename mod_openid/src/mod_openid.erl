@@ -133,7 +133,7 @@ check_authentication2(AssocHandle, Sig, Signed, Query) ->
 %% Fields is a list of fields which should be in the query as openid.Field
 %% return the list of argument [{Key,Value}] as they appears in the query
 retrieve_params(Fields,Query) ->
-    {ok, FList} = regexp:split(Fields, ","),
+    FList = re:split(Fields, ",", [{return, list}]),
     retrieve_params_recurse(FList,Query).
 retrieve_params_recurse([],_) -> [];
 retrieve_params_recurse([Key | Tail ], Query) ->

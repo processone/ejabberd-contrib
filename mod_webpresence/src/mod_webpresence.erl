@@ -667,9 +667,8 @@ intund2string(undefined) -> "undefined";
 intund2string(Int) when is_integer(Int) -> integer_to_list(Int).
 
 escape(S1) ->
-    {ok, S2, _} = regexp:gsub(S1, "\'", "\\'"),
-    {ok, S3, _} = regexp:gsub(S2, "\n", "\\n"),
-    S3.
+    S2 = re:replace(S1, "\'", "\\'", [global, {return, list}]),
+    re:replace(S2, "\n", "\\n", [global, {return, list}]).
 
 get_baseurl(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
