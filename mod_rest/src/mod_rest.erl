@@ -29,12 +29,14 @@
 
 -export([start/2,
 	 stop/1,
+	 split_line/1,
 	 process/2
 	]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
--include("web/ejabberd_http.hrl").
+-include("ejabberd_http.hrl").
 -include("ejabberd_ctl.hrl").
 
 start(_Host, _Opts) ->
@@ -52,7 +54,7 @@ process([], #request{method = 'POST',
     try
 	{ClientAddress, _PortNumber} = ClientIp,
 	check_member_option(Host, ClientAddress, allowed_ips),
-	maybe_post_request(Data, Host, ClientIp)
+	maybe_post_request(binary_to_list(Data), Host, ClientIp)
     catch
 	error:{badmatch, _} = Error ->
 	    ?DEBUG("Error when processing REST request: ~nData: ~p~nError: ~p", [Data, Error]),
@@ -109,7 +111,7 @@ try_get_option(Host, OptionName, DefaultValue) ->
 	true -> ok;
 	_ -> throw({module_must_be_started_in_vhost, ?MODULE, Host})
     end,
-    gen_mod:get_module_opt(Host, ?MODULE, OptionName, DefaultValue).
+    gen_mod:get_module_opt(Host, ?MODULE, OptionName, fun(I) when I -> I end, DefaultValue).
 
 get_option_access(Host) ->
     try_get_option(Host, access_commands, []).
@@ -117,7 +119,7 @@ get_option_access(Host) ->
 %% This function crashes if the stanza does not satisfy configured restrictions
 check_stanza(Stanza, _From, To, Host) ->
     check_member_option(Host, jlib:jid_to_string(To), allowed_destinations),
-    {xmlelement, StanzaType, _Attrs, _Kids} = Stanza,
+    {xmlel, StanzaType, _Attrs, _Kids} = Stanza,
     check_member_option(Host, StanzaType, allowed_stanza_types),
     allowed.
 
@@ -142,7 +144,7 @@ post_request(Stanza, From, To) ->
 %% 32 is the integer that represents the blankspace
 %% 34 is the integer that represents the double quotes: "
 %% 92 is the integer that represents the backslash: \
-split_line(Line) -> list_to_binary(split(binary_to_list(Line), "", [])).
+split_line(Line) -> split(Line, "", []).
 split("", "", Args) -> lists:reverse(Args);
 split("", Arg, Args) -> split("", "", [lists:reverse(Arg) | Args]);
 split([32 | Line], "", Args) -> split(Line, [], Args);
