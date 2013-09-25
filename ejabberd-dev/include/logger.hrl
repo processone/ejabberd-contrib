@@ -18,35 +18,40 @@
 %%% 02111-1307 USA
 %%%
 %%%----------------------------------------------------------------------
+-define(PRINT(Format, Args), io:format(Format, Args)).
 
-%% This macro returns a string of the ejabberd version running, e.g. "2.3.4"
-%% If the ejabberd application description isn't loaded, returns atom: undefined
--define(VERSION, ejabberd_config:get_version()).
+-ifdef(LAGER).
+-compile([{parse_transform, lager_transform}]).
 
--define(MYHOSTS, ejabberd_config:get_myhosts()).
+-define(DEBUG(Format, Args),
+	lager:debug(Format, Args)).
 
--define(MYNAME, hd(ejabberd_config:get_myhosts())).
+-define(INFO_MSG(Format, Args),
+	lager:info(Format, Args)).
 
--define(MYLANG, ejabberd_config:get_mylang()).
+-define(WARNING_MSG(Format, Args),
+	lager:warning(Format, Args)).
 
--define(MSGS_DIR, filename:join(["priv", "msgs"])).
+-define(ERROR_MSG(Format, Args),
+	lager:error(Format, Args)).
 
--define(CONFIG_PATH, <<"ejabberd.cfg">>).
+-define(CRITICAL_MSG(Format, Args),
+	lager:critical(Format, Args)).
 
--define(LOG_PATH, <<"ejabberd.log">>).
+-else.
 
--define(EJABBERD_URI, <<"http://www.process-one.net/en/ejabberd/">>).
+-define(DEBUG(Format, Args),
+	p1_logger:debug_msg(?MODULE, ?LINE, Format, Args)).
 
--define(S2STIMEOUT, 600000).
+-define(INFO_MSG(Format, Args),
+	p1_logger:info_msg(?MODULE, ?LINE, Format, Args)).
 
-%%-define(DBGFSM, true).
+-define(WARNING_MSG(Format, Args),
+	p1_logger:warning_msg(?MODULE, ?LINE, Format, Args)).
 
--record(scram,
-	{storedkey = <<"">>,
-         serverkey = <<"">>,
-         salt = <<"">>,
-         iterationcount = 0 :: integer()}).
+-define(ERROR_MSG(Format, Args),
+	p1_logger:error_msg(?MODULE, ?LINE, Format, Args)).
 
--type scram() :: #scram{}.
-
--define(SCRAM_DEFAULT_ITERATION_COUNT, 4096).
+-define(CRITICAL_MSG(Format, Args),
+	p1_logger:critical_msg(?MODULE, ?LINE, Format, Args)).
+-endif.
