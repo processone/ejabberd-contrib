@@ -634,7 +634,7 @@ act_on_room(destroy, {N, H, Pid}, SH) ->
     gen_fsm:send_all_state_event(
       Pid, {destroy, "Room destroyed by rooms_unused_destroy."}),
     mod_muc:room_destroyed(H, N, Pid, SH),
-    mod_muc:forget_room(H, N);
+    mod_muc:forget_room(SH, H, N);
 
 act_on_room(list, _, _) ->
     ok.
