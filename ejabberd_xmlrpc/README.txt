@@ -148,6 +148,43 @@ defined (the corresponding ACL and ACCESS are not shown):
   ...
  ]}.
 
+Example configuration in ejabberd 13, using YAML formatting:
+acl:
+  restxmlrpcadmin:
+    user:
+      - "admin": "example.com"
+  xmlrpcadmin:
+    user:
+      - "adminjabber": "example.org"
+  rpcadmin:
+    user:
+      - "admin1": "example.net"
+
+access:
+  restxmlrpcaccess:
+    restxmlrpcadmin: allow
+    admin: allow
+  xmlrpcaccess:
+    xmlrpcadmin: allow
+  rpcaccess:
+    rpcadmin: allow
+
+listen:
+-
+    #ip: "127.0.0.1"
+    port: 4560
+    module: ejabberd_xmlrpc
+    timeout: 30000
+    maxsessions: 20
+    access_commands:
+            restxmlrpcaccess:
+                all : []
+            xmlrpcaccess:
+                commands: [register,status]
+                options: []
+            rpcaccess:
+                commands: [unregister,status]
+                options: []
 
 
 	USAGE
