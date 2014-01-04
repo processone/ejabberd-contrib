@@ -70,9 +70,6 @@
 -define(VERSION_MULTICAST, "$Revision: 440 $ ").
 -define(PROCNAME, ejabberd_mod_multicast).
 
-%% TODO: move this line to jlib.hrl
--define(NS_ADDRESS, "http://jabber.org/protocol/address").
-
 -define(PURGE_PROCNAME, ejabberd_mod_multicast_purgeloop).
 
 %% TODO: allow configuration instead of hard-coding
