@@ -30,9 +30,9 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
--include("mod_muc/mod_muc_room.hrl").
--include("web/ejabberd_http.hrl").
--include("web/ejabberd_web_admin.hrl").
+-include("mod_muc_room.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 -include("ejabberd_commands.hrl").
 
 %% Copied from mod_muc/mod_muc.erl
