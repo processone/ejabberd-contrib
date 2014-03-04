@@ -26,6 +26,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("logger.hrl").
 
 -record(route_multicast, {domain, pid}).
 -record(state, {}).

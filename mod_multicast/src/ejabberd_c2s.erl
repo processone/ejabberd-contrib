@@ -37,6 +37,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("logger.hrl").
 
 -define(SETS, gb_sets).
 

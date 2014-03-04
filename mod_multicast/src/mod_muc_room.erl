@@ -29,6 +29,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("logger.hrl").
 
 -define(MAX_USERS_DEFAULT, 200).
 -define(MAX_USERS_DEFAULT_LIST,
@@ -1199,7 +1200,7 @@ filter_presence({xmlelement, "presence", Attrs, Els}) ->
 			 {xmlelement, _Name1, Attrs1, _Els1} ->
 			     XMLNS = xml:get_attr_s("xmlns", Attrs1),
 			     case XMLNS of
-				 ?NS_MUC ++ _ ->
+				 "http://jabber.org/protocol/muc" ++ _ ->
 				     false;
 				 _ ->
 				     true

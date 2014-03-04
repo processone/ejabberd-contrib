@@ -30,6 +30,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("logger.hrl").
 
 -record(state, {lserver, lservice, access, service_limits}).
 
@@ -69,9 +70,6 @@
 
 -define(VERSION_MULTICAST, "$Revision: 440 $ ").
 -define(PROCNAME, ejabberd_mod_multicast).
-
-%% TODO: move this line to jlib.hrl
--define(NS_ADDRESS, "http://jabber.org/protocol/address").
 
 -define(PURGE_PROCNAME, ejabberd_mod_multicast_purgeloop).
 
