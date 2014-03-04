@@ -76,8 +76,8 @@ commands() ->
      #ejabberd_commands{name = create_room, tags = [muc_room],
 		       desc = "Create a MUC room name@service in host",
 		       module = ?MODULE, function = create_room,
-		       args = [{name, string}, {service, string},
-			       {host, string}],
+		       args = [{name, binary}, {service, binary},
+			       {host, binary}],
 		       result = {res, rescode}},
      #ejabberd_commands{name = destroy_room, tags = [muc_room],
 		       desc = "Destroy a MUC room",
@@ -379,18 +379,19 @@ create_room(Name, Host, ServerHost) ->
 
     %% Get the default room options from the muc configuration
     DefRoomOpts = gen_mod:get_module_opt(ServerHost, mod_muc,
-					 default_room_options, []),
+					 default_room_options, fun(X) -> X end, []),
 
     %% Store the room on the server, it is not started yet though at this point
     mod_muc:store_room(ServerHost, Host, Name, DefRoomOpts),
 
     %% Get all remaining mod_muc parameters that might be utilized
-    Access = gen_mod:get_module_opt(ServerHost, mod_muc, access, all),
-    AcCreate = gen_mod:get_module_opt(ServerHost, mod_muc, access_create, all),
-    AcAdmin = gen_mod:get_module_opt(ServerHost, mod_muc, access_admin, none),
-    AcPer = gen_mod:get_module_opt(ServerHost, mod_muc, access_persistent, all),
-    HistorySize = gen_mod:get_module_opt(ServerHost, mod_muc, history_size, 20),
-    RoomShaper = gen_mod:get_module_opt(ServerHost, mod_muc, room_shaper, none),
+    Access = gen_mod:get_module_opt(ServerHost, mod_muc, access, fun(X) -> X end, all),
+    AcCreate = gen_mod:get_module_opt(ServerHost, mod_muc, access_create, fun(X) -> X end, all),
+    AcAdmin = gen_mod:get_module_opt(ServerHost, mod_muc, access_admin, fun(X) -> X end, none),
+    AcPer = gen_mod:get_module_opt(ServerHost, mod_muc, access_persistent, fun(X) -> X end, all),
+    PersistHistory = gen_mod:get_module_opt(ServerHost, mod_muc, persist_history, fun(X) -> X end, false),
+    HistorySize = gen_mod:get_module_opt(ServerHost, mod_muc, history_size, fun(X) -> X end, 20),
+    RoomShaper = gen_mod:get_module_opt(ServerHost, mod_muc, room_shaper, fun(X) -> X end, none),
 
     %% If the room does not exist yet in the muc_online_room
     case mnesia:dirty_read(muc_online_room, {Name, Host}) of
