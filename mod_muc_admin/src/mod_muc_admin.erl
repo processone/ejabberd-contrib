@@ -29,6 +29,7 @@
 	]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
 -include("mod_muc_room.hrl").
 -include("ejabberd_http.hrl").
@@ -70,7 +71,7 @@ commands() ->
      #ejabberd_commands{name = muc_unregister_nick, tags = [muc],
 		       desc = "Unregister the nick in the MUC service",
 		       module = ?MODULE, function = muc_unregister_nick,
-		       args = [{nick, string}],
+		       args = [{nick, binary}],
 		       result = {res, rescode}},
 
      #ejabberd_commands{name = create_room, tags = [muc_room],
@@ -82,8 +83,8 @@ commands() ->
      #ejabberd_commands{name = destroy_room, tags = [muc_room],
 		       desc = "Destroy a MUC room",
 		       module = ?MODULE, function = destroy_room,
-		       args = [{name, string}, {service, string},
-			       {host, string}],
+		       args = [{name, binary}, {service, binary},
+			       {host, binary}],
 		       result = {res, rescode}},
      #ejabberd_commands{name = create_rooms_file, tags = [muc],
 		       desc = "Create the rooms indicated in file",
@@ -98,18 +99,18 @@ commands() ->
      #ejabberd_commands{name = rooms_unused_list, tags = [muc],
 		       desc = "List the rooms that are unused for many days in host",
 		       module = ?MODULE, function = rooms_unused_list,
-		       args = [{host, string}, {days, integer}],
+		       args = [{host, binary}, {days, integer}],
 		       result = {rooms, {list, {room, string}}}},
      #ejabberd_commands{name = rooms_unused_destroy, tags = [muc],
 		       desc = "Destroy the rooms that are unused for many days in host",
 		       module = ?MODULE, function = rooms_unused_destroy,
-		       args = [{host, string}, {days, integer}],
+		       args = [{host, binary}, {days, integer}],
 		       result = {rooms, {list, {room, string}}}},
 
      #ejabberd_commands{name = get_room_occupants, tags = [muc_room],
 			desc = "Get the list of occupants of a MUC room",
 			module = ?MODULE, function = get_room_occupants,
-			args = [{name, string}, {service, string}],
+			args = [{name, binary}, {service, binary}],
 			result = {occupants, {list,
 					      {occupant, {tuple,
 							  [{jid, string},
@@ -121,33 +122,33 @@ commands() ->
      #ejabberd_commands{name = get_room_occupants_number, tags = [muc_room],
 			desc = "Get the number of occupants of a MUC room",
 			module = ?MODULE, function = get_room_occupants_number,
-			args = [{name, string}, {service, string}],
+			args = [{name, binary}, {service, binary}],
 			result = {occupants, integer}},
 
      #ejabberd_commands{name = send_direct_invitation, tags = [muc_room],
 			desc = "Send a direct invitation to several destinations",
 			longdesc = "Password and Message can also be: none. Users JIDs are separated with : ",
 			module = ?MODULE, function = send_direct_invitation,
-		       args = [{room, string}, {password, string}, {reason, string}, {users, string}],
-		       result = {res, rescode}},
+		        args = [{room, binary}, {password, binary}, {reason, binary}, {users, string}],
+		        result = {res, rescode}},
 
      #ejabberd_commands{name = change_room_option, tags = [muc_room],
 		       desc = "Change an option in a MUC room",
 		       module = ?MODULE, function = change_room_option,
-		       args = [{name, string}, {service, string},
+		       args = [{name, binary}, {service, binary},
 			       {option, string}, {value, string}],
 		       result = {res, rescode}},
 
      #ejabberd_commands{name = set_room_affiliation, tags = [muc_room],
 		       desc = "Change an affiliation in a MUC room",
 		       module = ?MODULE, function = set_room_affiliation,
-		       args = [{name, string}, {service, string},
-			       {jid, string}, {affiliation, string}],
+		       args = [{name, binary}, {service, binary},
+			       {jid, binary}, {affiliation, string}],
 		       result = {res, rescode}},
      #ejabberd_commands{name = get_room_affiliations, tags = [muc_room],
 			desc = "Get the list of affiliations of a MUC room",
 			module = ?MODULE, function = get_room_affiliations,
-			args = [{name, string}, {service, string}],
+			args = [{name, binary}, {service, binary}],
 			result = {affiliations, {list,
 						 {affiliation, {tuple,
 								[{username, string},
@@ -372,7 +373,7 @@ prepare_room_info(Room_info) ->
 %% Create/Delete Room
 %%----------------------------
 
-%% @spec (Name::string(), Host::string(), ServerHost::string()) ->
+%% @spec (Name::binary(), Host::binary(), ServerHost::binary()) ->
 %%       ok | error
 %% @doc Create a room immediately with the default options.
 create_room(Name, Host, ServerHost) ->
@@ -389,7 +390,7 @@ create_room(Name, Host, ServerHost) ->
     AcCreate = gen_mod:get_module_opt(ServerHost, mod_muc, access_create, fun(X) -> X end, all),
     AcAdmin = gen_mod:get_module_opt(ServerHost, mod_muc, access_admin, fun(X) -> X end, none),
     AcPer = gen_mod:get_module_opt(ServerHost, mod_muc, access_persistent, fun(X) -> X end, all),
-    PersistHistory = gen_mod:get_module_opt(ServerHost, mod_muc, persist_history, fun(X) -> X end, false),
+    _PersistHistory = gen_mod:get_module_opt(ServerHost, mod_muc, persist_history, fun(X) -> X end, false),
     HistorySize = gen_mod:get_module_opt(ServerHost, mod_muc, history_size, fun(X) -> X end, 20),
     RoomShaper = gen_mod:get_module_opt(ServerHost, mod_muc, room_shaper, fun(X) -> X end, none),
 
@@ -424,7 +425,7 @@ muc_create_room(ServerHost, {Name, Host, _}, DefRoomOpts) ->
     io:format("Creating room ~s@~s~n", [Name, Host]),
     mod_muc:store_room(ServerHost, Host, Name, DefRoomOpts).
 
-%% @spec (Name::string(), Host::string(), ServerHost::string()) ->
+%% @spec (Name::binary(), Host::binary(), ServerHost::binary()) ->
 %%       ok | {error, room_not_exists}
 %% @doc Destroy the room immediately.
 %% If the room has participants, they are not notified that the room was destroyed;
@@ -522,7 +523,7 @@ rooms_unused_destroy(Host, Days) ->
 rooms_unused_report(Action, Host, Days) ->
     {NA, NP, RP} = muc_unused(Action, Host, Days),
     io:format("Unused rooms: ~p out of ~p~n", [NP, NA]),
-    [R ++ "@" ++ H || {R, H, _P} <- RP].
+    [[R, <<"@">>, H] || {R, H, _P} <- RP].
 
 muc_unused(Action, ServerHost, Days) ->
     Host = find_host(ServerHost),
@@ -672,7 +673,7 @@ send_direct_invitation(RoomString, Password, Reason, UsersString) ->
     RoomJid = jlib:string_to_jid(RoomString),
     XmlEl = build_invitation(Password, Reason, RoomString),
     UsersStrings = get_users_to_invite(RoomJid, UsersString),
-    [send_direct_invitation(RoomJid, jlib:string_to_jid(UserStrings), XmlEl)
+    [send_direct_invitation(RoomJid, jlib:string_to_jid(list_to_binary(UserStrings)), XmlEl)
      || UserStrings <- UsersStrings],
     timer:sleep(1000),
     ok.
@@ -685,7 +686,7 @@ get_users_to_invite(RoomJid, UsersString) ->
 		     || {JidString, _Nick, _} <- OccupantsTuples],
     lists:filter(
 	fun(UserString) ->
-	    UserJid = jlib:string_to_jid(UserString),
+	    UserJid = jlib:string_to_jid(list_to_binary(UserString)),
 	    %% [{"badlop@localhost/work","badlop","moderator"}]
 	    lists:all(fun(OccupantJid) ->
 		UserJid#jid.luser /= OccupantJid#jid.luser
@@ -697,19 +698,19 @@ get_users_to_invite(RoomJid, UsersString) ->
 
 build_invitation(Password, Reason, RoomString) ->
     PasswordAttrList = case Password of
-	"none" -> [];
+	<<"none">> -> [];
 	_ -> [{<<"password">>, Password}]
     end,
     ReasonAttrList = case Reason of
-	"none" -> [];
+	<<"none">> -> [];
 	_ -> [{<<"reason">>, Reason}]
     end,
     XAttrs = [{<<"xmlns">>, ?NS_XCONFERENCE},
 	      {<<"jid">>, RoomString}]
 	++ PasswordAttrList
 	++ ReasonAttrList,
-    XEl = {xmlelement, <<"x">>, XAttrs, []},
-    {xmlelement, <<"message">>, [], [XEl]}.
+    XEl = {xmlel, <<"x">>, XAttrs, []},
+    {xmlel, <<"message">>, [], [XEl]}.
 
 send_direct_invitation(FromJid, UserJid, XmlEl) ->
     ejabberd_router:route(FromJid, UserJid, XmlEl).
@@ -783,7 +784,7 @@ change_option(Option, Value, Config) ->
 %% Get Room Affiliations
 %%----------------------------
 
-%% @spec(Name::string(), Service::string()) ->
+%% @spec(Name::binary(), Service::binary()) ->
 %%    [{JID::string(), Domain::string(), Role::string(), Reason::string()}]
 %% @doc Get the affiliations of  the room Name@Service.
 get_room_affiliations(Name, Service) ->
@@ -808,10 +809,10 @@ get_room_affiliations(Name, Service) ->
 %%----------------------------
 
 %% @spec(Name, Service, JID, AffiliationString) -> ok | {error, Error}
-%%       Name = string()
-%%       Service = string()
-%%       JID = string()
-%%	     AffiliationString = "outcast" | "none" | "member" | "admin" | "owner"
+%%       Name = binary()
+%%       Service = binary()
+%%       JID = binary()
+%%       AffiliationString = "outcast" | "none" | "member" | "admin" | "owner"
 %% @doc Set the affiliation of JID in the room Name@Service.
 %% If the affiliation is 'none', the action is to remove,
 %% In any other case the action will be to create the affiliation.
