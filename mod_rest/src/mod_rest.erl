@@ -46,11 +46,7 @@ start(_Host, _Opts) ->
 stop(_Host) ->
     ok.
 
-process([], #request{method = 'POST',
-		     data = Data,
-		     host = Host,
-		     ip = ClientIp
-		    }) ->
+process([], #request{method = 'POST', data = Data, host = Host, ip = ClientIp}) ->
     try
 	{ClientAddress, _PortNumber} = ClientIp,
 	check_member_option(Host, ClientAddress, allowed_ips),
