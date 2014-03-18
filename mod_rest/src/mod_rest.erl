@@ -111,7 +111,7 @@ try_get_option(Host, OptionName, DefaultValue) ->
 	true -> ok;
 	_ -> throw({module_must_be_started_in_vhost, ?MODULE, Host})
     end,
-    gen_mod:get_module_opt(Host, ?MODULE, OptionName, fun(I) when I -> I end, DefaultValue).
+    gen_mod:get_module_opt(Host, ?MODULE, OptionName, fun(I) -> I end, DefaultValue).
 
 get_option_access(Host) ->
     try_get_option(Host, access_commands, []).
