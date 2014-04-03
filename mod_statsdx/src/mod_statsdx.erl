@@ -29,9 +29,12 @@
 -include("ejabberd.hrl").
 -include("ejabberd_commands.hrl").
 -include("jlib.hrl").
+-include("logger.hrl").
 -include("mod_roster.hrl").
--include("web/ejabberd_http.hrl").
--include("web/ejabberd_web_admin.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
+
+-define(XCTB(Name, Text), ?XCT(list_to_binary(Name), list_to_binary(Text))).
 
 -define(PROCNAME, ejabberd_mod_statsdx).
 
@@ -42,7 +45,7 @@
 %%%% Module control
 
 start(Host, Opts) ->
-    Hooks = gen_mod:get_opt(hooks, Opts, false),
+    Hooks = gen_mod:get_opt(hooks, Opts, fun(O) -> is_atom(O) end, false),
     %% Default value for the counters
     CD = case Hooks of
 	     true -> 0;
@@ -75,7 +78,9 @@ stop(Host) ->
 %%%==================================
 %%%% Stats Server
 
-table_name(server) -> gen_mod:get_module_proc("server", mod_statsdx);
+%%% +++ TODO: why server and "server"
+table_name(server) -> gen_mod:get_module_proc(<<"server">>, mod_statsdx);
+table_name("server") -> gen_mod:get_module_proc(<<"server">>, mod_statsdx);
 table_name(Host) -> gen_mod:get_module_proc(Host, mod_statsdx).
 
 initialize_stats_server() ->
@@ -831,7 +836,7 @@ update_counter_create(Table, Element, C) ->
 get_tag_cdata_subtag(E, T) ->
     E2 = xml:get_subtag(E, T),
     case E2 of
-	false -> "unknown";
+	false -> <<"unknown">>;
 	_ -> xml:get_tag_cdata(E2)
     end.
 
@@ -908,7 +913,7 @@ get_client_os(Server) ->
     CO1 = ets:match(table_name(Server), {{client_os, Server, '$1', '$2'}, '$3'}),
     CO2 = lists:map(
 	    fun([Cl, Os, A3]) ->
-		    {lists:flatten([atom_to_list(Cl), "/", atom_to_list(Os)]), A3}
+		    {list_to_binary(lists:flatten([atom_to_list(Cl), "/", atom_to_list(Os)])), A3}
 	    end,
 	    CO1
 	   ),
@@ -918,7 +923,7 @@ get_client_conntype(Server) ->
     CO1 = ets:match(table_name(Server), {{client_conntype, Server, '$1', '$2'}, '$3'}),
     CO2 = lists:map(
 	    fun([Cl, Os, A3]) ->
-		    {lists:flatten([atom_to_list(Cl), "/", atom_to_list(Os)]), A3}
+		    {list_to_binary(lists:flatten([atom_to_list(Cl), "/", atom_to_list(Os)])), A3}
 	    end,
 	    CO1
 	   ),
@@ -958,73 +963,73 @@ localtime_to_string({{Y, Mo, D},{H, Mi, S}}) ->
 %%%% Web Admin Menu
 
 web_menu_main(Acc, Lang) ->
-    Acc ++ [{"statsdx", ?T("Statistics Dx")}].
+    Acc ++ [{<<"statsdx">>, ?T(<<"Statistics Dx">>)}].
 
 web_menu_node(Acc, _Node, Lang) ->
-    Acc ++ [{"statsdx", ?T("Statistics Dx")}].
+    Acc ++ [{<<"statsdx">>, ?T(<<"Statistics Dx">>)}].
 
 web_menu_host(Acc, _Host, Lang) ->
-    Acc ++ [{"statsdx", ?T("Statistics Dx")}].
+    Acc ++ [{<<"statsdx">>, ?T(<<"Statistics Dx">>)}].
 
 %%%==================================
 %%%% Web Admin Page
 
-web_page_main(_, #request{path=["statsdx"], lang = Lang} = _Request) ->
-    Res = [?XC("h1", ?T("Statistics")++" Dx"),
-	   ?XC("h3", "Accounts"),
-	   ?XAE("table", [],
-		[?XE("tbody", [
+web_page_main(_, #request{path=[<<"statsdx">>], lang = Lang} = _Request) ->
+    Res = [?XC(<<"h1">>, <<(?T(<<"Statistics">>))/binary, " Dx">>),
+	   ?XC(<<"h3">>, <<"Accounts">>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>, [
 			       do_stat(global, Lang, "registeredusers")
 			      ])
 		]),
-	   ?XC("h3", "Roster"),
-	   ?XAE("table", [],
-		[?XE("tbody", [
+	   ?XC(<<"h3">>, <<"Roster">>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>, [
 			       do_stat(global, Lang, "totalrosteritems"),
 			       do_stat(global, Lang, "meanitemsinroster"),
-			       ?XE("tr",
-				  [?XE("td", [?CT("Top rosters")]),
-				   ?XE("td", [
-				    ?ACT("top/roster/30", "30"), ?C(", "),
-				    ?ACT("top/roster/100", "100"), ?C(", "),
-				    ?ACT("top/roster/500", "500") ])]
+			       ?XE(<<"tr">>,
+				  [?XE(<<"td">>, [?CT(<<"Top rosters">>)]),
+				   ?XE(<<"td">>, [
+				    ?ACT(<<"top/roster/30">>, <<"30">>), ?C(<<", ">>),
+				    ?ACT(<<"top/roster/100">>, <<"100">>), ?C(<<", ">>),
+				    ?ACT(<<"top/roster/500">>, <<"500">>) ])]
 				 )
 			      ])
 		]),
-	   ?XC("h3", "Users"),
-	   ?XAE("table", [],
-		[?XE("tbody", [
+	   ?XC(<<"h3">>, <<"Users">>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>, [
 			       do_stat(global, Lang, "onlineusers"),
 			       do_stat(global, Lang, "offlinemsg"),
-			       ?XE("tr",
-				  [?XE("td", [?CT("Top offline message queues") ]),
-				   ?XE("td", [
-				    ?ACT("top/offlinemsg/30", "30"), ?C(", "),
-				    ?ACT("top/offlinemsg/100", "100"), ?C(", "),
-				    ?ACT("top/offlinemsg/500", "500") ])]
+			       ?XE(<<"tr">>,
+				  [?XE(<<"td">>, [?CT(<<"Top offline message queues">>) ]),
+				   ?XE(<<"td">>, [
+				    ?ACT(<<"top/offlinemsg/30">>, <<"30">>), ?C(<<", ">>),
+				    ?ACT(<<"top/offlinemsg/100">>, <<"100">>), ?C(<<", ">>),
+				    ?ACT(<<"top/offlinemsg/500">>, <<"500">>) ])]
 				 ),
 			       do_stat(global, Lang, "vcards"),
-			       ?XE("tr",
-				  [?XE("td", [?CT("Top vCard sizes") ]),
-				   ?XE("td", [
-				    ?ACT("top/vcard/5", "5"), ?C(", "),
-				    ?ACT("top/vcard/30", "30"), ?C(", "),
-				    ?ACT("top/vcard/100", "100"), ?C(", "),
-				    ?ACT("top/vcard/500", "500") ])]
+			       ?XE(<<"tr">>,
+				  [?XE(<<"td">>, [?CT(<<"Top vCard sizes">>) ]),
+				   ?XE(<<"td">>, [
+				    ?ACT(<<"top/vcard/5">>, <<"5">>), ?C(<<", ">>),
+				    ?ACT(<<"top/vcard/30">>, <<"30">>), ?C(<<", ">>),
+				    ?ACT(<<"top/vcard/100">>, <<"100">>), ?C(<<", ">>),
+				    ?ACT(<<"top/vcard/500">>, <<"500">>) ])]
 				 )
 			      ])
 		]),
-	   ?XC("h3", "MUC"),
-	   ?XAE("table", [],
-		[?XE("tbody", [
+	   ?XC(<<"h3">>, <<"MUC">>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>, [
 			       do_stat(global, Lang, "totalmucrooms"),
 			       do_stat(global, Lang, "permmucrooms"),
 			       do_stat(global, Lang, "regmucrooms")
 			      ])
 		]),
-	   ?XC("h3", "Pub/Sub"),
-	   ?XAE("table", [],
-		[?XE("tbody", [
+	   ?XC(<<"h3">>, <<"Pub/Sub">>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>, [
 			       do_stat(global, Lang, "regpubsubnodes")
 			      ])
 		]),
@@ -1039,87 +1044,90 @@ web_page_main(_, #request{path=["statsdx"], lang = Lang} = _Request) ->
 	   %%	[?XE("tbody", [
 	   %%		      ])
 	   %%	]),
-	   ?XC("h3", "Sessions: " ++ get_stat_n("client")),
-	   ?XAE("table", [],
-		[?XE("tbody",
+	   ?XC(<<"h3">>, <<"Sessions: ", (get_stat_n("client"))/binary>>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>,
 		     do_stat_table(global, Lang, "client", server)
 		    )
 		]),
-	   ?XC("h3", "Sessions: " ++ get_stat_n("os")),
-	   ?XAE("table", [],
-		[?XE("tbody",
+	   ?XC(<<"h3">>, <<"Sessions: ", (get_stat_n("os"))/binary>>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>,
 		     do_stat_table(global, Lang, "os", server)
 		    )
 		]),
-	   ?XC("h3", "Sessions: " ++ get_stat_n("client") ++ "/" ++ get_stat_n("os")),
-	   ?XAE("table", [],
-		[?XE("tbody",
+	   ?XC(<<"h3">>, <<"Sessions: ", (get_stat_n("client"))/binary, "/", (get_stat_n("os"))/binary>>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>,
 		     do_stat_table(global, Lang, "client_os", server)
 		    )
 		]),
-	   ?XC("h3", "Sessions: " ++ get_stat_n("conntype")),
-	   ?XAE("table", [],
-		[?XE("tbody",
+	   ?XC(<<"h3">>, <<"Sessions: ", (get_stat_n("conntype"))/binary>>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>,
 		     do_stat_table(global, Lang, "conntype", server)
 		    )
 		]),
-	   ?XC("h3", "Sessions: " ++ get_stat_n("client") ++ "/" ++ get_stat_n("conntype")),
-	   ?XAE("table", [],
-		[?XE("tbody",
+	   ?XC(<<"h3">>, <<"Sessions: ", (get_stat_n("client"))/binary, "/", (get_stat_n("conntype"))/binary>>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>,
 		     do_stat_table(global, Lang, "client_conntype", server)
 		    )
 		]),
-	   ?XC("h3", "Sessions: " ++ get_stat_n("languages")),
-	   ?XAE("table", [],
-		[?XE("tbody",
+	   ?XC(<<"h3">>, <<"Sessions: ", (get_stat_n("languages"))/binary>>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>,
 		     do_stat_table(global, Lang, "languages", server)
 		    )
 		])
 	  ],
     {stop, Res};
-web_page_main(_, #request{path=["statsdx", "top", Topic, Topnumber], q = _Q, lang = Lang} = _Request) ->
-    Res = [?XC("h1", ?T("Statistics")++" Dx"),
+web_page_main(_, #request{path=[<<"statsdx">>, <<"top">>, Topic, Topnumber], q = _Q, lang = Lang} = _Request) ->
+    Res = [?XC(<<"h1">>, <<(?T(<<"Statistics">>))/binary, " Dx">>),
 	   case Topic of
-		"offlinemsg" -> ?XCT("h2", "Top offline message queues");
-		"vcard" -> ?XCT("h2", "Top vCard sizes");
-		"roster" -> ?XCT("h2", "Top rosters")
+		<<"offlinemsg">> -> ?XCT(<<"h2">>, <<"Top offline message queues">>);
+		<<"vcard">> -> ?XCT(<<"h2">>, <<"Top vCard sizes">>);
+		<<"roster">> -> ?XCT(<<"h2">>, <<"Top rosters">>)
 	   end,
-	   ?XE("table",
-	       [?XE("thead", [?XE("tr",
-				  [?XE("td", [?CT("#")]),
-				   ?XE("td", [?CT("Jabber ID")]),
-				   ?XE("td", [?CT("Value")])]
+	   ?XE(<<"table">>,
+	       [?XE(<<"thead">>, [?XE(<<"tr">>,
+				  [?XE(<<"td">>, [?CT(<<"#">>)]),
+				   ?XE(<<"td">>, [?CT(<<"Jabber ID">>)]),
+				   ?XE(<<"td">>, [?CT(<<"Value">>)])]
 				 )]),
-		?XE("tbody", do_top_table(global, Lang, Topic, Topnumber, server))
+		?XE(<<"tbody">>, do_top_table(global, Lang, Topic, Topnumber, server))
 	       ])
 	  ],
     {stop, Res};
-web_page_main(_, #request{path=["statsdx" | FilterURL], q = Q, lang = Lang} = _Request) ->
+web_page_main(_, #request{path=[<<"statsdx">> | FilterURL], q = Q, lang = Lang} = _Request) ->
     Filter = parse_url_filter(FilterURL),
     Sort_query = get_sort_query(Q),
-    Res = [?XC("h1", ?T("Statistics")++" Dx"),
-	   ?XC("h2", "Sessions with: "++ io_lib:format("~p", [Filter])),
-	   ?XE("table",
+    FilterS = io_lib:format("~p", [Filter]),
+    Res = [?XC(<<"h1">>, list_to_binary(?T("Statistics") ++ " Dx222")),
+	   ?XC(<<"h2">>, list_to_binary("Sessions with: " ++ FilterS)),
+	   ?XE(<<"table">>,
 	       [
-		?XE("thead", [?XE("tr", make_sessions_table_tr(Lang) )]),
-		?XE("tbody", do_sessions_table(global, Lang, Filter, Sort_query, server))
+		?XE(<<"thead">>, [?XE(<<"tr">>, make_sessions_table_tr(Lang) )]),
+		?XE(<<"tbody">>, do_sessions_table(global, Lang, Filter, Sort_query, server))
 	       ])
 	  ],
     {stop, Res};
 web_page_main(Acc, _) -> Acc.
 
-do_top_table(_Node, Lang, Topic, TopnumberString, Host) ->
-    List = get_top_users(Host, list_to_integer(TopnumberString), Topic),
+do_top_table(_Node, Lang, Topic, TopnumberBin, Host) ->
+    List = get_top_users(Host, list_to_integer(binary_to_list(TopnumberBin)), Topic),
     %% get_top_users(Topnumber, "roster")
     {List2, _} = lists:mapfoldl(
-      fun({Value, User, Server}, Counter) ->
+      fun({Value, UserB, ServerB}, Counter) ->
+	    User = binary_to_list(UserB),
+	    Server = binary_to_list(ServerB),
 	    UserJID = User++"@"++Server,
 	    UserJIDUrl = "/admin/server/" ++ Server ++ "/user/" ++ User ++ "/",
 			ValueString = integer_to_list(Value),
 	    ValueEl = case Topic of
-		"offlinemsg" -> {url, UserJIDUrl++"queue/", ValueString};
-		"vcard" -> {url, UserJIDUrl++"vcard/", ValueString};
-		"roster" -> {url, UserJIDUrl++"roster/", ValueString};
+		<<"offlinemsg">> -> {url, UserJIDUrl++"queue/", ValueString};
+		<<"vcard">> -> {url, UserJIDUrl++"vcard/", ValueString};
+		<<"roster">> -> {url, UserJIDUrl++"roster/", ValueString};
 		_ -> ValueString
 	    end,
 	    {do_table_element(Counter, Lang, UserJID, {fixed_url, UserJIDUrl}, ValueEl),
@@ -1145,23 +1153,23 @@ get_sort_query2(Q) ->
 	false -> {ok, {reverse, abs(Integer)}}
     end.
 make_sessions_table_tr(Lang) ->
-    Titles = ["Jabber ID",
-	      "Client ID",
-	      "OS ID",
-	      "Lang",
-	      "Connection",
-	      "Client",
-	      "Version",
-	      "OS"],
+    Titles = [<<"Jabber ID">>,
+	      <<"Client ID">>,
+	      <<"OS ID">>,
+	      <<"Lang">>,
+	      <<"Connection">>,
+	      <<"Client">>,
+	      <<"Version">>,
+	      <<"OS">>],
     {Titles_TR, _} =
 	lists:mapfoldl(
 	  fun(Title, Num_column) ->
-		  NCS = integer_to_list(Num_column),
-		  TD = ?XE("td", [?CT(Title),
+		  NCS = list_to_binary(integer_to_list(Num_column)),
+		  TD = ?XE(<<"td">>, [?CT(Title),
 				  ?BR,
-				  ?ACT("?sort="++NCS, "<"),
-				  ?C(" "),
-				  ?ACT("?sort=-"++NCS, ">")]),
+				  ?ACT(<<"?sort=", NCS/binary>>, <<"<">>),
+				  ?C(<<" ">>),
+				  ?ACT(<<"?sort=-", NCS/binary>>, <<">">>)]),
 		  {TD, Num_column+1}
 	  end,
 	  1,
@@ -1178,7 +1186,7 @@ parse_url_filter(_, Res) ->
     Res.
 
 
-web_page_node(_, Node, ["statsdx"], _Query, Lang) ->
+web_page_node(_, Node, [<<"statsdx">>], _Query, Lang) ->
     TransactionsCommited =
 	rpc:call(Node, mnesia, system_info, [transaction_commits]),
     TransactionsAborted =
@@ -1189,10 +1197,10 @@ web_page_node(_, Node, ["statsdx"], _Query, Lang) ->
 	rpc:call(Node, mnesia, system_info, [transaction_log_writes]),
 
     Res =
-	[?XC("h1", io_lib:format(?T("~p statistics"), [Node])),
-	 ?XC("h3", "Connections"),
-	 ?XAE("table", [],
-	      [?XE("tbody", [
+	[?XC(<<"h1">>, list_to_binary(io_lib:format(?T("~p statistics"), [Node]))),
+	 ?XC(<<"h3">>, <<"Connections">>),
+	 ?XAE(<<"table">>, [],
+	      [?XE(<<"tbody">>, [
 			     do_stat(global, Lang, "onlineusers"),
 			     do_stat(Node, Lang, "httppollusers"),
 			     do_stat(Node, Lang, "httpbindusers"),
@@ -1200,15 +1208,15 @@ web_page_node(_, Node, ["statsdx"], _Query, Lang) ->
 			     do_stat(Node, Lang, "s2sservers")
 			    ])
 	      ]),
-	 ?XC("h3", "ejabberd"),
-	 ?XAE("table", [],
-	      [?XE("tbody", [
+	 ?XC(<<"h3">>, <<"ejabberd">>),
+	 ?XAE(<<"table">>, [],
+	      [?XE(<<"tbody">>, [
 			     do_stat(Node, Lang, "ejabberdversion")
 			    ])
 	      ]),
-	 ?XC("h3", "Erlang"),
-	 ?XAE("table", [],
-	      [?XE("tbody", [
+	 ?XC(<<"h3">>, <<"Erlang">>),
+	 ?XAE(<<"table">>, [],
+	      [?XE(<<"tbody">>, [
 			     do_stat(Node, Lang, "operatingsystem"),
 			     do_stat(Node, Lang, "erlangmachine"),
 			     do_stat(Node, Lang, "erlangmachinetarget"),
@@ -1217,18 +1225,18 @@ web_page_node(_, Node, ["statsdx"], _Query, Lang) ->
 			     do_stat(Node, Lang, "totalerlproc")
 			    ])
 	      ]),
-	 ?XC("h3", "Times"),
-	 ?XAE("table", [],
-	      [?XE("tbody", [
+	 ?XC(<<"h3">>, <<"Times">>),
+	 ?XAE(<<"table">>, [],
+	      [?XE(<<"tbody">>, [
 			     do_stat(Node, Lang, "uptime"),
 			     do_stat(Node, Lang, "uptimehuman"),
 			     do_stat(Node, Lang, "lastrestart"),
 			     do_stat(Node, Lang, "cputime")
 			    ])
 	      ]),
-	 ?XC("h3", "CPU"),
-	 ?XAE("table", [],
-	      [?XE("tbody", [
+	 ?XC(<<"h3">>, <<"CPU">>),
+	 ?XAE(<<"table">>, [],
+	      [?XE(<<"tbody">>, [
 			     do_stat(Node, Lang, "cpu_avg1"),
 			     do_stat(Node, Lang, "cpu_avg5"),
 			     do_stat(Node, Lang, "cpu_avg15"),
@@ -1248,9 +1256,9 @@ web_page_node(_, Node, ["statsdx"], _Query, Lang) ->
 	 %%  do_stat(Node, Lang, "reductions")
 	 %%])
 	 %%]),
-	 ?XC("h3", "Memory (bytes)"),
-	 ?XAE("table", [],
-	      [?XE("tbody", [
+	 ?XC(<<"h3">>, <<"Memory (bytes)">>),
+	 ?XAE(<<"table">>, [],
+	      [?XE(<<"tbody">>, [
 			     do_stat(Node, Lang, "memory_total"),
 			     do_stat(Node, Lang, "memory_processes"),
 			     do_stat(Node, Lang, "memory_processes_used"),
@@ -1262,84 +1270,84 @@ web_page_node(_, Node, ["statsdx"], _Query, Lang) ->
 			     do_stat(Node, Lang, "memory_ets")
 			    ])
 	      ]),
-	 ?XC("h3", "Database"),
-	 ?XAE("table", [],
-	      [?XE("tbody",
+	 ?XC(<<"h3">>, <<"Database">>),
+	 ?XAE(<<"table">>, [],
+	      [?XE(<<"tbody">>,
 		   [
-		    ?XE("tr", [?XCT("td", "Transactions commited"),
-			       ?XAC("td", [{"class", "alignright"}],
-				    integer_to_list(TransactionsCommited))]),
-		    ?XE("tr", [?XCT("td", "Transactions aborted"),
-			       ?XAC("td", [{"class", "alignright"}],
-				    integer_to_list(TransactionsAborted))]),
-		    ?XE("tr", [?XCT("td", "Transactions restarted"),
-			       ?XAC("td", [{"class", "alignright"}],
-				    integer_to_list(TransactionsRestarted))]),
-		    ?XE("tr", [?XCT("td", "Transactions logged"),
-			       ?XAC("td", [{"class", "alignright"}],
-				    integer_to_list(TransactionsLogged))])
+		    ?XE(<<"tr">>, [?XCT(<<"td">>, <<"Transactions commited">>),
+			       ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
+				    list_to_binary(integer_to_list(TransactionsCommited)))]),
+		    ?XE(<<"tr">>, [?XCT(<<"td">>, <<"Transactions aborted">>),
+			       ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
+				    list_to_binary(integer_to_list(TransactionsAborted)))]),
+		    ?XE(<<"tr">>, [?XCT(<<"td">>, <<"Transactions restarted">>),
+			       ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
+				    list_to_binary(integer_to_list(TransactionsRestarted)))]),
+		    ?XE(<<"tr">>, [?XCT(<<"td">>, <<"Transactions logged">>),
+			       ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
+				    list_to_binary(integer_to_list(TransactionsLogged)))])
 		   ])
 	      ])],
     {stop, Res};
 web_page_node(Acc, _, _, _, _) -> Acc.
 
 web_page_host(_, Host,
-	      #request{path = ["statsdx"],
+	      #request{path = [<<"statsdx">>],
 		       lang = Lang} = _Request) ->
-    Res = [?XC("h1", ?T("Statistics")++" Dx"),
-	   ?XC("h2", Host),
-	   ?XC("h3", "Accounts"),
-	   ?XAE("table", [],
-		[?XE("tbody", [
+    Res = [?XC(<<"h1">>, <<(?T(<<"Statistics">>))/binary, " Dx">>),
+	   ?XC(<<"h2">>, Host),
+	   ?XC(<<"h3">>, <<"Accounts">>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>, [
 			       do_stat(global, Lang, "registeredusers", Host)
 			      ])
 		]),
-	   ?XC("h3", "Roster"),
-	   ?XAE("table", [],
-		[?XE("tbody", [
+	   ?XC(<<"h3">>, <<"Roster">>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>, [
 			       do_stat(global, Lang, "totalrosteritems", Host),
 			       %%get_meanitemsinroster2(TotalRosterItems, RegisteredUsers)
-			       ?XE("tr",
-				  [?XE("td", [?C("Top rosters") ]),
-				   ?XE("td", [
-				    ?ACT("top/roster/30", "30"), ?C(", "),
-				    ?ACT("top/roster/100", "100"), ?C(", "),
-				    ?ACT("top/roster/500", "500") ])]
+			       ?XE(<<"tr">>,
+				  [?XE(<<"td">>, [?C(<<"Top rosters">>) ]),
+				   ?XE(<<"td">>, [
+				    ?ACT(<<"top/roster/30">>, <<"30">>), ?C(<<", ">>),
+				    ?ACT(<<"top/roster/100">>, <<"100">>), ?C(<<", ">>),
+				    ?ACT(<<"top/roster/500">>, <<"500">>) ])]
 				 )
 			      ])
 		]),
-	   ?XC("h3", "Users"),
-	   ?XAE("table", [],
-		[?XE("tbody", [
+	   ?XC(<<"h3">>, <<"Users">>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>, [
 			       do_stat(global, Lang, "onlineusers", Host),
 			       %%do_stat(global, Lang, "offlinemsg", Host), %% This make take a lot of time
 			       %%do_stat(global, Lang, "vcards", Host) %% This make take a lot of time
-			       ?XE("tr",
-				  [?XE("td", [?C("Top offline message queues")]),
-				   ?XE("td", [
-				    ?ACT("top/offlinemsg/30", "30"), ?C(", "),
-				    ?ACT("top/offlinemsg/100", "100"), ?C(", "),
-				    ?ACT("top/offlinemsg/500", "500") ])]
+			       ?XE(<<"tr">>,
+				  [?XE(<<"td">>, [?C(<<"Top offline message queues">>)]),
+				   ?XE(<<"td">>, [
+				    ?ACT(<<"top/offlinemsg/30">>, <<"30">>), ?C(<<", ">>),
+				    ?ACT(<<"top/offlinemsg/100">>, <<"100">>), ?C(<<", ">>),
+				    ?ACT(<<"top/offlinemsg/500">>, <<"500">>) ])]
 				 ),
-			       ?XE("tr",
-				  [?XE("td", [?C("Top vCard sizes") ]),
-				   ?XE("td", [
-				    ?ACT("top/vcard/5", "5"), ?C(", "),
-				    ?ACT("top/vcard/30", "30"), ?C(", "),
-				    ?ACT("top/vcard/100", "100"), ?C(", "),
-				    ?ACT("top/vcard/500", "500") ])]
+			       ?XE(<<"tr">>,
+				  [?XE(<<"td">>, [?C(<<"Top vCard sizes">>) ]),
+				   ?XE(<<"td">>, [
+				    ?ACT(<<"top/vcard/5">>, <<"5">>), ?C(<<", ">>),
+				    ?ACT(<<"top/vcard/30">>, <<"30">>), ?C(<<", ">>),
+				    ?ACT(<<"top/vcard/100">>, <<"100">>), ?C(<<", ">>),
+				    ?ACT(<<"top/vcard/500">>, <<"500">>) ])]
 				 )
 			      ])
 		]),
-	   ?XC("h3", "Connections"),
-	   ?XAE("table", [],
-		[?XE("tbody", [
+	   ?XC(<<"h3">>, <<"Connections">>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>, [
 			       do_stat(global, Lang, "s2sconnections", Host)
 			      ])
 		]),
-	   ?XC("h3", "MUC"),
-	   ?XAE("table", [],
-		[?XE("tbody", [
+	   ?XC(<<"h3">>, <<"MUC">>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>, [
 			       do_stat(global, Lang, "totalmucrooms", Host),
 			       do_stat(global, Lang, "permmucrooms", Host),
 			       do_stat(global, Lang, "regmucrooms", Host)
@@ -1357,45 +1365,45 @@ web_page_host(_, Host,
 	   %%  do_stat(global, Lang, "regpubsubnodes", Host)
 	   %% ])
 	   %%]),
-	   ?XC("h3", "Sessions: " ++ get_stat_n("client")),
-	   ?XAE("table", [],
-		[?XE("tbody",
+	   ?XC(<<"h3">>, <<"Sessions: ", (get_stat_n("client"))/binary>>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>,
 		     do_stat_table(global, Lang, "client", Host)
 		    )
 		]),
-	   ?XC("h3", "Sessions: " ++ get_stat_n("os")),
-	   ?XAE("table", [],
-		[?XE("tbody",
+	   ?XC(<<"h3">>, <<"Sessions: ", (get_stat_n("os"))/binary>>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>,
 		     do_stat_table(global, Lang, "os", Host)
 		    )
 		]),
-	   ?XC("h3", "Sessions: " ++ get_stat_n("client") ++ "/" ++ get_stat_n("os")),
-	   ?XAE("table", [],
-		[?XE("tbody",
+	   ?XC(<<"h3">>, <<"Sessions: ", (get_stat_n("client"))/binary, "/", (get_stat_n("os"))/binary>>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>,
 		     do_stat_table(global, Lang, "client_os", Host)
 		    )
 		]),
-	   ?XC("h3", "Sessions: " ++ get_stat_n("conntype")),
-	   ?XAE("table", [],
-		[?XE("tbody",
+	   ?XC(<<"h3">>, <<"Sessions: ", (get_stat_n("conntype"))/binary>>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>,
 		     do_stat_table(global, Lang, "conntype", Host)
 		    )
 		]),
-	   ?XC("h3", "Sessions: " ++ get_stat_n("client") ++ "/" ++ get_stat_n("conntype")),
-	   ?XAE("table", [],
-		[?XE("tbody",
+	   ?XC(<<"h3">>, <<"Sessions: ", (get_stat_n("client"))/binary, "/", (get_stat_n("conntype"))/binary>>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>,
 		     do_stat_table(global, Lang, "client_conntype", Host)
 		    )
 		]),
-	   ?XC("h3", "Sessions: " ++ get_stat_n("languages")),
-	   ?XAE("table", [],
-		[?XE("tbody",
+	   ?XC(<<"h3">>, <<"Sessions: ", (get_stat_n("languages"))/binary>>),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>,
 		     do_stat_table(global, Lang, "languages", Host)
 		    )
 		]),
-	   ?XC("h3", "Ratios"),
-	   ?XAE("table", [],
-	   	[?XE("tbody", [
+	   ?XC(<<"h3">>, <<"Ratios">>),
+	   ?XAE(<<"table">>, [],
+	   	[?XE(<<"tbody">>, [
 			       do_stat(global, Lang, "user_login", Host),
 			       do_stat(global, Lang, "user_logout", Host),
 			       do_stat(global, Lang, "register_user", Host),
@@ -1416,24 +1424,24 @@ web_page_host(_, Host,
 	   	])
 	  ],
     {stop, Res};
-web_page_host(_, Host, #request{path=["statsdx", "top", Topic, Topnumber], q = _Q, lang = Lang} = _Request) ->
+web_page_host(_, Host, #request{path=[<<"statsdx">>, <<"top">>, Topic, Topnumber], q = _Q, lang = Lang} = _Request) ->
     Res = [?XC("h1", ?T("Statistics")++" Dx"),
 	   case Topic of
-		"offlinemsg" -> ?XCT("h2", "Top offline message queues");
-		"vcard" -> ?XCT("h2", "Top vCard sizes");
-		"roster" -> ?XCT("h2", "Top rosters")
+		<<"offlinemsg">> -> ?XCT(<<"h2">>, <<"Top offline message queues">>);
+		<<"vcard">> -> ?XCT(<<"h2">>, <<"Top vCard sizes">>);
+		<<"roster">> -> ?XCT(<<"h2">>, <<"Top rosters">>)
 	   end,
-	   ?XE("table",
-	       [?XE("thead", [?XE("tr",
-				  [?XE("td", [?CT("#")]),
-				   ?XE("td", [?CT("Jabber ID")]),
-				   ?XE("td", [?CT("Value")])]
+	   ?XE(<<"table">>,
+	       [?XE(<<"thead">>, [?XE(<<"tr">>,
+				  [?XE(<<"td">>, [?CT(<<"#">>)]),
+				   ?XE(<<"td">>, [?CT(<<"Jabber ID">>)]),
+				   ?XE(<<"td">>, [?CT(<<"Value">>)])]
 				 )]),
-		?XE("tbody", do_top_table(global, Lang, Topic, Topnumber, Host))
+		?XE(<<"tbody">>, do_top_table(global, Lang, Topic, Topnumber, Host))
 	       ])
 	  ],
     {stop, Res};
-web_page_host(_, Host, #request{path=["statsdx" | FilterURL], q = Q,
+web_page_host(_, Host, #request{path=[<<"statsdx">> | FilterURL], q = Q,
 				lang = Lang} = _Request) ->
     Filter = parse_url_filter(FilterURL),
     Sort_query = get_sort_query(Q),
@@ -1455,19 +1463,20 @@ web_page_host(Acc, _, _) -> Acc.
 do_table_element(Lang, L, StatLink, N) ->
     do_table_element(no_counter, Lang, L, StatLink, N).
 do_table_element(Counter, Lang, L, StatLink, N) ->
-    ?XE("tr", [
+    ?XE(<<"tr">>, [
 	       case Counter of
-		   no_counter -> ?C("");
-		   _ -> ?XE("td", [?C(integer_to_list(Counter))])
+		   no_counter -> ?C(<<"">>);
+		   _ -> ?XE(<<"td">>, [?C(integer_to_list(Counter))])
                end,
 	       case StatLink of
-		   no_link -> ?XCT("td", L);
-		   {fixed_url, Fixedurl} -> ?XE("td", [?AC(Fixedurl, L)]);
-		   _ -> ?XE("td", [?AC(make_url(StatLink, L), L)])
+		   no_link -> ?XCT(<<"td">>, L);
+		   {fixed_url, Fixedurl} -> ?XE(<<"td">>, [?AC(Fixedurl, L)]);
+		   _ -> ?XE(<<"td">>, [?AC(list_to_binary(make_url(StatLink, L)), list_to_binary(L))])
                end,
 	       case N of
-		   {url, NUrl, NName} -> ?XAE("td", [{"class", "alignright"}], [?AC(NUrl, NName)]);
-		   _ -> ?XAC("td", [{"class", "alignright"}], N)
+		   {url, NUrl, NName} -> ?XAE(<<"td">>, [{<<"class">>, <<"alignright">>}], [?AC(NUrl, NName)]);
+		   N when is_list(N) -> ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}], list_to_binary(N));
+		   _ -> ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}], N)
                end
 	      ]).
 
@@ -1499,14 +1508,14 @@ do_sessions_table(_Node, _Lang, Filter, {Sort_direction, Sort_column}, Host) ->
 	      Server = JID#jid.lserver,
 	      UserURL = "/admin/server/" ++ Server ++ "/user/" ++ User ++ "/",
 	      ?XE("tr", [
-			 ?XE("td", [?AC(UserURL, jlib:jid_to_string(JID))]),
-			 ?XCT("td", atom_to_list(Client_id)),
-			 ?XCT("td", atom_to_list(OS_id)),
-			 ?XCT("td", Lang),
-			 ?XCT("td", atom_to_list(ConnType)),
-			 ?XCT("td", Client),
-			 ?XCT("td", Version),
-			 ?XCT("td", OS)
+			 ?XE(<<"td">>, [?AC(UserURL, jlib:jid_to_string(JID))]),
+			 ?XCTB("td", atom_to_list(Client_id)),
+			 ?XCTB("td", atom_to_list(OS_id)),
+			 ?XCTB("td", Lang),
+			 ?XCTB("td", atom_to_list(ConnType)),
+			 ?XCTB("td", Client),
+			 ?XCTB("td", Version),
+			 ?XCTB("td", OS)
 			])
       end,
       SessionsSorted
@@ -1544,9 +1553,9 @@ get_sessions_filtered(Filter, Host) ->
     ets:match_object(table_name(Host), Match).
 
 do_stat(Node, Lang, Stat) ->
-    ?XE("tr", [
-	       ?XCT("td", get_stat_n(Stat)),
-	       ?XAC("td", [{"class", "alignright"}],
+    ?XE(<<"tr">>, [
+	       ?XCT(<<"td">>, get_stat_n(Stat)),
+	       ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
 		    get_stat_v(Node, [Stat]))]).
 
 do_stat(Node, Lang, Stat, Host) ->
@@ -1556,9 +1565,9 @@ do_stat(Node, Lang, Stat, Host) ->
 
 %% Get a stat name
 get_stat_n(Stat) ->
-    mod_statsdx:get_statistic(foo, [Stat, title]).
+    list_to_binary(mod_statsdx:get_statistic(foo, [Stat, title])).
 %% Get a stat value
-get_stat_v(Node, Stat) -> get_stat_v2(mod_statsdx:get_statistic(Node, Stat)).
+get_stat_v(Node, Stat) -> list_to_binary(get_stat_v2(mod_statsdx:get_statistic(Node, Stat))).
 get_stat_v2(Value) when is_list(Value) -> Value;
 get_stat_v2(Value) when is_float(Value) -> io_lib:format("~.4f", [Value]);
 get_stat_v2(Value) when is_integer(Value) ->
@@ -1616,11 +1625,11 @@ get_top_users(Number, Topic) ->
     get_top_users(server, Number, Topic).
 
 %% Returns: [{Integer, User, Server}]
-get_top_users(Host, Number, "vcard") ->
+get_top_users(Host, Number, <<"vcard">>) ->
     get_top_users_vcard(Host, Number);
-get_top_users(Host, Number, "offlinemsg") ->
+get_top_users(Host, Number, <<"offlinemsg">>) ->
     get_top_users(Host, Number, offline_msg, #offline_msg.us);
-get_top_users(Host, Number, "roster") ->
+get_top_users(Host, Number, <<"roster">>) ->
     get_top_users(Host, Number, roster, #roster.us).
 
 
