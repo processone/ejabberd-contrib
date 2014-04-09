@@ -44,7 +44,7 @@
 -include("ejabberd.hrl").
 
 -define(PROCNAME, ?MODULE).
--define(DEFAULT_FILENAME, "s2s.log").
+-define(DEFAULT_FILENAME, <<"s2s.log">>).
 -define(FILE_OPTS, [append,raw]).
 
 -record(config, {filename=?DEFAULT_FILENAME, iodevice}).
@@ -55,7 +55,7 @@ start(_Host, Opts) ->
     %% condition is possible here
     case whereis(?PROCNAME) of
 	undefined ->
-	    Filename = gen_mod:get_opt(filename, Opts, ?DEFAULT_FILENAME),
+	    Filename = gen_mod:get_opt(filename, Opts, fun(V) -> V end, ?DEFAULT_FILENAME),
 	    %% TODO: Both hooks will need Host parameter for vhost support
 	    ejabberd_hooks:add(reopen_log_hook, ?MODULE, reopen_log, 55),
 	    ejabberd_hooks:add(s2s_connect_hook, ?MODULE, s2s_connect, 55),
