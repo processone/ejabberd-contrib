@@ -50,12 +50,11 @@
 -record(config, {filename=?DEFAULT_FILENAME, iodevice}).
 
 %% For now we only support one log file for all vhosts.
-start(Host, Opts) ->
+start(_Host, Opts) ->
     %% ejabberd starts modules sequentially so we assume no race
     %% condition is possible here
     case whereis(?PROCNAME) of
 	undefined ->
-	    ?DEBUG("Starting mod_s2s_log ~p  ~p~n", [Host, Opts]),
 	    Filename = gen_mod:get_opt(filename, Opts, ?DEFAULT_FILENAME),
 	    %% TODO: Both hooks will need Host parameter for vhost support
 	    ejabberd_hooks:add(reopen_log_hook, ?MODULE, reopen_log, 55),
@@ -67,7 +66,6 @@ start(Host, Opts) ->
     end.
 
 init(Config)->
-    ?DEBUG("Starting mod_s2s_log ~p with config ~p~n", [?MODULE, Config]),
     {ok, IOD} = file:open(Config#config.filename, ?FILE_OPTS),
     loop(Config#config{iodevice=IOD}).
 
@@ -79,7 +77,6 @@ loop(Config) ->
 	{reopen_log} ->
 	    file:close(Config#config.iodevice),
 	    {ok, IOD} = file:open(Config#config.filename, ?FILE_OPTS),
-	    ?INFO_MSG("Reopened s2s log file", []),
 	    loop(Config#config{iodevice = IOD});
 	stop ->
 	    file:close(Config#config.iodevice),
