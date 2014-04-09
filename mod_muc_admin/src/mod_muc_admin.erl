@@ -171,9 +171,9 @@ muc_online_rooms(ServerHost) ->
       fun({_, {Roomname, Host}, _}, Results) ->
 	      case MUCHost of
 		  global ->
-		      [Roomname, <<"@">>, Host | Results];
+		      [<<Roomname/binary, "@", Host/binary>> | Results];
 		  Host ->
-		      [Roomname, <<"@">>, Host | Results];
+		      [<<Roomname/binary, "@", Host/binary>> | Results];
 		  _ ->
 		      Results
 	      end
