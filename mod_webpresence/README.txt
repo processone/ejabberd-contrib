@@ -1,8 +1,6 @@
-
 	mod_webpresence - Presence on the Web
 
-	Authors: Igor Goryachev, Badlop
-	Requires: ejabberd SVN (not possible with 1.1.x)
+	Authors: Igor Goryachev, Badlop, runcom
 	http://www.ejabberd.im/mod_webpresence
 
 
@@ -35,23 +33,19 @@ No web server, database, additional libraries or programs are required.
 3. Copy the directory data/pixmaps to a directory you prefer.
 
 4. Edit ejabberd.cfg and add the HTTP and module definitions:
-{listen, [
-  ...
-  {5280, ejabberd_http, [
-    ...
-    {request_handlers, [
-      ...
-      {["presence"], mod_webpresence}
-    ]}
-  ]}
-]}.
 
-{modules, [
-  ...
-  {mod_webpresence, [
-    {pixmaps_path, "/path/to/pixmaps"}
-  ]}
-]}.
+listen:
+  -
+    port: 5280
+    module: ejabberd_http
+    [...]
+    request_handlers:
+      "presence": mod_webpresence
+
+modules:
+  [...]
+  mod_webpresence:
+    pixmaps_path: "/path/to/pixmaps"
 
 5. Restart ejabberd.
 If problems appear, remember to always look first the ejabberd log files
@@ -102,10 +96,14 @@ In that case, all the output methods are enabled, the icon theme is
 'jsf-jabber-text' and RandomID is disabled.
 
 The default behaviour is to not have automatic webpresence:
-  {access, webpresence_auto, [{deny, all}]}.
+  access:
+    webpresence_auto:
+      all: deny
 
 For example, if you want all the local users to be automatically enabled in the service:
-  {access, webpresence_auto, [{allow, local}]}.
+  access:
+    webpresence_auto:
+      local: allow
 
 Note that this ACCESS rule is only checked if the user is not registered. 
 So, if the user registers and disables all output methods,
@@ -119,50 +117,40 @@ register and disable output methods, you can use the Access configurable paramet
 	Example 1
 	---------
 
-{listen, [
-  ...
-  {5280, ejabberd_http, [
-    ...
-    {request_handlers, [
-      ...
-      {["presence"], mod_webpresence}
-    ]}
-  ]}
-]}.
+listen:
+  -
+    port: 5280
+    module: ejabberd_http
+    [...]
+    request_handlers:
+      "presence": mod_webpresence
 
-{modules, [
-  ...
-  {mod_webpresence, [
-    {pixmaps_path, "/path/to/pixmaps"}
-  ]}
-]}.
+modules:
+  [...]
+  mod_webpresence:
+    pixmaps_path: "/path/to/pixmaps"
 
 
 	Example 2
 	---------
 
-{listen, [
-  ...
-  {80, ejabberd_http, [
-    ...
-    {request_handlers, [
-      ...
-      {["status"], mod_webpresence}
-    ]}
-  ]}
-]}.
+listen:
+  -
+    port: 80
+    module: ejabberd_http
+    [...]
+    request_handlers:
+      "status": mod_webpresence
 
-{modules, [
-  ...
-  {mod_webpresence, [
-    {host, "webstatus.@HOST@"},
-    {access, local},
-    {pixmaps_path, "/path/to/pixmaps"},
-    {port, 80},
-    {path, "status"},
-    {baseurl, "http://www.example.org/status/"}
-  ]}
-]}.
+modules:
+  [...]
+  mod_webpresence:
+    host: "webstatus.@HOST@"
+    access: local
+    pixmaps_path: "/path/to/pixmaps"
+    port: 80
+    path: "status"
+    baseurl: "http://www.example.org/status/"
 
 
 	USAGE
