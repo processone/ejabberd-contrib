@@ -510,13 +510,13 @@ commands() ->
      #ejabberd_commands{name = send_message_chat, tags = [stanza],
 			desc = "Send a chat message to a local or remote bare of full JID",
 			module = ?MODULE, function = send_message_chat,
-			args = [{from, string}, {to, string}, {body, string}],
+			args = [{from, binary}, {to, binary}, {body, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = send_message_headline, tags = [stanza],
 			desc = "Send a headline message to a local or remote bare of full JID",
 			module = ?MODULE, function = send_message_headline,
-			args = [{from, string}, {to, string},
-				{subject, string}, {body, string}],
+			args = [{from, binary}, {to, binary},
+				{subject, binary}, {body, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = send_stanza_c2s, tags = [stanza],
 			desc = "Send a stanza as if sent from a c2s session",
@@ -1408,18 +1408,27 @@ send_packet_all_resources(FromJID, ToU, ToS, ToR, Packet) ->
 
 
 build_packet(message_chat, [Body]) ->
-    {xmlelement, "message",
-     [{"type", "chat"}, {"id", randoms:get_string()}],
-     [{xmlelement, "body", [], [{xmlcdata, Body}]}]
-    };
-build_packet(message_headline, [Subject, Body]) ->
-    {xmlelement, "message",
-     [{"type", "headline"}, {"id", randoms:get_string()}],
-     [{xmlelement, "subject", [], [{xmlcdata, Subject}]},
-      {xmlelement, "body", [], [{xmlcdata, Body}]}
-     ]
-    }.
+    #xmlel{name = <<"message">>,
+          attrs = [{<<"type">>, <<"chat">>},{<<"id">>, randoms:get_string()}],
+          children =
+          [#xmlel{name = <<"body">>,
+              attrs = [],
+              children =
+              [{xmlcdata, Body}]}]};
 
+build_packet(message_headline, [Subject, Body]) ->
+    #xmlel{name = <<"message">>,
+          attrs = [{<<"type">>, <<"headline">>},{<<"id">>, randoms:get_string()}],
+          children =
+          [#xmlel{name = <<"subject">>,
+            attrs = [],
+            children =
+            [{xmlcdata, Subject}]},
+            #xmlel{name = <<"body">>,
+              attrs = [],
+              children =
+              [{xmlcdata, Body}]}]}.
+              
 send_stanza_c2s(Username, Host, Resource, Stanza) ->
     C2sPid = ejabberd_sm:get_session_pid(Username, Host, Resource),
     XmlEl = xml_stream:parse_element(Stanza),
