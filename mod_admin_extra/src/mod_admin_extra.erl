@@ -219,22 +219,22 @@ commands() ->
      #ejabberd_commands{name = kick_session, tags = [session],
 			desc = "Kick a user session",
 			module = ?MODULE, function = kick_session,
-			args = [{user, string}, {host, string}, {resource, string}, {reason, string}],
+			args = [{user, binary}, {host, binary}, {resource, binary}, {reason, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = status_num_host, tags = [session, stats],
 			desc = "Number of logged users with this status in host",
 			module = ?MODULE, function = status_num,
-			args = [{host, string}, {status, string}],
+			args = [{host, binary}, {status, binary}],
 			result = {users, integer}},
      #ejabberd_commands{name = status_num, tags = [session, stats],
 			desc = "Number of logged users with this status",
 			module = ?MODULE, function = status_num,
-			args = [{status, string}],
+			args = [{status, binary}],
 			result = {users, integer}},
      #ejabberd_commands{name = status_list_host, tags = [session],
 			desc = "List of users logged in host with their statuses",
 			module = ?MODULE, function = status_list,
-			args = [{host, string}, {status, string}],
+			args = [{host, binary}, {status, binary}],
 			result = {users, {list,
 					  {userstatus, {tuple, [
 								{user, string},
@@ -247,7 +247,7 @@ commands() ->
      #ejabberd_commands{name = status_list, tags = [session],
 			desc = "List of logged users with this status",
 			module = ?MODULE, function = status_list,
-			args = [{status, string}],
+			args = [{status, binary}],
 			result = {users, {list,
 					  {userstatus, {tuple, [
 								{user, string},
@@ -320,47 +320,47 @@ commands() ->
 			desc = "Get content from a vCard field",
 			longdesc = Vcard1FieldsString ++ "\n" ++ Vcard2FieldsString ++ "\n\n" ++ VcardXEP,
 			module = ?MODULE, function = get_vcard,
-			args = [{user, string}, {host, string}, {name, string}],
+			args = [{user, binary}, {host, binary}, {name, binary}],
 			result = {content, string}},
      #ejabberd_commands{name = get_vcard2, tags = [vcard],
 			desc = "Get content from a vCard field",
 			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = get_vcard,
-			args = [{user, string}, {host, string}, {name, string}, {subname, string}],
+			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}],
 			result = {content, string}},
      #ejabberd_commands{name = get_vcard2_multi, tags = [vcard],
 			desc = "Get multiple contents from a vCard field (requires exmpp installed)",
 			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = get_vcard_multi,
-			args = [{user, string}, {host, string}, {name, string}, {subname, string}],
+			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}],
 			result = {contents, {list, string}}},
 
      #ejabberd_commands{name = set_vcard, tags = [vcard],
 			desc = "Set content in a vCard field",
 			longdesc = Vcard1FieldsString ++ "\n" ++ Vcard2FieldsString ++ "\n\n" ++ VcardXEP,
 			module = ?MODULE, function = set_vcard,
-			args = [{user, string}, {host, string}, {name, string}, {content, string}],
+			args = [{user, binary}, {host, binary}, {name, binary}, {content, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = set_vcard2, tags = [vcard],
 			desc = "Set content in a vCard subfield",
 			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = set_vcard,
-			args = [{user, string}, {host, string}, {name, string}, {subname, string}, {content, string}],
+			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}, {content, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = set_vcard2_multi, tags = [vcard],
 			desc = "Set multiple contents in a vCard subfield",
 			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = set_vcard,
-			args = [{user, string}, {host, string}, {name, string}, {subname, string}, {contents, {list, string}}],
+			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}, {contents, {list, binary}}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = add_rosteritem, tags = [roster],
 			desc = "Add an item to a user's roster (supports ODBC)",
 			module = ?MODULE, function = add_rosteritem,
-			args = [{localuser, string}, {localserver, string},
-				{user, string}, {server, string},
-				{nick, string}, {group, string},
-				{subs, string}],
+			args = [{localuser, binary}, {localserver, binary},
+				{user, binary}, {server, binary},
+				{nick, binary}, {group, binary},
+				{subs, binary}],
 			result = {res, rescode}},
      %%{"", "subs= none, from, to or both"},
      %%{"", "example: add-roster peter localhost mike server.com MiKe Employees both"},
@@ -368,8 +368,8 @@ commands() ->
      #ejabberd_commands{name = delete_rosteritem, tags = [roster],
 			desc = "Delete an item from a user's roster (supports ODBC)",
 			module = ?MODULE, function = delete_rosteritem,
-			args = [{localuser, string}, {localserver, string},
-				{user, string}, {server, string}],
+			args = [{localuser, binary}, {localserver, binary},
+				{user, binary}, {server, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = process_rosteritems, tags = [roster],
 			desc = "List or delete rosteritems that match filtering options",
@@ -413,7 +413,7 @@ commands() ->
      #ejabberd_commands{name = get_roster, tags = [roster],
 			desc = "Get roster of a local user",
 			module = ?MODULE, function = get_roster,
-			args = [{user, string}, {host, string}],
+			args = [{user, binary}, {host, binary}],
 			result = {contacts, {list, {contact, {tuple, [
 								      {jid, string},
 								      {nick, string},
@@ -809,20 +809,20 @@ kick_session(User, Server, Resource, ReasonText) ->
 
 kick_this_session(User, Server, Resource, Reason) ->
     ejabberd_router:route(
-      jlib:make_jid("", "", ""),
+      jlib:make_jid(<<>>, <<>>, <<>>),
       jlib:make_jid(User, Server, Resource),
-      {xmlelement, "broadcast", [], [{exit, Reason}]}).
+      {xmlel, <<"broadcast">>, [], [{exit, Reason}]}).
 
 
 status_num(Host, Status) ->
     length(get_status_list(Host, Status)).
 status_num(Status) ->
-    status_num("all", Status).
+    status_num(<<"all">>, Status).
 status_list(Host, Status) ->
     Res = get_status_list(Host, Status),
     [{U, S, R, P, St} || {U, S, R, P, St} <- Res].
 status_list(Status) ->
-    status_list("all", Status).
+    status_list(<<"all">>, Status).
 
 
 get_status_list(Host, Status_required) ->
@@ -831,7 +831,7 @@ get_status_list(Host, Status_required) ->
     %% Reformat the list
     Sessions2 = [ {Session#session.usr, Session#session.sid, Session#session.priority} || Session <- Sessions],
     Fhost = case Host of
-		"all" ->
+		<<"all">> ->
 		    %% All hosts are requested, so dont filter at all
 		    fun(_, _) -> true end;
 		_ ->
@@ -843,7 +843,7 @@ get_status_list(Host, Status_required) ->
     Sessions4 = [ {ejabberd_c2s:get_presence(Pid), Server, Priority} || {Pid, Server, Priority} <- Sessions3],
     %% Filter by status
     Fstatus = case Status_required of
-		  "all" ->
+		  <<"all">> ->
 		      fun(_, _) -> true end;
 		  _ ->
 		      fun(A, B) -> A == B end
@@ -882,18 +882,18 @@ dirty_get_sessions_list2() ->
 %% Make string more print-friendly
 stringize(String) ->
     %% Replace newline characters with other code
-    ejabberd_regexp:greplace(String, "\n", "\\n").
+    ejabberd_regexp:greplace(String, <<"\n">>, <<"\\n">>).
 
 set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
     Pid = ejabberd_sm:get_session_pid(User, Host, Resource),
     USR = User ++ "@" ++ Host ++ "/" ++ Resource,
     US = User ++ "@" ++ Host,
     Message = {route_xmlstreamelement,
-	       {xmlelement, "presence",
-		[{"from", USR}, {"to", US}, {"type", Type}],
-		[{xmlelement, "show", [], [{xmlcdata, Show}]},
-		 {xmlelement, "status", [], [{xmlcdata, Status}]},
-		 {xmlelement, "priority", [], [{xmlcdata, Priority}]}]}},
+	       {xmlel, <<"presence">>,
+		[{<<"from">>, USR}, {<<"to">>, US}, {<<"type">>, Type}],
+		[{xmlel, <<"show">>, [], [{xmlcdata, Show}]},
+		 {xmlel, <<"status">>, [], [{xmlcdata, Status}]},
+		 {xmlel, <<"priority">>, [], [{xmlcdata, Priority}]}]}},
     Pid ! Message.
 
 user_sessions_info(User, Host) ->
@@ -929,14 +929,14 @@ user_sessions_info(User, Host) ->
 
 set_nickname(User, Host, Nickname) ->
     R = mod_vcard:process_sm_iq(
-	  {jid, User, Host, "", User, Host, ""},
-	  {jid, User, Host, "", User, Host, ""},
-	  {iq, "", set, "", "en",
-	   {xmlelement, "vCard",
-	    [{"xmlns", "vcard-temp"}], [
-					{xmlelement, "NICKNAME", [], [{xmlcdata, Nickname}]}
-				       ]
-	   }}),
+	  {jid, User, Host, <<>>, User, Host, <<>>},
+	  {jid, User, Host, <<>>, User, Host, <<>>},
+	  {iq, <<>>, set, <<>>, <<"en">>,
+	   {xmlel, <<"vCard">>, [
+	     {<<"xmlns">>, <<"vcard-temp">>}], [
+		{xmlel, <<"NICKNAME">>, [], [{xmlcdata, Nickname}]}
+            ]
+	  }}),
     case R of
 	{iq, [], result, [], _L, []} ->
 	    ok;
@@ -966,9 +966,9 @@ set_vcard(User, Host, Name, Subname, SomeContent) ->
 %% Internal vcard
 
 get_module_resource(Server) ->
-    case gen_mod:get_module_opt(Server, ?MODULE, module_resource, none) of
-	none -> atom_to_list(?MODULE);
-	R when is_list(R) -> R
+    case gen_mod:get_module_opt(Server, ?MODULE, module_resource, fun(A) -> A end, none) of
+	none -> list_to_binary(atom_to_list(?MODULE));
+	R when is_binary(R) -> R
     end.
 
 get_vcard_content(User, Server, Data) ->
@@ -1013,8 +1013,8 @@ get_subtag_exmpp(Xmlelement, Name) ->
 
 set_vcard_content(User, Server, Data, SomeContent) ->
     ContentList = case SomeContent of
-	[Char | _] when not is_list(Char) -> [SomeContent];
-	[Char | _] when is_list(Char) -> SomeContent
+	[Bin | _] when is_binary(Bin) -> SomeContent;
+	Bin when is_binary(Bin) -> [SomeContent]
     end,
     [{_, Module, Function, _Opts}] = ets:lookup(sm_iqtable, {?NS_VCARD, Server}),
     JID = jlib:make_jid(User, Server, get_module_resource(Server)),
@@ -1031,7 +1031,7 @@ set_vcard_content(User, Server, Data, SomeContent) ->
 	 end,
 
     %% Build new vcard
-    SubEl = {xmlelement, "vCard", [{"xmlns","vcard-temp"}], A4},
+    SubEl = {xmlel, <<"vCard">>, [{<<"xmlns">>,<<"vcard-temp">>}], A4},
     IQ2 = #iq{type=set, sub_el = SubEl},
 
     Module:Function(JID, JID, IQ2),
@@ -1042,18 +1042,18 @@ update_vcard_els(Data, ContentList, Els1) ->
     [Data1 | Data2] = Data,
     NewEls = case Data2 of
 		[] ->
-		    [{xmlelement, Data1, [], [{xmlcdata,Content}]} || Content <- ContentList];
+		    [{xmlel, Data1, [], [{xmlcdata,Content}]} || Content <- ContentList];
 		[D2] ->
 		    OldEl = case lists:keysearch(Data1, 2, Els2) of
 				{value, A} -> A;
-				false -> {xmlelement, Data1, [], []}
+				false -> {xmlel, Data1, [], []}
 			    end,
-		    {xmlelement, _, _, ContentOld1} = OldEl,
-		    Content2 = [{xmlelement, D2, [], [{xmlcdata,Content}]} || Content <- ContentList],
+		    {xmlel, _, _, ContentOld1} = OldEl,
+		    Content2 = [{xmlel, D2, [], [{xmlcdata,Content}]} || Content <- ContentList],
 		    ContentOld2 = [A || {_, X, _, _} = A <- ContentOld1, X/=D2],
 		    ContentOld3 = lists:keysort(2, ContentOld2),
 		    ContentNew = lists:keymerge(2, Content2, ContentOld3),
-		    [{xmlelement, Data1, [], ContentNew}]
+		    [{xmlel, Data1, [], ContentNew}]
 	    end,
     Els3 = lists:keydelete(Data1, 2, Els2),
     lists:keymerge(2, NewEls, Els3).
@@ -1064,7 +1064,7 @@ update_vcard_els(Data, ContentList, Els1) ->
 %%%
 
 add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, Subs) ->
-    case add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, list_to_atom(Subs), []) of
+    case add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, Subs, []) of
 	{atomic, ok} ->
 	    push_roster_item(LocalUser, LocalServer, User, Server, {add, Nick, Subs, Group}),
 	    ok;
@@ -1076,16 +1076,11 @@ add_rosteritem(LU, LS, User, Server, Nick, Group, Subscription, Xattrs) ->
     subscribe(LU, LS, User, Server, Nick, Group, Subscription, Xattrs).
 
 subscribe(LU, LS, User, Server, Nick, Group, Subscription, _Xattrs) ->
-    SubscriptionS = case is_atom(Subscription) of
-	true -> atom_to_list(Subscription);
-	false -> Subscription
-    end,
-    ItemEl = build_roster_item(User, Server, {add, Nick, SubscriptionS, Group}),
-    {ok, M} = loaded_module(LS,[mod_roster_odbc,mod_roster]),
-    M:set_items(
+    ItemEl = build_roster_item(User, Server, {add, Nick, Subscription, Group}),
+    mod_roster:set_items(
 	LU, LS,
-	{xmlelement,"query",
-            [{"xmlns","jabber:iq:roster"}],
+	{xmlel, <<"query">>,
+            [{<<"xmlns">>, <<"jabber:iq:roster">>}],
             [ItemEl]}).
 
 delete_rosteritem(LocalUser, LocalServer, User, Server) ->
@@ -1099,21 +1094,11 @@ delete_rosteritem(LocalUser, LocalServer, User, Server) ->
 
 unsubscribe(LU, LS, User, Server) ->
     ItemEl = build_roster_item(User, Server, remove),
-    {ok, M} = loaded_module(LS,[mod_roster_odbc,mod_roster]),
-    M:set_items(
+    mod_roster:set_items(
 	LU, LS,
-	{xmlelement,"query",
-            [{"xmlns","jabber:iq:roster"}],
+	{xmlel, <<"query">>,
+            [{<<"xmlns">>, <<"jabber:iq:roster">>}],
             [ItemEl]}).
-
-loaded_module(Domain,Options) ->
-    LoadedModules = gen_mod:loaded_modules(Domain),
-    case lists:filter(fun(Module) ->
-                              lists:member(Module, LoadedModules)
-                      end, Options) of
-        [M|_] -> {ok, M};
-        [] -> {error,not_found}
-    end.
 
 %% -----------------------------
 %% Get Roster
@@ -1133,11 +1118,10 @@ make_roster_xmlrpc(Roster) ->
 	      Subs = atom_to_list(Item#roster.subscription),
 	      Ask = atom_to_list(Item#roster.ask),
 	      Groups = case Item#roster.groups of
-			   [] -> [""];
+			   [] -> [<<>>];
 			   Gs -> Gs
 		       end,
-	      ItemsX = [{JIDS, Nick, Subs, Ask, Group}
-			|| Group <- Groups],
+	      ItemsX = [{JIDS, Nick, Subs, Ask, Group} || Group <- Groups],
 	      ItemsX ++ Res
       end,
       [],
@@ -1150,7 +1134,7 @@ make_roster_xmlrpc(Roster) ->
 
 push_roster(File, User, Server) ->
     {ok, [Roster]} = file:consult(File),
-    subscribe_roster({User, Server, "", User}, Roster).
+    subscribe_roster({User, Server, <<>>, User}, Roster).
 
 push_roster_all(File) ->
     {ok, [Roster]} = file:consult(File),
@@ -1171,7 +1155,7 @@ subscribe_roster({Name, Server, Group, Nick}, [{Name, Server, _, _} | Roster]) -
     subscribe_roster({Name, Server, Group, Nick}, Roster);
 %% Subscribe Name2 to Name1
 subscribe_roster({Name1, Server1, Group1, Nick1}, [{Name2, Server2, Group2, Nick2} | Roster]) ->
-    subscribe(Name1, Server1, Name2, Server2, Nick2, Group2, both, []),
+    subscribe(Name1, Server1, Name2, Server2, Nick2, Group2, <<"both">>, []),
     subscribe_roster({Name1, Server1, Group1, Nick1}, Roster).
 
 push_alltoall(S, G) ->
@@ -1203,39 +1187,37 @@ push_roster_item(LU, LS, R, U, S, Action) ->
     ejabberd_router:route(LJID, LJID, ResIQ).
 
 build_roster_item(U, S, {add, Nick, Subs, Group}) ->
-    {xmlelement, "item",
-     [{"jid", jlib:jid_to_string(jlib:make_jid(U, S, ""))},
-      {"name", Nick},
-      {"subscription", Subs}],
-     [{xmlelement, "group", [], [{xmlcdata, Group}]}]
+    {xmlel, <<"item">>,
+     [{<<"jid">>, jlib:jid_to_string(jlib:make_jid(U, S, <<>>))},
+      {<<"name">>, Nick},
+      {<<"subscription">>, Subs}],
+     [{xmlel, <<"group">>, [], [{xmlcdata, Group}]}]
     };
 build_roster_item(U, S, remove) ->
-    {xmlelement, "item",
-     [{"jid", jlib:jid_to_string(jlib:make_jid(U, S, ""))},
-      {"subscription", "remove"}],
+    {xmlel, <<"item">>,
+     [{<<"jid">>, jlib:jid_to_string(jlib:make_jid(U, S, <<>>))},
+      {<<"subscription">>, <<"remove">>}],
      []
     }.
 
 build_iq_roster_push(Item) ->
-    {xmlelement, "iq",
-     [{"type", "set"}, {"id", "push"}],
-     [{xmlelement, "query",
-       [{"xmlns", ?NS_ROSTER}],
+    {xmlel, <<"iq">>,
+     [{<<"type">>, <<"set">>}, {<<"id">>, <<"push">>}],
+     [{xmlel, <<"query">>,
+       [{<<"xmlns">>, ?NS_ROSTER}],
        [Item]
       }
      ]
     }.
 
 build_broadcast(U, S, {add, _Nick, Subs, _Group}) ->
-    build_broadcast(U, S, list_to_atom(Subs));
+    build_broadcast(U, S, list_to_atom(binary_to_list(Subs)));
 build_broadcast(U, S, remove) ->
     build_broadcast(U, S, none);
-%% @spec (U::string(), S::string(), Subs::atom()) -> any()
+%% @spec (U::binary(), S::binary(), Subs::atom()) -> any()
 %% Subs = both | from | to | none
 build_broadcast(U, S, SubsAtom) when is_atom(SubsAtom) ->
-    {xmlelement, "broadcast", [],
-     [{item, {U, S, ""}, SubsAtom}]
-    }.
+    {broadcast, {item, {U, S, <<>>}, SubsAtom}}.
 
 %%%
 %%% Last Activity
@@ -1277,15 +1259,15 @@ set_last(User, Server, Timestamp, Status) ->
 %% <aa xmlns='bb'>Cluth</aa>
 
 private_get(Username, Host, Element, Ns) ->
-    From = jlib:make_jid(Username, Host, ""),
-    To = jlib:make_jid(Username, Host, ""),
-    IQ = {iq, "", get, ?NS_PRIVATE, "",
-	  {xmlelement,"query",
-	   [{"xmlns",?NS_PRIVATE}],
-	   [{xmlelement, Element, [{"xmlns", Ns}], []}]}},
+    From = jlib:make_jid(Username, Host, <<>>),
+    To = jlib:make_jid(Username, Host, <<>>),
+    IQ = {iq, <<>>, get, ?NS_PRIVATE, <<>>,
+	  {xmlel, <<"query">>,
+	   [{<<"xmlns">>,?NS_PRIVATE}],
+	   [{xmlel, Element, [{<<"xmlns">>, Ns}], []}]}},
     ResIq = mod_private:process_sm_iq(From, To, IQ),
-    [{xmlelement,"query",
-      [{"xmlns","jabber:iq:private"}],
+    [{xmlel, <<"query">>,
+      [{<<"xmlns">>, <<"jabber:iq:private">>}],
       [SubEl]}] = ResIq#iq.sub_el,
     xml:element_to_string(SubEl).
 
@@ -1300,11 +1282,11 @@ private_set(Username, Host, ElementString) ->
     end.
 
 private_set2(Username, Host, Xml) ->
-    From = jlib:make_jid(Username, Host, ""),
-    To = jlib:make_jid(Username, Host, ""),
-    IQ = {iq, "", set, ?NS_PRIVATE, "",
-	  {xmlelement,"query",
-	   [{"xmlns",?NS_PRIVATE}],
+    From = jlib:make_jid(Username, Host, <<>>),
+    To = jlib:make_jid(Username, Host, <<>>),
+    IQ = {iq, <<>>, set, ?NS_PRIVATE, <<>>,
+	  {xmlel, <<"query">>,
+	   [{<<"xmlns">>, ?NS_PRIVATE}],
 	   [Xml]}},
     mod_private:process_sm_iq(From, To, IQ),
     ok.
@@ -1341,7 +1323,7 @@ srg_get_info(Group, Host) ->
 
 srg_get_members(Group, Host) ->
     Members = mod_shared_roster:get_group_explicit_users(Host,Group),
-    [jlib:jid_to_string(jlib:make_jid(MUser, MServer, <<"">>))
+    [jlib:jid_to_string(jlib:make_jid(MUser, MServer, <<>>))
      || {MUser, MServer} <- Members].
 
 srg_user_add(User, Host, Group, GroupHost) ->
@@ -1383,7 +1365,7 @@ send_packet_all_resources(FromJIDString, ToJIDString, Packet) ->
     ToUser = ToJID#jid.user,
     ToServer = ToJID#jid.server,
     case ToJID#jid.resource of
-	"" ->
+	<<>> ->
 	    send_packet_all_resources(FromJID, ToUser, ToServer, Packet);
 	Res ->
 	    send_packet_all_resources(FromJID, ToUser, ToServer, Res, Packet)
@@ -1392,7 +1374,7 @@ send_packet_all_resources(FromJIDString, ToJIDString, Packet) ->
 send_packet_all_resources(FromJID, ToUser, ToServer, Packet) ->
     case ejabberd_sm:get_user_resources(ToUser, ToServer) of
 	[] ->
-	    send_packet_all_resources(FromJID, ToUser, ToServer, "", Packet);
+	    send_packet_all_resources(FromJID, ToUser, ToServer, <<>>, Packet);
 	ToResources ->
 	    lists:foreach(
 	      fun(ToResource) ->
@@ -1438,7 +1420,7 @@ privacy_set(Username, Host, QueryS) ->
     From = jlib:string_to_jid(Username ++ "@" ++ Host),
     To = jlib:string_to_jid(Host),
     QueryEl = xml_stream:parse_element(QueryS),
-    StanzaEl = {xmlelement, "iq", [{"type", "set"}], [QueryEl]},
+    StanzaEl = {xmlel, <<"iq">>, [{<<"type">>, <<"set">>}], [QueryEl]},
     IQ = jlib:iq_query_info(StanzaEl),
     ejabberd_hooks:run_fold(
 		     privacy_iq_set,
