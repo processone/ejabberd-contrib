@@ -16,9 +16,10 @@
 	 log_packet_send/3,
 	 log_packet_receive/4]).
 
-%-define(ejabberd_debug, true).
+-define(LAGER, 1).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
 
 -define(PROCNAME, ?MODULE).
@@ -29,7 +30,7 @@
 
 start(Host, Opts) ->
     ?DEBUG(" ~p  ~p~n", [Host, Opts]),
-    case gen_mod:get_opt(host_config, Opts, []) of
+    case gen_mod:get_opt(host_config, Opts, fun(L) when is_list(L) -> L end, []) of
 	[] ->
 	    start_vh(Host, Opts);
 	HostConfig ->
@@ -46,8 +47,8 @@ start_vhs(Host, [{_VHost, _Opts}| Tail]) ->
     ?DEBUG("start_vhs ~p  ~p~n", [Host, [{_VHost, _Opts}| Tail]]),
     start_vhs(Host, Tail).
 start_vh(Host, Opts) ->
-    Path = gen_mod:get_opt(path, Opts, ?DEFAULT_PATH),
-    Format = gen_mod:get_opt(format, Opts, ?DEFAULT_FORMAT),
+    Path = gen_mod:get_opt(path, Opts, fun iolist_to_binary/1, ?DEFAULT_PATH),
+    Format = gen_mod:get_opt(format, Opts, fun(A) when is_atom(A) -> A end, ?DEFAULT_FORMAT),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE, log_packet_send, 55),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, log_packet_receive, 55),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
@@ -82,12 +83,12 @@ log_packet_receive(_JID, From, To, _Packet) when From#jid.lserver == To#jid.lser
 log_packet_receive(_JID, From, To, Packet) ->
     log_packet(From, To, Packet, To#jid.lserver).
 
-log_packet(From, To, Packet = {xmlelement, "message", Attrs, _Els}, Host) ->
-    case xml:get_attr_s("type", Attrs) of
-	"groupchat" -> %% mod_muc_log already does it
+log_packet(From, To, Packet = #xmlel{name = <<"message">>, attrs = Attrs}, Host) ->
+    case xml:get_attr_s(<<"type">>, Attrs) of
+	<<"groupchat">> -> %% mod_muc_log already does it
 	    ?DEBUG("dropping groupchat: ~s", [xml:element_to_string(Packet)]),
 	    ok;
-	"error" -> %% we don't log errors
+	<<"error">> -> %% we don't log errors
 	    ?DEBUG("dropping error: ~s", [xml:element_to_string(Packet)]),
 	    ok;
 	_ ->
@@ -103,21 +104,21 @@ write_packet(From, To, Packet, Host) ->
 		   Result
 	   end,
     Format = Config#config.format,
-    {Subject, Body} = {case xml:get_path_s(Packet, [{elem, "subject"}, cdata]) of
+    {Subject, Body} = {case xml:get_subtag(Packet, <<"subject">>) of
 			   false ->
 			       "";
-			   Text ->
-			       escape(Format, Text)
+			   SubjEl ->
+			       escape(Format, xml:get_tag_cdata(SubjEl))
 		       end,
-		       escape(Format, xml:get_path_s(Packet, [{elem, "body"}, cdata]))},
-    case Subject ++ Body of
-        "" -> %% don't log empty messages
+		       escape(Format, xml:get_path_s(Packet, [{elem, <<"body">>}, cdata]))},
+    case Subject == [] andalso Body == [] of
+        true -> %% don't log empty messages
             ?DEBUG("not logging empty message from ~s",[jlib:jid_to_string(From)]),
             ok;
-        _ ->
+        false ->
 	    Path = Config#config.path,
-	    FromJid = From#jid.luser++"@"++From#jid.lserver,
-	    ToJid = To#jid.luser++"@"++To#jid.lserver,
+            FromJid = [From#jid.luser, "@", From#jid.lserver],
+            ToJid = [To#jid.luser, "@", To#jid.lserver],
 	    {FilenameTemplate, DateString, Header, MessageType} =
 		case calendar:local_time() of
 		    {{Y, M, D}, {H, Min, S}} ->
@@ -151,13 +152,14 @@ write_packet(From, To, Packet, Host) ->
 			   io:format(NewFile, Header, []),
 			   NewFile
 		   end,
-	    MessageText = case Subject of
-		       "" ->
+	    MessageText = case Subject == [] of
+		       true ->
 			   Body;
-		       _ ->
+		       false ->
 			   io_lib:format(template(Format, subject), [Subject])++Body
 		   end,
 	    ?DEBUG("MessageTemplate ~s~n",[template(Format, MessageType)]),
+	    ?DEBUG("Data: ~s ~s ~s ~s ~s ~s ~n",[DateString, FromJid, From#jid.lresource, ToJid, To#jid.lresource, MessageText]),
 	    io:format(File, lists:flatten(template(Format, MessageType)), [DateString, FromJid, From#jid.lresource, ToJid,
 							    To#jid.lresource, MessageText]),
 	    file:close(File)
@@ -183,17 +185,20 @@ close_previous_logfile(FilenameTemplate, Format, Date) ->
 	    ok
     end.
 
+escape(html, <<$<, Text/binary>>, Acc) ->
+    escape(html,Text,<<Acc/binary,"&lt;">>);
+escape(html, <<$&, Text/binary>>, Acc) ->
+    escape(html,Text,<<Acc/binary,"&amp;">>); 
+escape(html, <<Char, Text/binary>>, Acc) ->
+    escape(html,Text,<<Acc/binary,Char>>);
+escape(html, <<>>, Acc) ->
+    Acc.
+
+escape(html, Text) -> escape(html,Text,<<>>);
 escape(text, Text) ->
     Text;
 escape(_, "") ->
-    "";
-escape(html, [$< | Text]) ->
-    "&lt;" ++ escape(html, Text);
-escape(html, [$& | Text]) ->
-    "&amp;" ++ escape(html, Text);
-escape(html, [Char | Text]) ->
-    [Char | escape(html, Text)].
-
+    "".
 
 % return the number of occurence of Word in String
 count(String, Word) ->
