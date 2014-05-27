@@ -1,29 +1,29 @@
 ejabberd-contrib is a collaborative development area for ejabberd
-modules developers and users.
+module developers and users.
 
 
     For users
     =========
 
-You need to have Erlang installed.
-
 To use an ejabberd module coming from this repository:
 
-- Read the module specific README to see if special steps are needed
-  to deploy it.
+- You need to have Erlang installed.
 
-- Run "./build.sh" or "build.bat" in the root directory of the wanted
+- Read the module-specific README.txt file to see if special steps are
+  required to deploy it.
+
+- Run "./build.sh" or "build.bat" in the root directory of the desired
   module.
 
 - Copy generated .beam files from the ebin directory to the directory
   where your ejabberd .beam files are.
 
 - Use the configuration file examples provided in the conf dir to
-  update your ejabberd.cfg configuration file.
+  update your ejabberd.cfg or ejabberd.yml configuration file.
 
 If during compilation of a module you get an error like:
   {"init terminating in do_boot",{undef,[{make,all,[]},...
-it means Erlang couldn't find its file make.beam
+it means Erlang couldn't find its make.beam file.
 In Debian and other distributions you can try to install packages like:
   erlang-dev erlang-nox erlang-tools
 
@@ -31,26 +31,25 @@ In Debian and other distributions you can try to install packages like:
     For developers
     ==============
 
-The following organisation has been set-up for the development:
+The following organization has been set up for the development:
 
-- Development and compilation of module should be possible without
+- Development and compilation of modules should be possible without
   the ejabberd source code, as the ejabberd-dev helper module contains
-  include file to make compilation possible.
+  the include files necessary to make compilation possible.
 
 - The module directory structure is usually the following:
- README.txt: Module description
- LICENSE.txt: License for the module
- Emakefile: Erlang makefile to build the module (preferred way, if no
-   dependencies on C code, as build will thus works on Windows)
- doc/: Documentation dir
- src/: Source directory
+ README.txt: Module description.
+ LICENSE.txt: License for the module.
+ Emakefile: Erlang Makefile to build the module (preferred way, if no
+   dependencies on C code, as build will thus work on Windows).
+ doc/: Documentation directory.
+ src/: Source directory.
  src/msgs/: Directory with translation files (pot, po and msg).
- ebin/: empty (Target directory for the build).
+ ebin/: Empty (target directory for the build).
  conf/: Directory containing example configuration for your module.
  build.sh: *nix build script.
  build.bat: Windows build script.
 
-- Module developers should put in the README if the module has
-  requirements or known incompatibilities with other modules (for
+- Module developers should note in the README.txt file whether the module
+  has requirements or known incompatibilities with other modules (for
   example, by modifying the same main ejabberd modules).
-
