@@ -1,4 +1,4 @@
-ejabberd-modules is a collaborative development area for ejabberd
+ejabberd-contrib is a collaborative development area for ejabberd
 modules developers and users.
 
 
@@ -12,8 +12,8 @@ To use an ejabberd module coming from this repository:
 - Read the module specific README to see if special steps are needed
   to deploy it.
 
-- Run "./build.sh" or "build.bat" in the root (usually trunk
-  directory) of the wanted module.
+- Run "./build.sh" or "build.bat" in the root directory of the wanted
+  module.
 
 - Copy generated .beam files from the ebin directory to the directory
   where your ejabberd .beam files are.
@@ -33,13 +33,9 @@ In Debian and other distributions you can try to install packages like:
 
 The following organisation has been set-up for the development:
 
-- Each module has its own SVN structure (trunk/branches/tags) to allow
-  independent versioning.
-
 - Development and compilation of module should be possible without
-  ejabberd SVN, as long as developers check-out the ejabberd-dev
-  module. This module contains include file to make compilation
-  possible.
+  the ejabberd source code, as the ejabberd-dev helper module contains
+  include file to make compilation possible.
 
 - The module directory structure is usually the following:
  README.txt: Module description
