@@ -10,12 +10,11 @@ It can store messages in plain text or HTML format.
 Compilation and installation
 ----------------------------
 
-You need to have Erlang installed as well as the ejabberd-dev module
-(checkout it in the same directory than mod_log_chat is).
+- You need to have Erlang installed.
 
 - Run
-  erl -pa ../../ejabberd-dev/trunk/ebin -make
-  in the trunk directory of mod_log_chat.
+  erl -pa ../ejabberd-dev/ebin -make
+  in the mod_log_chat directory.
 
 - Copy generated mod_log_chat.beam file from the ebin directory to the
   directory where your ejabberd .beam files are.
