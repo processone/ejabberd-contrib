@@ -1,8 +1,8 @@
 mod_log_chat
 ============
 
-mod_log_chat is a ejabberd module aimed at logging chat messages in
-text files. mod_log_chat create one file per couple of chatters and
+mod_log_chat is an ejabberd module aimed at logging chat messages in
+text files. mod_log_chat creates one file per couple of chatters and
 per day (it doesn't log muc messages, use mod_muc_log for this).
 
 It can store messages in plain text or HTML format.
@@ -10,12 +10,11 @@ It can store messages in plain text or HTML format.
 Compilation and installation
 ----------------------------
 
-You need to have Erlang installed as well as the ejabberd-dev module
-(checkout it in the same directory than mod_log_chat is).
+- You need to have Erlang installed.
 
 - Run
-  erl -pa ../../ejabberd-dev/trunk/ebin -make
-  in the trunk directory of mod_log_chat.
+  erl -pa ../ejabberd-dev/ebin -make
+  in the mod_log_chat directory.
 
 - Copy generated mod_log_chat.beam file from the ebin directory to the
   directory where your ejabberd .beam files are.
