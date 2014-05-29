@@ -1,1 +1,1 @@
-erl -pa ../../ejabberd-dev/trunk/ebin -pa ebin -make
+erl -pa ../ejabberd-dev/ebin -pa ebin -make
