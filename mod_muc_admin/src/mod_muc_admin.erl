@@ -66,7 +66,7 @@ commands() ->
      #ejabberd_commands{name = muc_online_rooms, tags = [muc],
 		       desc = "List existing rooms ('global' to get all vhosts)",
 		       module = ?MODULE, function = muc_online_rooms,
-		       args = [{host, string}],
+		       args = [{host, binary}],
 		       result = {rooms, {list, {room, string}}}},
      #ejabberd_commands{name = muc_unregister_nick, tags = [muc],
 		       desc = "Unregister the nick in the MUC service",
