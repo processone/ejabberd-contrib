@@ -57,6 +57,7 @@ start(Host, Opts) ->
     Filename1 = gen_mod:get_opt(
 		  sessionlog, 
 		  Opts, 
+		  fun(S) -> S end,
 		  "/tmp/ejabberd_logsession_@HOST@.log"),
     Filename = replace_host(Host, Filename1),
     File = open_file(Filename),
@@ -115,7 +116,7 @@ get_process_name(Host) ->
     gen_mod:get_module_proc(Host, ?PROCNAME).
 
 replace_host(Host, Filename) ->
-    re:replace(Filename, "@HOST@", Host, [global, {return, list}]).
+    re:replace(Filename, "@HOST@", binary_to_list(Host), [global, {return, list}]).
 
 open_file(Filename) -> 
     {ok, File} = file:open(Filename, [append]),

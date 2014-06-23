@@ -3,7 +3,7 @@
 
 	Homepage: http://www.ejabberd.im/mod_logsession
 	Author: Badlop
-	Requirements: ejabberd trunk SVN 1635 or newer
+	Requirements: ejabberd 14.05 or newer
 
 
 	DESCRIPTION
@@ -23,7 +23,7 @@ Note: to log the failed authentication attempts, you need to patch ejabberd.
 1 Copy this file to ejabberd/src/mod_logsession.erl
 2 Recompile ejabberd
 3 Add to ejabberd.cfg, 'modules' section the basic configuration:
-    {mod_logsession,     []},
+    mod_logsession: {}
 4 With this configuration, the log files are:
     /tmp/ejabberd_logsession_@HOST@.log
 
@@ -40,13 +40,11 @@ sessionlog:
 	EXAMPLE CONFIGURATION
 	---------------------
 
-{modules, [
+modules:
   ...
-  {mod_logsession, [
-    {sessionlog, "/var/log/ejabberd/session_@HOST@.log"}
-  ]},
+  mod_logsession:
+    sessionlog: "/var/log/ejabberd/session_@HOST@.log"
   ...
-]}.
 
 With that configuration, if the server has three vhosts:
   "localhost", "example.org" and "example.net",

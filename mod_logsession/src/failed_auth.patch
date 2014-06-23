@@ -1,44 +1,65 @@
---- ejabberd_c2s.erl
-+++ ejabberd_c2s.erl
-@@ -496,6 +496,11 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
- 			    fsm_next_state_pack(session_established,
-                                                 NewStateData);
- 			_ ->
-+			    ejabberd_hooks:run(failed_auth_hook,
-+					       StateData#state.server,
-+					       [legacy, U,
-+						StateData#state.server,
-+						StateData#state.ip]),
- 			    ?INFO_MSG(
- 			       "(~w) Failed legacy authentication for ~s",
- 			       [StateData#state.socket,
-@@ -586,6 +591,11 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
- 				   StateData#state{
- 				     sasl_state = NewSASLState});
- 		{error, Error, Username} ->
-+		    ejabberd_hooks:run(failed_auth_hook,
+From 86a811a92b27afe43adcc3ab3692df13949c4221 Mon Sep 17 00:00:00 2001
+From: Badlop <badlop@process-one.net>
+Date: Mon, 23 Jun 2014 13:47:10 +0200
+Subject: [PATCH] Patch for mod_logsession
+
+---
+ src/ejabberd_c2s.erl | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/src/ejabberd_c2s.erl b/src/ejabberd_c2s.erl
+index 9ce66d0..d59ec58 100644
+--- a/src/ejabberd_c2s.erl
++++ b/src/ejabberd_c2s.erl
+@@ -659,6 +659,11 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
+ 							privacy_list = PrivList},
+ 			fsm_next_state(session_established, NewStateData);
+ 		  _ ->
++		      ejabberd_hooks:run(failed_auth_hook,
 +				       StateData#state.server,
-+				       [sasl_auth, Username,
++				       [legacy, U,
 +					StateData#state.server,
 +					StateData#state.ip]),
- 		    ?INFO_MSG(
- 		       "(~w) Failed authentication for ~s@~s",
+ 		      IP = peerip(StateData#state.sockmod,
+ 				  StateData#state.socket),
+ 		      ?INFO_MSG("(~w) Failed legacy authentication for "
+@@ -753,6 +758,11 @@ wait_for_feature_request({xmlstreamelement, El},
+ 		fsm_next_state(wait_for_sasl_response,
+ 			       StateData#state{sasl_state = NewSASLState});
+ 	    {error, Error, Username} ->
++	    ejabberd_hooks:run(failed_auth_hook,
++			       StateData#state.server,
++			       [sasl_auth, Username,
++				StateData#state.server,
++				StateData#state.ip]),
+ 		IP = peerip(StateData#state.sockmod, StateData#state.socket),
+ 		?INFO_MSG("(~w) Failed authentication for ~s@~s from IP ~s",
  		       [StateData#state.socket,
-@@ -721,10 +731,15 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
- 		    fsm_next_state(wait_for_sasl_response,
- 		     StateData#state{sasl_state = NewSASLState});
- 		{error, Error, Username} ->
-+		    ejabberd_hooks:run(failed_auth_hook,
-+				       StateData#state.server,
-+				       [sasl_resp, Username,
-+					StateData#state.server,
-+					StateData#state.ip]),
- 		    ?INFO_MSG(
--		       "(~w) Failed authentication for ~s@~s",
-+		       "(~w) Failed authentication for ~s@~s ~n~p",
+@@ -935,6 +945,11 @@ wait_for_sasl_response({xmlstreamelement, El},
+ 		fsm_next_state(wait_for_sasl_response,
+ 			       StateData#state{sasl_state = NewSASLState});
+ 	    {error, Error, Username} ->
++		ejabberd_hooks:run(failed_auth_hook,
++			       StateData#state.server,
++			       [sasl_resp, Username,
++				StateData#state.server,
++				StateData#state.ip]),
+ 		IP = peerip(StateData#state.sockmod, StateData#state.socket),
+ 		?INFO_MSG("(~w) Failed authentication for ~s@~s from IP ~s",
  		       [StateData#state.socket,
--			Username, StateData#state.server]),
-+			Username, StateData#state.server, StateData]),
- 		    send_element(StateData,
- 				 {xmlelement, "failure",
- 				  [{"xmlns", ?NS_SASL}],
+@@ -947,6 +962,12 @@ wait_for_sasl_response({xmlstreamelement, El},
+ 						children = []}]}),
+ 		fsm_next_state(wait_for_feature_request, StateData);
+ 	    {error, Error} ->
++		Username = element(5, element(9, StateData#state.sasl_state)),
++		ejabberd_hooks:run(failed_auth_hook,
++			       StateData#state.server,
++			       [sasl_resp, Username,
++				StateData#state.server,
++				StateData#state.ip]),
+ 		send_element(StateData,
+ 			     #xmlel{name = <<"failure">>,
+ 				    attrs = [{<<"xmlns">>, ?NS_SASL}],
+-- 
+1.8.5.3
+
