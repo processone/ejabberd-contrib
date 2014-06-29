@@ -24,6 +24,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("logger.hrl").
 
 -define(DICT, dict).
 
