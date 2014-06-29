@@ -19,8 +19,9 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
--include("web/ejabberd_http.hrl").
--include("mod_muc/mod_muc_room.hrl").
+-include("ejabberd_http.hrl").
+-include("mod_muc_room.hrl").
+-include("logger.hrl").
 -include_lib("kernel/include/file.hrl").
 
 -define(PROCNAME, mod_muc_log_http).
