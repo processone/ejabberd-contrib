@@ -84,6 +84,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("logger.hrl").
 
 -record(state, {host,
                 sessions,

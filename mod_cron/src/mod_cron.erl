@@ -20,8 +20,10 @@
 
 -include("ejabberd_commands.hrl").
 -include("ejabberd.hrl").
--include("web/ejabberd_http.hrl").
--include("web/ejabberd_web_admin.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
+-include("logger.hrl").
+-include("xml.hrl").
 
 -record(task, {taskid, timerref, host, task}).
 
