@@ -877,6 +877,8 @@ find_host(global) ->
     global;
 find_host("global") ->
     global;
+find_host(<<"global">>) ->
+    global;
 find_host(ServerHost) when is_list(ServerHost) ->
     find_host(list_to_binary(ServerHost));
 find_host(ServerHost) ->
