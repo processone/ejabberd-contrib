@@ -93,15 +93,16 @@ init([Host, Opts]) ->
     Access = gen_mod:get_opt(access, Opts, fun(O) -> O end, local),
     Port = gen_mod:get_opt(port, Opts, fun(O) -> O end, 5280),
     Path = gen_mod:get_opt(path, Opts, fun(O) -> O end, <<"presence">>),
-    BaseURL = gen_mod:get_opt(baseurl, Opts, fun(O) -> O end,
-                              iolist_to_binary(io_lib:format(<<"http://~s:~p/~s/">>, [Host, Port, Path]))),
+    BaseURL1 = gen_mod:get_opt(baseurl, Opts, fun(O) -> O end,
+                               iolist_to_binary(io_lib:format(<<"http://~s:~p/~s/">>, [Host, Port, Path]))),
+    BaseURL2 = ejabberd_regexp:greplace(BaseURL1, <<"@HOST@">>, Host),
     ejabberd_router:register_route(MyHost),
     ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 50),
     ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, web_page_host, 50),
     {ok, #state{host = MyHost,
 		server_host = Host,
-		base_url = BaseURL,
+		base_url = BaseURL2,
 		access = Access}}.
 
 %%--------------------------------------------------------------------
