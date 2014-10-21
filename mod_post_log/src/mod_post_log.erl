@@ -37,34 +37,34 @@ stop(Host) ->
     ok.
 
 log_user_send(From, To, Packet) ->
-    ok = log_packet(From, To, Packet, From#jid.lserver).
+    ok = log_packet(From, To, Packet).
 
-log_packet(From, To, {xmlelement, "message", _Attrs, _Els} = Packet, Host) ->
-    ok = log_message(From, To, Packet, Host);
+log_packet(From, To, {xmlelement, "message", _Attrs, _Els} = Packet) ->
+    ok = log_message(From, To, Packet);
 
-log_packet(_From, _To, {xmlelement, _Name, _Attrs, _Els}, _Host) ->
+log_packet(_From, _To, {xmlelement, _Name, _Attrs, _Els}) ->
     ok.
 
-log_message(From, To, {xmlelement, _Name, Attrs, _Els} = Packet, Host) ->
+log_message(From, To, {xmlelement, _Name, Attrs, _Els} = Packet) ->
     Type = lists:keyfind("type", 1, Attrs),
-    log_message_filter(Type, From, To, Packet, Host).
+    log_message_filter(Type, From, To, Packet).
 
-log_message_filter({"type", Type}, From, To, Packet, Host)
+log_message_filter({"type", Type}, From, To, Packet)
   when Type =:= "chat";
        Type =:= "groupchat" ->
-    log_chat(From, To, Packet, Host);
-log_message_filter(_Other, _From, _To, _Packet, _Host) ->
+    log_chat(From, To, Packet);
+log_message_filter(_Other, _From, _To, _Packet) ->
     ok.
 
-log_chat(From, To, {xmlelement, _Name, _Attrs, Els} = Packet, Host) ->
+log_chat(From, To, {xmlelement, _Name, _Attrs, Els} = Packet) ->
     case get_body(Els) of
         no_body ->
             ok;
         {ok, _Body} ->
-            log_chat_with_body(From, To, Packet, Host)
+            log_chat_with_body(From, To, Packet)
     end.
 
-log_chat_with_body(_From, _To, Packet, _Host) ->
+log_chat_with_body(_From, _To, Packet) ->
     post_xml(xml:element_to_binary(Packet)).
 
 post_xml(Xml) ->
