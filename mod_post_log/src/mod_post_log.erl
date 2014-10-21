@@ -89,7 +89,7 @@ post_xml(Xml) ->
     ok.
 
 post_result({_ReqId, {error, Reason}}) ->
-    report_error(Reason);
+    report_error([ {error, Reason } ]);
 post_result({_ReqId, Result}) ->
     {StatusLine, Headers, Body} = Result,
     {_HttpVersion, StatusCode, ReasonPhrase} = StatusLine,
