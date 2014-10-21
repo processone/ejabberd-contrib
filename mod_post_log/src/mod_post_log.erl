@@ -64,18 +64,22 @@ log_chat(From, To, {xmlelement, _Name, _Attrs, Els} = Packet) ->
             log_chat_with_body(From, To, Packet)
     end.
 
-log_chat_with_body(_From, _To, Packet) ->
-    post_xml(xml:element_to_binary(Packet)).
+log_chat_with_body(From, To, Packet) ->
+    post_xml(From, To, xml:element_to_binary(Packet)).
 
-post_xml(Xml) ->
+post_xml(From, To, Xml) ->
     Ts = to_iso_8601_date(os:timestamp()),
 
     Body = Xml,
 
     Url = get_opt(url),
     TsHeader = get_opt(ts_header, "X-Message-Timestamp"),
-    Headers = [ {TsHeader, Ts} | get_opt(headers, []) ],
-    io:format("Headers: ~p\n", [Headers]),
+    FromHeader = get_opt(from_header, "X-Message-From"),
+    ToHeader = get_opt(to_header, "X-Message-To"),
+    Headers = [ {TsHeader,   Ts},
+                {FromHeader, format_jid(From)},
+                {ToHeader,   format_jid(To)}
+                | get_opt(headers, []) ],
     ContentType = get_opt(content_type, "text/xml"),
     HttpOptions = get_opt(http_options, []),
     ReqOptions = get_opt(req_options, []),
@@ -126,6 +130,16 @@ get_opt(Opt, Default) ->
 
 report_error(ReportArgs) ->
     ok = error_logger:error_report([ mod_post_log_cannot_post | ReportArgs ]).
+
+format_jid(#jid{luser = User, lserver = Server, lresource = Resource})
+  when Resource =:= undefined;
+       Resource =:= "";
+       Resource =:= <<"">> ->
+    %% The guard above feels defensive, but I don't yet know the full
+    %% set of ways that ejabberd will represent an empty resource
+    io_lib:format("~s@~s", [User, Server]);
+format_jid(#jid{luser = User, lserver = Server, lresource = Resource}) ->
+    io_lib:format("~s@~s/~s", [User, Server, Resource]).
 
 %% Erlang now()-style timestamps are in UTC by definition, and we are
 %% assuming ISO 8601 dates should be printed in UTC as well, so no
