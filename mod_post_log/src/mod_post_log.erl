@@ -39,24 +39,24 @@ stop(Host) ->
 log_user_send(From, To, Packet) ->
     ok = log_packet(From, To, Packet).
 
-log_packet(From, To, {xmlelement, "message", _Attrs, _Els} = Packet) ->
+log_packet(From, To, #xmlel{name = <<"message">>} = Packet) ->
     ok = log_message(From, To, Packet);
 
-log_packet(_From, _To, {xmlelement, _Name, _Attrs, _Els}) ->
+log_packet(_From, _To, _Packet) ->
     ok.
 
-log_message(From, To, {xmlelement, _Name, Attrs, _Els} = Packet) ->
-    Type = lists:keyfind("type", 1, Attrs),
+log_message(From, To, #xmlel{attrs = Attrs} = Packet) ->
+    Type = lists:keyfind(<<"type">>, 1, Attrs),
     log_message_filter(Type, From, To, Packet).
 
-log_message_filter({"type", Type}, From, To, Packet)
-  when Type =:= "chat";
-       Type =:= "groupchat" ->
+log_message_filter({<<"type">>, Type}, From, To, Packet)
+  when Type =:= <<"chat">>;
+       Type =:= <<"groupchat">> ->
     log_chat(From, To, Packet);
 log_message_filter(_Other, _From, _To, _Packet) ->
     ok.
 
-log_chat(From, To, {xmlelement, _Name, _Attrs, Els} = Packet) ->
+log_chat(From, To, #xmlel{children = Els} = Packet) ->
     case get_body(Els) of
         no_body ->
             ok;
@@ -109,11 +109,11 @@ post_result({_ReqId, Result}) ->
     end.
 
 get_body(Els) ->
-    XmlElements = [ El || El <- Els, element(1, El) =:= xmlelement ],
-    case lists:keyfind("body", 2, XmlElements) of
+    XmlEls = [ El || El <- Els, is_record(El, xmlel) ],
+    case lists:keyfind(<<"body">>, #xmlel.name, XmlEls) of
         false ->
             no_body;
-        {xmlelement, "body", _, InnerEls} ->
+        #xmlel{children = InnerEls} ->
             case lists:keyfind(xmlcdata, 1, InnerEls) of
                 false ->
                     no_body;
@@ -126,7 +126,10 @@ get_opt(Opt) ->
     get_opt(Opt, undefined).
 
 get_opt(Opt, Default) ->
-    gen_mod:get_module_opt(global, ?MODULE, Opt, Default).
+    F = fun(Val) when is_binary(Val) -> binary_to_list(Val);
+           (Val)                     -> Val
+        end,
+    gen_mod:get_module_opt(global, ?MODULE, Opt, F, Default).
 
 report_error(ReportArgs) ->
     ok = error_logger:error_report([ mod_post_log_cannot_post | ReportArgs ]).
