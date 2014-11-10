@@ -110,21 +110,22 @@ is_carbon(Packet) ->
     {Direction, SubTag} = case {xml:get_subtag(Packet, <<"sent">>),
 				xml:get_subtag(Packet, <<"received">>)} of
 			    {false, false} ->
-				{none, none};
+				{false, false};
 			    {false, Tag} ->
 				{incoming, Tag};
 			    {Tag, _} ->
 				{outgoing, Tag}
 			  end,
-    if SubTag =:= none ->
-	   false;
-       true ->
-	   case xml:get_subtag(SubTag, <<"forwarded">>) of
-	     false ->
-		 false;
-	     _ ->
-		 {true, Direction}
-	   end
+    F = fun(_, false) ->
+	       false;
+	   (Name, Tag) ->
+	       xml:get_subtag(Tag, Name)
+	end,
+    case lists:foldl(F, SubTag, [<<"forwarded">>, <<"message">>, <<"body">>]) of
+      #xmlel{children = Body} when length(Body) > 0 ->
+	  {true, Direction};
+      _ ->
+	  false
     end.
 
 loop(Config) ->
