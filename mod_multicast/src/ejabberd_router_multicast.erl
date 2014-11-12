@@ -3,7 +3,6 @@
 %%% Author  : Badlop <badlop@ono.com>
 %%% Purpose : Multicast router
 %%% Created : 11 Aug 2007 by Badlop <badlop@ono.com>
-%%% Id      : $Id: ejabberd_router_multicast.erl 440 2007-12-06 22:36:21Z badlop $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_router_multicast).
@@ -25,8 +24,8 @@
 	 terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("logger.hrl").
+-include("jlib.hrl").
 
 -record(route_multicast, {domain, pid}).
 -record(state, {}).
@@ -71,11 +70,13 @@ unregister_route(Domain) ->
 	LDomain ->
 	    Pid = self(),
 	    F = fun() ->
-			case mnesia:match(#route_multicast{domain = LDomain,
-							   pid = Pid}) of
+		    case mnesia:select(route_multicast,
+		       [{#route_multicast{pid = Pid, domain = LDomain, _ = '_'},
+			 [],
+			 ['$_']}]) of
 			    [R] -> mnesia:delete_object(R);
 			    _ -> ok
-			end
+		    end
 		end,
 	    mnesia:transaction(F)
     end.
@@ -189,21 +190,48 @@ code_change(_OldVsn, State, _Extra) ->
 %% Destinations = [#jid]
 do_route(From, Domain, Destinations, Packet) ->
 
-    ?DEBUG("route_multicast~n\tfrom ~p~n\tdomain ~p~n\tdestinations ~p~n\tpacket ~p~n",
-	   [From, Domain, Destinations, Packet]),
+    ?DEBUG("route_multicast~n\tfrom ~s~n\tdomain ~s~n\tdestinations ~p~n\tpacket ~p~n",
+	   [jlib:jid_to_string(From),
+	    Domain,
+	    [jlib:jid_to_string(To) || To <- Destinations],
+	    Packet]),
+
+    {Groups, Rest} = lists:foldr(
+                       fun(Dest, {Groups1, Rest1}) ->
+                               case ejabberd_sm:get_session_pid(Dest#jid.luser, Dest#jid.lserver, Dest#jid.lresource) of
+                                   none ->
+                                       {Groups1, [Dest|Rest1]};
+                                   Pid ->
+                                       Node = node(Pid),
+                                       if Node /= node() ->
+                                               {dict:append(Node, Dest, Groups1), Rest1};
+                                          true ->
+                                               {Groups1, [Dest|Rest1]}
+                                       end
+                               end
+                       end, {dict:new(), []}, Destinations),
+
+    dict:map(
+      fun(Node, [Single]) ->
+              ejabberd_cluster:send({ejabberd_sm, Node},
+                                    {route, From, Single, Packet});
+         (Node, Dests) ->
+              ejabberd_cluster:send({ejabberd_sm, Node},
+                                    {route_multiple, From, Dests, Packet})
+      end, Groups),
 
     %% Try to find an appropriate multicast service
     case mnesia:dirty_read(route_multicast, Domain) of
 
 	%% If no multicast service is available in this server, send manually
-	[] -> do_route_normal(From, Destinations, Packet);
+	[] -> do_route_normal(From, Rest, Packet);
 
 	%% If available, send the packet using multicast service
 	[R] ->
 	    case R#route_multicast.pid of
 		Pid when is_pid(Pid) ->
-		    Pid ! {route_trusted, From, Destinations, Packet};
-		_ -> do_route_normal(From, Destinations, Packet)
+		    Pid ! {route_trusted, From, Rest, Packet};
+		_ -> do_route_normal(From, Rest, Packet)
 	    end
     end.
 
