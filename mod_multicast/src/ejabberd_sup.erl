@@ -1,13 +1,30 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_sup.erl
-%%% Author  : Alexey Shchepin <alexey@sevcom.net>
-%%% Purpose : 
-%%% Created : 31 Jan 2003 by Alexey Shchepin <alexey@sevcom.net>
-%%% Id      : $Id: ejabberd_sup.erl 440 2007-12-06 22:36:21Z badlop $
+%%% Author  : Alexey Shchepin <alexey@process-one.net>
+%%% Purpose : Erlang/OTP supervisor
+%%% Created : 31 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_sup).
--author('alexey@sevcom.net').
+-author('alexey@process-one.net').
 
 -behaviour(supervisor).
 
@@ -45,13 +62,6 @@ init([]) ->
 	 brutal_kill,
 	 worker,
 	 [ejabberd_router]},
-    Router_multicast =
-	{ejabberd_router_multicast,
-	 {ejabberd_router_multicast, start_link, []},
-	 permanent,
-	 brutal_kill,
-	 worker,
-	 [ejabberd_router_multicast]},
     SM =
 	{ejabberd_sm,
 	 {ejabberd_sm, start_link, []},
@@ -73,6 +83,13 @@ init([]) ->
 	 brutal_kill,
 	 worker,
 	 [ejabberd_local]},
+    Captcha =
+	{ejabberd_captcha,
+	 {ejabberd_captcha, start_link, []},
+	 permanent,
+	 brutal_kill,
+	 worker,
+	 [ejabberd_captcha]},
     Listener =
 	{ejabberd_listener,
 	 {ejabberd_listener, start_link, []},
@@ -156,10 +173,10 @@ init([]) ->
 	   NodeGroups,
 	   SystemMonitor,
 	   Router,
-	   Router_multicast,
 	   SM,
 	   S2S,
 	   Local,
+	   Captcha,
 	   ReceiverSupervisor,
 	   C2SSupervisor,
 	   S2SInSupervisor,
