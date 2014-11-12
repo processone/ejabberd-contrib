@@ -82,6 +82,7 @@ baseurl:
     This informational option is used only when sending a message to the user
     and when building the JavaScript code.
     It is the base part of the URL of the webpresence HTTP content.
+    You can use the keyword @HOST@.
     If the option is not specified, it takes as default value: http://host:port/path/
 
 
