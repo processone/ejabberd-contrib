@@ -60,7 +60,7 @@ stop(Host) ->
 	  ok;
       _ ->
 	  ejabberd_hooks:delete(reopen_log_hook, ?MODULE, reopen_log, 42),
-	  gen_mod:get_module_proc(Host, ?PROCNAME) ! stop,
+	  ?PROCNAME ! stop,
 	  ok
     end.
 
