@@ -27,18 +27,18 @@
 start(_Host, Opts) ->
 	case whereis(?PROCNAME) of
 		undefined ->
-			Interval = gen_mod:get_opt(interval, Opts, 5),
+			Interval = gen_mod:get_opt(interval, Opts, fun(O) -> O end, 5),
 			I = Interval*60*1000,
 			%I = 9000, %+++
 
-			Type = gen_mod:get_opt(type, Opts, html),
+			Type = gen_mod:get_opt(type, Opts, fun(O) -> O end, html),
 
-			Split = gen_mod:get_opt(split, Opts, false),
+			Split = gen_mod:get_opt(split, Opts, fun(O) -> O end, false),
 
-			BaseFilename = gen_mod:get_opt(basefilename, Opts, "/tmp/ejasta"),
+			BaseFilename = binary_to_list(gen_mod:get_opt(basefilename, Opts, fun(O) -> O end, "/tmp/ejasta")),
 
-			Hosts_all = ejabberd_config:get_global_option(hosts),
-			Hosts = gen_mod:get_opt(hosts, Opts, Hosts_all),
+			Hosts_all = ejabberd_config:get_global_option(hosts, fun(O) -> O end),
+			Hosts = gen_mod:get_opt(hosts, Opts, fun(O) -> O end, Hosts_all),
 
 			register(?PROCNAME, spawn(?MODULE, loop, [I, Hosts, BaseFilename, Type, Split]));
 		_ ->
@@ -215,7 +215,7 @@ write_stats(I, node, Node, F, T) ->
 	
 	fwbr(F, T),
 	CPUTime = element(1, rpc:call(Node, erlang, statistics, [runtime])),
-	fw(F, "~s (ms): ~w",[?T("CPUtime"), CPUTime]),
+	fw(F, "~s (ms): ~w",["CPUtime", CPUTime]),
 	
 	fwbr(F, T),
 	MT = trunc(erlang:memory(total)/1024),
@@ -362,12 +362,12 @@ get(Node, A) ->
 fw(F, S) -> file:write(F, S).
 fw(F, S, O) -> file:write(F, io_lib:format(S, O)).
 
-fwt(F, S, O, html) -> fw(F, "~s: ~p<br/>~n",[?T(S), O]);
-fwt(F, S, O, txt) -> fw(F, "~s: ~p~n",[?T(S), O]);
+fwt(F, S, O, html) -> fw(F, "~s: ~p<br/>~n",[S, O]);
+fwt(F, S, O, txt) -> fw(F, "~s: ~p~n",[S, O]);
 fwt(F, _, O, dat) -> fw(F, "~p~n",[O]).
 
-fwts(F, S, O, html) -> fw(F, "~s: ~s<br/>~n",[?T(S), O]);
-fwts(F, S, O, txt) -> fw(F, "~s: ~s~n",[?T(S), O]);
+fwts(F, S, O, html) -> fw(F, "~s: ~s<br/>~n",[S, O]);
+fwts(F, S, O, txt) -> fw(F, "~s: ~s~n",[S, O]);
 fwts(F, _, O, dat) -> fw(F, "~s~n",[O]).
 
 %fwtsn(F, S, O, html) -> fw(F, "~s: ~s<br/>",[?T(S), O]);

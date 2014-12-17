@@ -221,7 +221,7 @@ remove_user(_User, Server) ->
 
 user_send_packet(FromJID, ToJID, NewEl) ->
     %% Registrarse para tramitar Host/mod_stats2file
-    case list_to_atom(ToJID#jid.lresource) of
+    case list_to_atom(binary_to_list(ToJID#jid.lresource)) of
 	?MODULE -> received_response(FromJID, ToJID, NewEl);
 	_ -> ok
     end.
@@ -618,7 +618,9 @@ get_s2sconnections(Host) ->
 %%    {Host, Res} = ets:foldl(F2, {Host, 0}, irc_connection),
 %%	Res.
 
-is_host(Host, Subhost) ->
+is_host(HostBin, SubhostBin) ->
+    Host = binary_to_list(HostBin),
+    Subhost = binary_to_list(SubhostBin),
     Pos = string:len(Host)-string:len(Subhost)+1,
     case string:rstr(Host, Subhost) of
 	Pos -> true;
@@ -763,15 +765,15 @@ user_logout(User, Host, Resource, _Status) ->
     end.
 
 request_iqversion(User, Host, Resource) ->
-    From = jlib:make_jid("", Host, atom_to_list(?MODULE)),
+    From = jlib:make_jid(<<"">>, Host, list_to_binary(atom_to_list(?MODULE))),
     FromStr = jlib:jid_to_string(From),
     To = jlib:make_jid(User, Host, Resource),
     ToStr = jlib:jid_to_string(To),
-    Packet = {xmlelement,"iq",
-	      [{"from",FromStr}, {"to",ToStr}, {"type","get"},
-		{"id", "statsdx" ++ randoms:get_string()}],
-	      [{xmlelement, "query",
-		[{"xmlns","jabber:iq:version"}], []}]},
+    Packet = {xmlel,<<"iq">>,
+	      [{<<"from">>,FromStr}, {<<"to">>,ToStr}, {<<"type">>,<<"get">>},
+		{<<"id">>, list_to_binary("statsdx"++randoms:get_string())}],
+	      [{xmlel, <<"query">>,
+		[{<<"xmlns">>,<<"jabber:iq:version">>}], []}]},
     ejabberd_local:route(From, To, Packet).
 
 %% cuando el virtualJID recibe una respuesta iqversion,
