@@ -230,7 +230,7 @@ user_send_packet_traffic(FromJID, ToJID, NewEl) ->
     %% Only required for traffic stats
     Host = FromJID#jid.lserver,
     HostTo = ToJID#jid.lserver,
-    {xmlelement, Type, _, _} = NewEl,
+    {xmlel, Type, _, _} = NewEl,
     Type2 = case Type of
     		"iq" -> iq;
     		"message" -> message;
@@ -247,7 +247,7 @@ user_send_packet_traffic(FromJID, ToJID, NewEl) ->
 user_receive_packet_traffic(_JID, From, To, FixedPacket) ->
     HostFrom = From#jid.lserver,
     Host = To#jid.lserver,
-    {xmlelement, Type, _, _} = FixedPacket,
+    {xmlel, Type, _, _} = FixedPacket,
     Type2 = case Type of
 		"iq" -> iq;
 		"message" -> message;
@@ -783,15 +783,15 @@ received_response(From, _To, El) ->
     catch
     	_:_ -> ok
     end.
-received_response(From, {xmlelement, "iq", Attrs, Elc}) ->
+received_response(From, {xmlel, <<"iq">>, Attrs, Elc}) ->
     User = From#jid.luser,
     Host = From#jid.lserver,
     Resource = From#jid.lresource,
 
-    "result" = xml:get_attr_s("type", Attrs),
-    Lang = case xml:get_attr_s("xml:lang", Attrs) of
+    <<"result">> = xml:get_attr_s(<<"type">>, Attrs),
+    Lang = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
 	       [] -> "unknown";
-	       L -> L
+	       L -> binary_to_list(L)
 	   end,
     TableHost = table_name(Host),
     TableServer = table_name("server"),
@@ -799,11 +799,11 @@ received_response(From, {xmlelement, "iq", Attrs, Elc}) ->
     update_counter_create(TableServer, {lang, server, Lang}, 1),
 
     [El] = xml:remove_cdata(Elc),
-    {xmlelement, _, Attrs2, _Els2} = El,
-    ?NS_VERSION = xml:get_attr_s("xmlns", Attrs2),
+    {xmlel, _, Attrs2, _Els2} = El,
+    ?NS_VERSION = xml:get_attr_s(<<"xmlns">>, Attrs2),
 
-    Client = get_tag_cdata_subtag(El, "name"),
-    Version = get_tag_cdata_subtag(El, "version"),
+    Client = get_tag_cdata_subtag(El, <<"name">>),
+    Version = get_tag_cdata_subtag(El, <<"version">>),
     OS = get_tag_cdata_subtag(El, "os"),
     {Client_id, OS_id} = identify(Client, OS),
 
@@ -838,8 +838,8 @@ update_counter_create(Table, Element, C) ->
 get_tag_cdata_subtag(E, T) ->
     E2 = xml:get_subtag(E, T),
     case E2 of
-	false -> <<"unknown">>;
-	_ -> xml:get_tag_cdata(E2)
+	false -> "unknown";
+	_ -> binary_to_list(xml:get_tag_cdata(E2))
     end.
 
 list_elem(Type, id) ->
@@ -915,7 +915,7 @@ get_client_os(Server) ->
     CO1 = ets:match(table_name(Server), {{client_os, Server, '$1', '$2'}, '$3'}),
     CO2 = lists:map(
 	    fun([Cl, Os, A3]) ->
-		    {list_to_binary(lists:flatten([atom_to_list(Cl), "/", atom_to_list(Os)])), A3}
+		    {lists:flatten([atom_to_list(Cl), "/", atom_to_list(Os)]), A3}
 	    end,
 	    CO1
 	   ),
@@ -925,7 +925,7 @@ get_client_conntype(Server) ->
     CO1 = ets:match(table_name(Server), {{client_conntype, Server, '$1', '$2'}, '$3'}),
     CO2 = lists:map(
 	    fun([Cl, Os, A3]) ->
-		    {list_to_binary(lists:flatten([atom_to_list(Cl), "/", atom_to_list(Os)])), A3}
+		    {lists:flatten([atom_to_list(Cl), "/", atom_to_list(Os)]), A3}
 	    end,
 	    CO1
 	   ),
@@ -1505,15 +1505,16 @@ do_sessions_table(_Node, _Lang, Filter, {Sort_direction, Sort_column}, Host) ->
     Sessions = get_sessions_filtered(Filter, Host),
     SessionsSorted = sort_sessions(Sort_direction, Sort_column, Sessions),
     lists:map(
-      fun( {{session, JID}, Client_id, OS_id, Lang, ConnType, Client, Version, OS} ) ->
-	      User = JID#jid.luser,
-	      Server = JID#jid.lserver,
+      fun( {{session, JID}, Client_id, OS_id, LangS, ConnType, Client, Version, OS} ) ->
+	      Lang = list_to_binary(LangS),
+	      User = binary_to_list(JID#jid.luser),
+	      Server = binary_to_list(JID#jid.lserver),
 	      UserURL = "/admin/server/" ++ Server ++ "/user/" ++ User ++ "/",
 	      ?XE("tr", [
-			 ?XE(<<"td">>, [?AC(UserURL, jlib:jid_to_string(JID))]),
+			 ?XE(<<"td">>, [?AC(list_to_binary(UserURL), jlib:jid_to_string(JID))]),
 			 ?XCTB("td", atom_to_list(Client_id)),
 			 ?XCTB("td", atom_to_list(OS_id)),
-			 ?XCTB("td", Lang),
+			 ?XCTB("td", LangS),
 			 ?XCTB("td", atom_to_list(ConnType)),
 			 ?XCTB("td", Client),
 			 ?XCTB("td", Version),
@@ -1544,12 +1545,12 @@ get_sessions_filtered(Filter, server) ->
       ?MYHOSTS);
 get_sessions_filtered(Filter, Host) ->
     Match = case Filter of
-		[{"client", Client}] -> {{session, '$1'}, list_to_atom(Client), '$2', '$3', '$4', '$5', '$6', '$7'};
-		[{"os", OS}] -> {{session, '$1'}, '$2', list_to_atom(OS), '$3', '$4', '$5', '$6', '$7'};
-		[{"conntype", ConnType}] -> {{session, '$1'}, '$2', '$3', '$4', list_to_atom(ConnType), '$5', '$6', '$7'};
-		[{"languages", Lang}] -> {{session, '$1'}, '$2', '$3', Lang, '$4', '$5', '$6', '$7'};
-		[{"client", Client}, {"os", OS}] -> {{session, '$1'}, list_to_atom(Client), list_to_atom(OS), '$3', '$4', '$5', '$6', '$7'};
-		[{"client", Client}, {"conntype", ConnType}] -> {{session, '$1'}, list_to_atom(Client), '$2', '$3', list_to_atom(ConnType), '$5', '$6', '$7'};
+		[{<<"client">>, Client}] -> {{session, '$1'}, list_to_atom(binary_to_list(Client)), '$2', '$3', '$4', '$5', '$6', '$7'};
+		[{<<"os">>, OS}] -> {{session, '$1'}, '$2', list_to_atom(binary_to_list(OS)), '$3', '$4', '$5', '$6', '$7'};
+		[{<<"conntype">>, ConnType}] -> {{session, '$1'}, '$2', '$3', '$4', list_to_atom(binary_to_list(ConnType)), '$5', '$6', '$7'};
+		[{<<"languages">>, Lang}] -> {{session, '$1'}, '$2', '$3', binary_to_list(Lang), '$4', '$5', '$6', '$7'};
+		[{<<"client">>, Client}, {<<"os">>, OS}] -> {{session, '$1'}, list_to_atom(binary_to_list(Client)), list_to_atom(binary_to_list(OS)), '$3', '$4', '$5', '$6', '$7'};
+		[{<<"client">>, Client}, {<<"conntype">>, ConnType}] -> {{session, '$1'}, list_to_atom(binary_to_list(Client)), '$2', '$3', list_to_atom(binary_to_list(ConnType)), '$5', '$6', '$7'};
 		_ -> {{session, '$1'}, '$2', '$3', '$4', '$5'}
 	    end,
     ets:match_object(table_name(Host), Match).
