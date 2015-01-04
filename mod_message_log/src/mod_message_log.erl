@@ -40,12 +40,19 @@
 -record(state, {filename = ?DEFAULT_FILENAME :: binary(),
 		iodevice                     :: io:device()}).
 
+-type direction() :: incoming | outgoing | offline.
+-type state() :: #state{}.
+
 %% -------------------------------------------------------------------
 %% gen_mod/supervisor callbacks.
 %% -------------------------------------------------------------------
 
+-spec start_link(gen_mod:opts()) -> {ok, pid()} | ignore | {error, _}.
+
 start_link(Opts) ->
     gen_server:start_link({local, ?PROCNAME}, ?MODULE, Opts, []).
+
+-spec start(binary(), gen_mod:opts()) -> {ok, _} | {ok, _, _} | {error, _}.
 
 start(Host, Opts) ->
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
@@ -63,6 +70,8 @@ start(Host, Opts) ->
 	[?MODULE]
     },
     supervisor:start_child(ejabberd_sup, Spec).
+
+-spec stop(binary()) -> ok.
 
 stop(Host) ->
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
@@ -82,6 +91,8 @@ stop(Host) ->
 %% gen_server callbacks.
 %% -------------------------------------------------------------------
 
+-spec init(gen_mod:opts()) -> {ok, state()}.
+
 init(Opts) ->
     process_flag(trap_exit, true),
     ejabberd_hooks:add(reopen_log_hook, ?MODULE, reopen_log, 42),
@@ -90,8 +101,12 @@ init(Opts) ->
     {ok, IoDevice} = file:open(Filename, ?FILE_MODES),
     {ok, #state{filename = Filename, iodevice = IoDevice}}.
 
+-spec handle_call(_, {pid(), _}, state()) -> {noreply, state()}.
+
 handle_call(_Request, _From, State) ->
     {noreply, State}.
+
+-spec handle_cast(_, state()) -> {noreply, state()}.
 
 handle_cast({message, Direction, From, To, Type}, #state{iodevice = IoDevice} =
 	    State) ->
@@ -105,12 +120,18 @@ handle_cast(reopen_log, #state{filename = Filename, iodevice = IoDevice} =
 handle_cast(_Request, State) ->
     {noreply, State}.
 
+-spec handle_info(timeout | _, state()) -> {noreply, state()}.
+
 handle_info(_Info, State) ->
     {noreply, State}.
+
+-spec terminate(normal | shutdown | {shutdown, _} | _, _) -> any().
 
 terminate(_Reason, State) ->
     ejabberd_hooks:delete(reopen_log_hook, ?MODULE, reopen_log, 42),
     ok = file:close(State#state.iodevice).
+
+-spec code_change({down, _} | _, state(), _) -> {ok, state()}.
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
@@ -119,14 +140,22 @@ code_change(_OldVsn, State, _Extra) ->
 %% ejabberd_hooks callbacks.
 %% -------------------------------------------------------------------
 
+-spec log_packet_send(jid(), jid(), xmlel()) -> any().
+
 log_packet_send(From, To, Packet) ->
     log_packet(outgoing, From, To, Packet).
+
+-spec log_packet_receive(jid(), jid(), jid(), xmlel()) -> any().
 
 log_packet_receive(JID, From, _To, Packet) ->
     log_packet(incoming, From, JID, Packet).
 
+-spec log_packet_offline(jid(), jid(), xmlel()) -> any().
+
 log_packet_offline(From, To, Packet) ->
     log_packet(offline, From, To, Packet).
+
+-spec reopen_log() -> any().
 
 reopen_log() ->
     gen_server:cast(?PROCNAME, reopen_log).
@@ -134,6 +163,8 @@ reopen_log() ->
 %% -------------------------------------------------------------------
 %% Internal functions.
 %% -------------------------------------------------------------------
+
+-spec log_packet(direction(), jid(), jid(), xmlel()) -> any().
 
 log_packet(Direction, From, To, #xmlel{name = <<"message">>} = Packet) ->
     case xml:get_subtag(Packet, <<"body">>) of
@@ -152,6 +183,8 @@ log_packet(Direction, From, To, #xmlel{name = <<"message">>} = Packet) ->
 log_packet(_Direction, _From, _To, _Packet) ->
     ok.
 
+-spec get_message_type(xmlel()) -> binary().
+
 get_message_type(#xmlel{attrs = Attrs}) ->
     case xml:get_attr_s(<<"type">>, Attrs) of
       <<"">> ->
@@ -159,6 +192,8 @@ get_message_type(#xmlel{attrs = Attrs}) ->
       Type ->
 	  Type
     end.
+
+-spec is_carbon(xmlel()) -> {true, direction()} | false.
 
 is_carbon(Packet) ->
     {Direction, SubTag} = case {xml:get_subtag(Packet, <<"sent">>),
@@ -182,6 +217,8 @@ is_carbon(Packet) ->
 	  false
     end.
 
+-spec write_log(io:device(), direction(), jid(), jid(), binary()) -> ok.
+
 write_log(IoDevice, Direction, From, To, Type) ->
     Date = format_date(calendar:local_time()),
     Record = io_lib:format("~s [~s, ~s] ~s -> ~s~n",
@@ -189,6 +226,8 @@ write_log(IoDevice, Direction, From, To, Type) ->
 			    jlib:jid_to_string(From),
 			    jlib:jid_to_string(To)]),
     ok = file:write(IoDevice, [Record]).
+
+-spec format_date(calendar:datetime()) -> io_lib:chars().
 
 format_date({{Year, Month, Day}, {Hour, Minute, Second}}) ->
     Format = "~B-~2..0B-~2..0B ~2..0B:~2..0B:~2..0B",
