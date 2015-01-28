@@ -3,7 +3,7 @@
 
 	http://www.ejabberd.im/mod_cron
 	Author: Badlop
-	Requirements: ejabberd trunk SVN 1635 or newer
+	Requirements: ejabberd git master
 
 
 This module allows advanced ejabberd administrators to schedule commands for
@@ -19,11 +19,12 @@ ejabberd log file.
 	BASIC CONFIGURATION
 	===================
 
-Add the module to your ejabberd.cfg, on the modules section:
+Add the module to the modules configuration.
+As it requires complex configuration, add this to the ejabberd.yml file:
+  include_config_file: "/etc/ejabberd/additional.cfg"
+And this to additional.cfg:
 {modules, [
-  ...
   {mod_cron, []},
-  ...
 ]}.
 
 

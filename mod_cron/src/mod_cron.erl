@@ -36,7 +36,7 @@ start(Host, Opts) ->
     ejabberd_commands:register_commands(commands()),
     ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, web_page_host, 50),
-    Tasks = gen_mod:get_opt(tasks, Opts, []),
+    Tasks = gen_mod:get_opt(tasks, Opts, fun(A) -> A end, []),
     catch ets:new(cron_tasks, [ordered_set, named_table, public, {keypos, 2}]),
     [add_task(Host, Task) || Task <- Tasks].
 
@@ -128,7 +128,7 @@ commands() ->
      #ejabberd_commands{name = cron_list, tags = [cron],
 		       desc = "List tasks scheduled in a host",
 		       module = ?MODULE, function = cron_list,
-		       args = [{host, string}],
+		       args = [{host, binary}],
 			   result = {tasks, {list, {task, {tuple, [{id, integer}, {task, string}]}}}}},
      #ejabberd_commands{name = cron_del, tags = [cron],
 		       desc = "Delete this task from the schedule",
@@ -141,8 +141,7 @@ cron_list(Host) ->
     Tasks = get_tasks(Host),
     [{T#task.taskid, io_lib:format("~p", [T#task.task])} || T <- Tasks].
 
-cron_del(TaskId_string) ->
-    TaskId = list_to_integer(TaskId_string),
+cron_del(TaskId) ->
     delete_taskid(TaskId),
 	ok.
 
@@ -152,14 +151,14 @@ cron_del(TaskId_string) ->
 %% ---------------------
 
 web_menu_host(Acc, _Host, Lang) ->
-    [{"cron", ?T("Cron Tasks")} | Acc].
+    [{<<"cron">>, ?T(<<"Cron Tasks">>)} | Acc].
 
 web_page_host(_, Host,
-	      #request{path = ["cron"],
+	      #request{path = [<<"cron">>],
 		       lang = Lang} = _Request) ->
     Tasks = get_tasks(Host),
     Tasks_table = make_tasks_table(Tasks, Lang),
-    Res = [?XC("h1", "Cron Tasks")] ++ Tasks_table,
+    Res = [?XC(<<"h1">>, <<"Cron Tasks">>)] ++ Tasks_table,
     {stop, Res};
 web_page_host(Acc, _, _) -> Acc.
 
@@ -167,17 +166,17 @@ make_tasks_table(Tasks, Lang) ->
     TList = lists:map(
 	      fun(T) ->
 		      {Time_num, Time_unit, Mod, Fun, Args} = T#task.task,
-		      ?XE("tr",
-			  [?XC("td", integer_to_list(Time_num) ++" " ++ atom_to_list(Time_unit)),
-			   ?XC("td", atom_to_list(Mod)),
-			   ?XC("td", atom_to_list(Fun)),
-			   ?XC("td", io_lib:format("~p", [Args]))])
+		      ?XE(<<"tr">>,
+			  [?XC(<<"td">>, list_to_binary(integer_to_list(Time_num) ++" " ++ atom_to_list(Time_unit))),
+			   ?XC(<<"td">>, list_to_binary(atom_to_list(Mod))),
+			   ?XC(<<"td">>, list_to_binary(atom_to_list(Fun))),
+			   ?XC(<<"td">>, list_to_binary(io_lib:format("~p", [Args])))])
 	      end, Tasks),
-    [?XE("table",
-	 [?XE("thead",
-	      [?XE("tr",
-		   [?XCT("td", "Periodicity"),
-		    ?XCT("td", "Module"),
-		    ?XCT("td", "Function"),
-		    ?XCT("td", "Arguments")])]),
-	  ?XE("tbody", TList)])].
+    [?XE(<<"table">>,
+	 [?XE(<<"thead">>,
+	      [?XE(<<"tr">>,
+		   [?XCT(<<"td">>, <<"Periodicity">>),
+		    ?XCT(<<"td">>, <<"Module">>),
+		    ?XCT(<<"td">>, <<"Function">>),
+		    ?XCT(<<"td">>, <<"Arguments">>)])]),
+	  ?XE(<<"tbody">>, TList)])].
