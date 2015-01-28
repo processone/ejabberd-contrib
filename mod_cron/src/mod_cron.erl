@@ -54,7 +54,8 @@ stop(Host) ->
 
 %% Method to add new task
 add_task(Host, Task) ->
-    {Time_num, Time_unit, Mod, Fun, Args} = Task,
+    [Time_num, Time_unit, Mod, Fun, Args] =
+	[proplists:get_value(Key, Task) || Key <- [time, units, module, function, arguments]],
 
     %% Convert to miliseconds
     Time = case Time_unit of
