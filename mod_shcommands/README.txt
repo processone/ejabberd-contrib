@@ -2,7 +2,7 @@
 	mod_shcommands - Execute shell commands
 
 	Author: Badlop
-	http://ejabberd.jabber.ru/mod_shcommands
+	http://ejabberd.im/mod_shcommands
 
 
 
@@ -63,9 +63,5 @@ administrators.
 	===================
 
 Add the module to your ejabberd.cfg, on the modules section:
-{modules, [
-  ...
-  {mod_shcommands, []},
-  ...
-]}.
-
+modules:
+  mod_shcommands: {}

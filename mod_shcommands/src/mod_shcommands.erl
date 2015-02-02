@@ -16,8 +16,8 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
--include("web/ejabberd_http.hrl").
--include("web/ejabberd_web_admin.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 
 %%-------------------
 %% gen_mod functions
@@ -112,10 +112,10 @@ parse_and_execute(Query, Node) ->
 
 get_val(Val, Query) ->
     {value, {_, R}} = lists:keysearch(Val, 1, Query),
-    R.
+    binary_to_list(R).
 
 parse1_command(<<"executectl">>, {Command, _, _}, Node) ->
-    Command2 = string:tokens(Command, <<" ">>),
+    Command2 = string:tokens(Command, " "),
     {_E, Efile} = execute(ctl, Node, Command2),
     io_lib:format("ejabberdctl ~p ~s~n~s", [Node, Command, Efile]);
 
@@ -129,13 +129,13 @@ parse1_command(<<"executeshe">>, {_, _, Command}, Node) ->
     E = rpc:call(Node, os, cmd, [Command]),
     C1 = lists:map(
 	   fun(C) -> string:strip(os:cmd(C), right, $\n) end,
-	   [<<"whoami">>, <<"hostname -s">>, <<"pwd">>]),
+	   ["whoami", "hostname -s", "pwd"]),
     io_lib:format("~s@~s:~s$ ~s~n~s", C1 ++ [Command, E]).
 
 
 execute(Type, Node, C) ->
     GL = group_leader(),
-    Filename = <<"temp">> ++ io_lib:format("~p", [random:uniform()*10000]),
+    Filename = "temp" ++ io_lib:format("~p", [random:uniform()*10000]),
     {ok, File} = file:open(Filename, [write]),
     group_leader(File, self()),
     Res = case Type of
@@ -152,6 +152,6 @@ execute(Type, Node, C) ->
     file:delete(Filename),
     E2 = case binary_to_list(B) of
 	     [] -> [];
-	     List -> <<"\n">>++List
+	     List -> "\n"++List
 	 end,
     {E, E2}.
