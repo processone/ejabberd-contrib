@@ -24,35 +24,35 @@
 %% -------------------
 
 start(Host, Opts) ->
-    Logdir = gen_mod:get_opt(logdir, Opts, "/tmp/jabberlogs/"),
+    Logdir = gen_mod:get_opt(logdir, Opts, fun(A) -> A end, "/tmp/jabberlogs/"),
 
-    Rd = gen_mod:get_opt(rotate_days, Opts, 1),
-    Rf = case gen_mod:get_opt(rotate_megs, Opts, 10) of
+    Rd = gen_mod:get_opt(rotate_days, Opts, fun(A) -> A end, 1),
+    Rf = case gen_mod:get_opt(rotate_megs, Opts, fun(A) -> A end, 10) of
 	     no -> no;
 	     Rf1 -> Rf1*1024*1024
 	 end,
-    Rp = case gen_mod:get_opt(rotate_kpackets, Opts, 10) of
+    Rp = case gen_mod:get_opt(rotate_kpackets, Opts, fun(A) -> A end, 10) of
 	     no -> no;
 	     Rp1 -> Rp1*1000
 	 end,
     RotateO = {Rd, Rf, Rp},
-    CheckRKP = gen_mod:get_opt(check_rotate_kpackets, Opts, 1),
+    CheckRKP = gen_mod:get_opt(check_rotate_kpackets, Opts, fun(A) -> A end, 1),
 
-    Timezone = gen_mod:get_opt(timezone, Opts, local),
+    Timezone = gen_mod:get_opt(timezone, Opts, fun(A) -> A end, local),
 
-    Orientation = gen_mod:get_opt(orientation, Opts, [send, recv]),
-    Stanza = gen_mod:get_opt(stanza, Opts, [iq, message, presence, other]),
-    Direction = gen_mod:get_opt(direction, Opts, [internal, vhosts, external]),
+    Orientation = gen_mod:get_opt(orientation, Opts, fun(A) -> A end, [send, recv]),
+    Stanza = gen_mod:get_opt(stanza, Opts, fun(A) -> A end, [iq, message, presence, other]),
+    Direction = gen_mod:get_opt(direction, Opts, fun(A) -> A end, [internal, vhosts, external]),
     FilterO = {
       {orientation, Orientation},
       {stanza, Stanza},
       {direction, Direction}},
-    ShowIP = gen_mod:get_opt(show_ip, Opts, false),
+    ShowIP = gen_mod:get_opt(show_ip, Opts, fun(A) -> A end, false),
 
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE, send_packet, 90),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, receive_packet, 90),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
-	     spawn(?MODULE, init, [Host, Logdir, RotateO, CheckRKP,
+	     spawn(?MODULE, init, [binary_to_list(Host), Logdir, RotateO, CheckRKP,
 				   Timezone, ShowIP, FilterO])).
 
 stop(Host) ->
@@ -110,10 +110,10 @@ filter(FilterO, E) ->
 	FilterO,
     {Orientation, From, To, Packet} = E,
 
-    {xmlelement, Stanza_str, _Attrs, _Els} = Packet,
-    Stanza = list_to_atom(Stanza_str),
+    {xmlel, Stanza_str, _Attrs, _Els} = Packet,
+    Stanza = list_to_atom(binary_to_list(Stanza_str)),
 
-    Hosts_all = ejabberd_config:get_global_option(hosts),
+    Hosts_all = ejabberd_config:get_global_option(hosts, fun(A) -> A end),
     {Host_local, Host_remote} = case Orientation of
 				    send -> {From#jid.lserver, To#jid.lserver};
 				    recv -> {To#jid.lserver, From#jid.lserver}
@@ -194,7 +194,7 @@ add_log(Io, Timezone, ShowIP, {Orientation, From, To, Packet}, _OSD) ->
     TimestampISO = get_now_iso(Timezone),
     io:fwrite(Io, "<packet or=\"~p\" ljid=\"~s\" ~sts=\"~s\">~s</packet>~n",
 	      [Orientation, jlib:jid_to_string(LocalJID), LocalIPS,
-	       TimestampISO, xml:element_to_string(Packet)]).
+	       TimestampISO, binary_to_list(xml:element_to_binary(Packet))]).
 
 %% -------------------
 %% File
@@ -258,7 +258,7 @@ get_now_iso(Timezone) ->
 		    local -> calendar:now_to_local_time(now());
 		    universal -> calendar:now_to_universal_time(now())
 		end,
-    jlib:timestamp_to_iso(TimeStamp).
+    binary_to_list(jlib:timestamp_to_iso(TimeStamp)).
 
 calc_div(A, B) when is_integer(A) and is_integer(B) and B =/= 0 ->
     A/B;

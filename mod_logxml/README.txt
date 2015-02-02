@@ -3,7 +3,7 @@
 
 	Homepage: http://www.ejabberd.im/mod_logxml
 	Author: Badlop
-	Module for ejabberd 0.7.5 or newer
+	Module for ejabberd git master
 
 
 	DESCRIPTION
@@ -42,7 +42,6 @@ timezone:
     Default value: local
 show_ip: 
     If the IP address of the local user should be logged to file.
-    This option requires ejabberd 2.0.0 or newer, specifically SVN r772 (2007-05-21)
     Default value: false
 rotate_days: 
     Rotate logs every X days
@@ -61,29 +60,28 @@ check_rotate_kpackets:
     Default value: 1
 
 
-
 	EXAMPLE CONFIGURATION
 	---------------------
 
-In ejabberd.cfg, in the modules section, add the module. For example:
+In ejabberd.yml, in the modules section, add the module. For example:
 
-{modules, [
-  ...
-  {mod_logxml, [
-     {stanza, [message, other]},
-     {direction, [external]},
-     {orientation, [send, recv]},
-     {logdir, "/var/jabber/logs/"},
-     {timezone, universal}, 
-     {show_ip, false},  % To enable this option you need ejabberd 2.0.0 or newer
-     {rotate_days, 1}, 
-     {rotate_megs, 100}, 
-     {rotate_kpackets, no},
-     {check_rotate_kpackets, 1}
-  ]},
-  ...
-]}.
-
+modules:
+  mod_logxml:
+     stanza:
+       - iq
+       - other
+     direction:
+       - external
+     orientation:
+       - send
+       - recv
+     logdir: "/tmp/logs/"
+     timezone: universal
+     show_ip: false
+     rotate_days: 1
+     rotate_megs: 100
+     rotate_kpackets: no
+     check_rotate_kpackets: 1
 
 
 	FORMAT OF XML
