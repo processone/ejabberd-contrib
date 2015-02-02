@@ -26,12 +26,6 @@
 
 -define(PROCNAME, mod_muc_log_http).
 
--ifdef(SSL39).
--define(STRING2LOWER, string).
--else.
--define(STRING2LOWER, httpd_util).
--endif.
-
 % TODO:
 %  - If chatroom is password protected, ask password
 %  - If chatroom is only for members, ask for username and password
@@ -47,10 +41,11 @@
 process(LocalPath, Request) ->
 	serve(LocalPath, Request).
 
-serve(LocalPath, #request{host = Host} = Request) ->
+serve(LocalPathBin, #request{host = Host} = Request) ->
 	Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
 	Proc ! {get_docroot, self()},
 	receive DocRoot -> ok end,
+	LocalPath = [binary_to_list(LPB) || LPB <- LocalPathBin],
 	FileName = filename:join(filename:split(DocRoot) ++ LocalPath),
 	case file:read_file(FileName) of
 		{ok, FileContents} ->
@@ -213,7 +208,7 @@ show_dir_listing(DirName, LocalPath) ->
 %%%----------------------------------------------------------------------
 
 content_type(Filename) ->
-	case ?STRING2LOWER:to_lower(filename:extension(Filename)) of
+	case string:to_lower(filename:extension(Filename)) of
 		".jpg"  -> "image/jpeg";
 		".jpeg" -> "image/jpeg";
 		".gif"  -> "image/gif";
@@ -246,8 +241,9 @@ loop(DocRoot) ->
 %%%----------------------------------------------------------------------
 
 start(Host, _Opts) -> 
-	DocRoot = gen_mod:get_module_opt(Host, mod_muc_log, outdir, "www/muc"),
+	DocRootBin = gen_mod:get_module_opt(Host, mod_muc_log, outdir, fun(A) -> A end, <<"www/muc">>),
 	Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+	DocRoot = binary_to_list(DocRootBin),
 	catch register(Proc, spawn(?MODULE, loop, [DocRoot])),
 	ok.
 
