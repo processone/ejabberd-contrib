@@ -1,0 +1,6 @@
+
+	Feature requests for mod_mam
+
+- Add ODBC support.
+- Support archiving preferences (XEP-0313, section 6).
+- Add form element that allows for matching <body/> contents.
