@@ -1,4 +1,8 @@
 
+
+Please note: those modules do NOT work with ejabberd 13 or newer.
+
+
 	mod_archive - Message Archiving (XEP-0136)
 
 There are three different modules, the main difference between them is the storage method:

@@ -6,6 +6,7 @@
 	    mailto:henoch@dtek.chalmers.se
 	    xmpp:legoscia@jabber.cd.chalmers.se
 	Requirements: ejabberd 2.x.x
+	    Does NOT work with ejabberd 13 or newer.
 
 
 This module supports storing and retrieving a profile according to

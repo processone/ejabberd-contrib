@@ -3,7 +3,8 @@
 
 	Author: Eric Cestari <eric@ohmforce.com> http://www.cestari.info/
     Licensed under the same terms as ejabberd (GPL 2)
-	Requires: ejabberd trunk SVN r1561 or newer; or ejabberd 2.0.3 or newer
+	Requires: ejabberd 2.0.3 or newer.
+	Does NOT work with ejabberd 13 or newer.
 
 
 	DESCRIPTION

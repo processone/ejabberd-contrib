@@ -1,3 +1,8 @@
+
+
+    Please note: this module does NOT work with ejabberd 13 or newer.
+
+
 mod_openid 
 Transform the Jabber Server in an openid provider.
 (http://openid.net/)

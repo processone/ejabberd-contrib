@@ -9,6 +9,7 @@
 	  http://www.dtek.chalmers.se/~henoch/text/ejabberd-ircd.html
 	Requirements:
 	  ejabberd trunk SVN 1631 or newer
+	  Does NOT work with ejabberd 13 or newer
 
 
 	DESCRIPTION
