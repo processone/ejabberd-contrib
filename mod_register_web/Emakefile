@@ -1,2 +1,0 @@
-{'../ejabberd-dev/src/gen_mod', [{outdir, "../ejabberd-dev/ebin"},{i,"../ejabberd-dev/include"}]}.
-{'src/mod_register_web',     [{outdir, "ebin"},{i,"../ejabberd-dev/include"}]}.
