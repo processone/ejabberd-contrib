@@ -1256,4 +1256,4 @@ remove_user(LUser, LServer, mnesia) ->
 		end
 	end,
     {atomic, ok} = mnesia:transaction(Remove),
-    ok.
+    manage_mnesia_fragments(true).
