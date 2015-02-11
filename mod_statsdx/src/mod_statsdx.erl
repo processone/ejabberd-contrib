@@ -878,6 +878,7 @@ list_elem(conntypes, full) ->
      {"c2s", c2s},
      {"c2s_tls", c2s_tls},
      {"c2s_compressed", c2s_compressed},
+     {"c2s_compressed_tls", c2s_compressed_tls},
      {"http_poll", http_poll},
      {"http_bind", http_bind},
      {"unknown", unknown}
