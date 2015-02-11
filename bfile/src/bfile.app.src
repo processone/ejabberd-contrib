@@ -1,7 +1,0 @@
-{application,bfile,
- [{description,"Fast FILE interface"},
-  {vsn,"%VSN%"},
-  {modules,[%MODULES%]},
-  {applications,[kernel,stdlib]},
-  {env, []},
-  {mod,{bfile,[]}}]}.
