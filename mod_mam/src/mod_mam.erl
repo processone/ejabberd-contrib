@@ -463,7 +463,9 @@ store_message(#mam_meta{mam_jid = US, first_id = FirstID, last_id = LastID} =
     UpdateMsgTab =
 	fun() ->
 		DeleteMsg = fun(DelID) ->
-				    mnesia:delete({mam_msg, {US, DelID}})
+				    Key = {US, DelID},
+				    ?DEBUG("Deleting MAM message ~w", [Key]),
+				    mnesia:delete({mam_msg, Key})
 			    end,
 		lists:foreach(DeleteMsg, lists:seq(FirstID, NewFirstID - 1)),
 		mnesia:write(Msg#mam_msg{key = {US, ID}, time = os:timestamp()})
