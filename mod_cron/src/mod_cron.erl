@@ -16,6 +16,8 @@
 	 run_task/3,
 	 web_menu_host/3, web_page_host/3,
 	 start/2,
+         apply_interval/3,
+         apply_interval1/3,
 	 stop/1]).
 
 -include("ejabberd_commands.hrl").
@@ -26,7 +28,6 @@
 -include("xml.hrl").
 
 -record(task, {taskid, timerref, host, task}).
-
 
 %% ---------------------
 %% gen_mod
@@ -52,24 +53,102 @@ stop(Host) ->
 %% Task management
 %% ---------------------
 
+time_to_ms(IntervalUnit, IntervalNum) ->
+    case IntervalUnit of
+        seconds -> timer:seconds(IntervalNum);
+        minutes -> timer:minutes(IntervalNum);
+        hours -> timer:hours(IntervalNum);
+        days -> timer:hours(IntervalNum)*24
+    end.
+
+time_until_event(IntervalMS) ->
+    {MegaSecs, Secs, MicroSecs} = erlang:now(),
+    NowMS = (MegaSecs*1000000 + Secs)*1000 + round(MicroSecs/1000),
+    MSSinceLastEvent = (NowMS rem IntervalMS),
+    (IntervalMS - MSSinceLastEvent).
+
+begin_interval_timer(TaskId, TimeUnit, TimeNum, StartParams) ->
+    IntervalMS = time_to_ms(TimeUnit, TimeNum),
+    MSToGo = time_until_event(IntervalMS),
+    {ok, TimerRef} = timer:apply_after(MSToGo, ?MODULE, apply_interval,
+                                       [TaskId, IntervalMS, StartParams]),
+    TimerRef.
+
+begin_fixed_timer(TaskId, TimeUnit, TimeNum, StartParams) ->
+    %% A fixed second timer happens minutely, minute timer happens hourly, a fixed hour timer happens daily.
+    IntervalMS = case TimeUnit of
+                     seconds -> timer:minutes(1);
+                     minutes -> timer:hours(1);
+                     hours -> timer:hours(1) * 24;
+                     _ -> undefined
+                 end,
+
+    FixedTimeMS = time_to_ms(TimeUnit, TimeNum),
+
+    %% Calculate time until the next IntervalUnit, then add FixedTimeMS
+    %% e.g. now is 00:00:32 wait until the next minute (28s), then keep waiting
+    %% 5 more seconds to get 00:01:05 (= wait 33s).
+    %% We then fire the event at 00:01:05 and wait a minute to fire again
+    %% at 00:02:05 etc.
+    MSToGo1 = time_until_event(IntervalMS) + FixedTimeMS,
+
+    %% If we were, for example, at 1:03PM and the event is hourly at
+    %% 1:05PM then we dont want to wait 57+5 minutes, we want to wait
+    %% 2 minutes.
+    MSToGo2 = if MSToGo1 > IntervalMS ->
+                      MSToGo1 - IntervalMS;
+                 true ->
+                      MSToGo1
+              end,
+
+    ?DEBUG("MS To Go Fixed: ~p ~p", [MSToGo1, MSToGo2]),
+    {ok, TimerRef} = timer:apply_after(MSToGo2, ?MODULE, apply_interval, [TaskId, IntervalMS, StartParams]),
+    TimerRef.
+
+apply_interval(TaskId, IntervalMS, StartParams) ->
+    %% apply_after doesnt belong to a pid (which is needed for apply_after to stay alive), so make one
+    spawn(?MODULE, apply_interval1, [TaskId, IntervalMS, StartParams]).
+
+apply_interval1(TaskId, IntervalMS, [M, F, A]=StartParams) ->
+    % we've already waited for the interval to expire once to get here,
+    % and apply_interval doesn't apply first, so run the task once then start the timer
+    run_task(M, F, A),
+    {ok, TimerRef} = timer:apply_interval(IntervalMS, ?MODULE, run_task, StartParams),
+    update_timer_ref(TaskId, TimerRef),
+
+    %% Wait forever so the timer process stays alive
+    receive
+        _ ->
+            ok
+    end.
+
+update_timer_ref(TaskId, NewTimerRef) ->
+    [Task] = ets:lookup(cron_tasks, TaskId),
+    NewTask = Task#task{timerref=NewTimerRef},
+    ets:insert(cron_tasks, NewTask).
+
 %% Method to add new task
 add_task(Host, Task) ->
-    [Time_num, Time_unit, Mod, Fun, Args] =
-	[proplists:get_value(Key, Task) || Key <- [time, units, module, function, arguments]],
-
-    %% Convert to miliseconds
-    Time = case Time_unit of
-	       seconds -> timer:seconds(Time_num);
-	       minutes -> timer:minutes(Time_num);
-	       hours -> timer:hours(Time_num);
-	       days -> timer:hours(Time_num)*24
-	   end,
-
-    %% Start timer
-    {ok, TimerRef} = timer:apply_interval(Time, ?MODULE, run_task, [Mod, Fun, Args]),
+    [TimeNum, TimeUnit, Mod, Fun, Args, InTimerType] =
+	[proplists:get_value(Key, Task) || Key <- [time, units, module, function, arguments, timer_type]],
+    TimerType = case InTimerType of
+                    <<"fixed">> ->
+                        fixed;
+                    fixed ->
+                        fixed;
+                    _ ->
+                        interval
+                end,
 
     %% Get new task identifier
     TaskId = get_new_taskid(),
+
+    TimerRef = case TimerType of
+                   interval ->
+                       begin_interval_timer(TaskId, TimeUnit, TimeNum, [Mod, Fun, Args]);
+                   fixed ->
+                       begin_fixed_timer(TaskId, TimeUnit, TimeNum, [Mod, Fun, Args])
+               end,
 
     %% Store TRef
     Taskr = #task{
