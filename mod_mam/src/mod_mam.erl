@@ -929,9 +929,7 @@ send_fin_message(#jid{lserver = Host} = JID, QueryID,
 -spec query_archive(mam_query(), db_type()) -> mam_result() | {error, _}.
 
 query_archive(Query, mnesia) ->
-    {atomic, Result} =
-	mnesia:transaction(fun() -> collect_messages(Query, mnesia) end),
-    Result.
+    mnesia:sync_dirty(fun() -> collect_messages(Query, mnesia) end),
 
 -spec read_meta(mam_jid(), db_type()) -> mam_meta().
 
@@ -1001,7 +999,7 @@ collect_messages(#mam_query{mam_jid = {U, S},
       filtered ->
 	  collect_next(Query, QueryState, Meta, N, DBType);
       not_found ->
-	  ?ERROR_MSG("MAM message ~B of ~s@~s not found", [ID, U, S]),
+	  ?DEBUG("MAM message ~B of ~s@~s not found", [ID, U, S]),
 	  collect_next(Query, QueryState, Meta, N - 1, DBType)
     end.
 
@@ -1024,7 +1022,7 @@ collect_next(#mam_query{direction = aft} = Query,
 
 read_message(Key, Filter, mnesia) ->
     ReadMsg = fun() -> mnesia:read(mam_msg, Key) end,
-    case mnesia:activity(transaction, ReadMsg, [], mnesia_frag) of
+    case mnesia:activity(sync_dirty, ReadMsg, [], mnesia_frag) of
       [#mam_msg{} = Msg] ->
 	  case filter_message(Msg, Filter) of
 	    pass ->
