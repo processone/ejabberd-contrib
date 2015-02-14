@@ -235,9 +235,9 @@ user_send_packet_traffic(FromJID, ToJID, NewEl) ->
     HostTo = ToJID#jid.lserver,
     {xmlel, Type, _, _} = NewEl,
     Type2 = case Type of
-    		"iq" -> iq;
-    		"message" -> message;
-    		"presence" -> presence
+    		<<"iq">> -> iq;
+    		<<"message">> -> message;
+    		<<"presence">> -> presence
     	    end,
     Dest = case is_host(HostTo, Host) of
     	       true -> in;
@@ -252,9 +252,9 @@ user_receive_packet_traffic(_JID, From, To, FixedPacket) ->
     Host = To#jid.lserver,
     {xmlel, Type, _, _} = FixedPacket,
     Type2 = case Type of
-		"iq" -> iq;
-		"message" -> message;
-		"presence" -> presence
+		<<"iq">> -> iq;
+		<<"message">> -> message;
+		<<"presence">> -> presence
 	    end,
     Dest = case is_host(HostFrom, Host) of
 	       true -> in;
