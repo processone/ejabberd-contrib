@@ -45,7 +45,10 @@
 %%%% Module control
 
 start(Host, Opts) ->
-    Hooks = gen_mod:get_opt(hooks, Opts, fun(O) -> is_atom(O) end, false),
+    Hooks = gen_mod:get_opt(hooks, Opts,
+			    fun(O) when is_boolean(O) -> O;
+			       (traffic) -> traffic
+			    end, false),
     %% Default value for the counters
     CD = case Hooks of
 	     true -> 0;
