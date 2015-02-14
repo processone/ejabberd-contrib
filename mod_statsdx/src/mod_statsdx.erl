@@ -1685,8 +1685,8 @@ get_users_vcard_fun(#vcard{us = {_, Host1}}, {HostReq, NumRemaining, MinSize, Si
     when (Host1 /= HostReq) and (HostReq /= server) ->
     {HostReq, NumRemaining, MinSize, Sizes, Selects};
 get_users_vcard_fun(Vcard, {HostReq, NumRemaining, MinSize, Sizes, Selects}) ->
-    String = lists:flatten(xml:element_to_string(Vcard#vcard.vcard)),
-    Size = length(String),
+    Binary = xml:element_to_binary(Vcard#vcard.vcard),
+    Size = byte_size(Binary),
     case {Size > MinSize, NumRemaining > 0} of
 	{true, true} ->
 	    {User, Host} = Vcard#vcard.us,
