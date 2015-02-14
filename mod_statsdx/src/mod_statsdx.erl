@@ -221,7 +221,7 @@ remove_user(_User, Server) ->
 
 user_send_packet(FromJID, ToJID, NewEl) ->
     %% Registrarse para tramitar Host/mod_stats2file
-    case list_to_atom(binary_to_list(ToJID#jid.lresource)) of
+    case jlib:binary_to_atom(ToJID#jid.lresource) of
 	?MODULE -> received_response(FromJID, ToJID, NewEl);
 	_ -> ok
     end.
@@ -619,11 +619,8 @@ get_s2sconnections(Host) ->
 %%	Res.
 
 is_host(HostBin, SubhostBin) ->
-    Host = binary_to_list(HostBin),
-    Subhost = binary_to_list(SubhostBin),
-    Pos = string:len(Host)-string:len(Subhost)+1,
-    case string:rstr(Host, Subhost) of
-	Pos -> true;
+    case catch binary:split(HostBin, SubhostBin) of
+	[_Sub, <<"">>] -> true;
 	_ -> false
     end.
 
@@ -1118,7 +1115,7 @@ web_page_main(_, #request{path=[<<"statsdx">> | FilterURL], q = Q, lang = Lang} 
 web_page_main(Acc, _) -> Acc.
 
 do_top_table(_Node, Lang, Topic, TopnumberBin, Host) ->
-    List = get_top_users(Host, list_to_integer(binary_to_list(TopnumberBin)), Topic),
+    List = get_top_users(Host, jlib:binary_to_integer(TopnumberBin), Topic),
     %% get_top_users(Topnumber, "roster")
     {List2, _} = lists:mapfoldl(
       fun({Value, UserB, ServerB}, Counter) ->
@@ -1546,12 +1543,12 @@ get_sessions_filtered(Filter, server) ->
       ?MYHOSTS);
 get_sessions_filtered(Filter, Host) ->
     Match = case Filter of
-		[{<<"client">>, Client}] -> {{session, '$1'}, list_to_atom(binary_to_list(Client)), '$2', '$3', '$4', '$5', '$6', '$7'};
-		[{<<"os">>, OS}] -> {{session, '$1'}, '$2', list_to_atom(binary_to_list(OS)), '$3', '$4', '$5', '$6', '$7'};
-		[{<<"conntype">>, ConnType}] -> {{session, '$1'}, '$2', '$3', '$4', list_to_atom(binary_to_list(ConnType)), '$5', '$6', '$7'};
+		[{<<"client">>, Client}] -> {{session, '$1'}, jlib:binary_to_atom(Client), '$2', '$3', '$4', '$5', '$6', '$7'};
+		[{<<"os">>, OS}] -> {{session, '$1'}, '$2', jlib:binary_to_atom(OS), '$3', '$4', '$5', '$6', '$7'};
+		[{<<"conntype">>, ConnType}] -> {{session, '$1'}, '$2', '$3', '$4', jlib:binary_to_atom(ConnType), '$5', '$6', '$7'};
 		[{<<"languages">>, Lang}] -> {{session, '$1'}, '$2', '$3', binary_to_list(Lang), '$4', '$5', '$6', '$7'};
-		[{<<"client">>, Client}, {<<"os">>, OS}] -> {{session, '$1'}, list_to_atom(binary_to_list(Client)), list_to_atom(binary_to_list(OS)), '$3', '$4', '$5', '$6', '$7'};
-		[{<<"client">>, Client}, {<<"conntype">>, ConnType}] -> {{session, '$1'}, list_to_atom(binary_to_list(Client)), '$2', '$3', list_to_atom(binary_to_list(ConnType)), '$5', '$6', '$7'};
+		[{<<"client">>, Client}, {<<"os">>, OS}] -> {{session, '$1'}, jlib:binary_to_atom(Client), jlib:binary_to_atom(OS), '$3', '$4', '$5', '$6', '$7'};
+		[{<<"client">>, Client}, {<<"conntype">>, ConnType}] -> {{session, '$1'}, jlib:binary_to_atom(Client), '$2', '$3', jlib:binary_to_atom(ConnType), '$5', '$6', '$7'};
 		_ -> {{session, '$1'}, '$2', '$3', '$4', '$5'}
 	    end,
     ets:match_object(table_name(Host), Match).
