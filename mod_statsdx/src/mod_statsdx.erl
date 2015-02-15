@@ -804,7 +804,7 @@ received_response(From, {xmlel, <<"iq">>, Attrs, Elc}) ->
 
     Client = get_tag_cdata_subtag(El, <<"name">>),
     Version = get_tag_cdata_subtag(El, <<"version">>),
-    OS = get_tag_cdata_subtag(El, "os"),
+    OS = get_tag_cdata_subtag(El, <<"os">>),
     {Client_id, OS_id} = identify(Client, OS),
 
     ConnType = get_connection_type(User, Host, Resource),
