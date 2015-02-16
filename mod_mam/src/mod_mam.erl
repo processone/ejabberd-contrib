@@ -1011,7 +1011,7 @@ read_meta(US, mnesia) ->
       -> mam_msg() | filtered | not_found.
 
 read_message(Key, Filter, mnesia) ->
-    ReadMsg = fun() -> mnesia:dirty_read(mam_msg, Key) end,
+    ReadMsg = fun() -> mnesia:read(mam_msg, Key) end,
     case mnesia:activity(sync_dirty, ReadMsg, [], mnesia_frag) of
       [#mam_msg{} = Msg] ->
 	  case filter_message(Msg, Filter) of
