@@ -862,6 +862,7 @@ list_elem(clients, full) ->
      {"libgaim", libgaim},
      {"JBother", jbother},
      {"iChat", ichat},
+     {"imagent", messages},
      {"Miranda", miranda},
      {"Trillian", trillian},
      {"QIP Infium", qipinfium},
@@ -870,7 +871,10 @@ list_elem(clients, full) ->
      {"Gabber", gabber},
      {"BitlBee", bitlbee},
      {"jabber.el", jabberel},
+     {"mcabber", mcabber},
      {"centerim", centerim},
+     {"Conversations", conversations},
+     {"yaxim", yaxim},
      {"unknown", unknown}
     ];
 list_elem(conntypes, full) ->
