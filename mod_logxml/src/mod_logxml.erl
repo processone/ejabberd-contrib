@@ -183,12 +183,15 @@ add_log(Io, Timezone, ShowIP, {Orientation, From, To, Packet}, _OSD) ->
 		   recv -> To
 	       end,
     LocalIPS = case ShowIP of
-		   true -> 
-		       {UserIP, _Port} = ejabberd_sm:get_user_ip(
-					   LocalJID#jid.user,
-					   LocalJID#jid.server,
-					   LocalJID#jid.resource),
-		       io_lib:format("lip=\"~s\" ", [inet_parse:ntoa(UserIP)]);
+		   true ->
+		       case ejabberd_sm:get_user_ip(
+			      LocalJID#jid.user,
+			      LocalJID#jid.server,
+			      LocalJID#jid.resource) of
+			   {UserIP, _Port} ->
+			       io_lib:format("lip=\"~s\" ", [inet_parse:ntoa(UserIP)]);
+			   undefined -> "lip=\"undefined\" "
+		       end;
 		   false -> ""
 	       end,
     TimestampISO = get_now_iso(Timezone),
