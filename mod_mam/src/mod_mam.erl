@@ -934,7 +934,7 @@ query_archive(#mam_query{mam_jid = {U, S}, max = Max} = Query) ->
 	  StartID = get_start_id(Query, Meta),
 	  query_archive(Query, #mam_query_state{current = StartID,
 						n_remaining = Max},
-			   Meta, DBType);
+			Meta, DBType);
       {error, Error} ->
 	  {error, Error}
     end.
@@ -966,15 +966,15 @@ query_archive(#mam_query{mam_jid = {U, S},
     case read_message({{U, S}, ID}, Filter, Direction, DBType) of
       #mam_msg{} = Msg ->
 	  NewQueryState =
-	  case QueryState of
-	    #mam_query_state{first = undefined} ->
-		QueryState#mam_query_state{first = ID,
-					   last = ID,
-					   messages = [Msg]};
-	    #mam_query_state{} ->
-		QueryState#mam_query_state{last = ID,
-					   messages = [Msg | Msgs]}
-	  end,
+	      case QueryState of
+		#mam_query_state{first = undefined} ->
+		    QueryState#mam_query_state{first = ID,
+					       last = ID,
+					       messages = [Msg]};
+		#mam_query_state{} ->
+		    QueryState#mam_query_state{last = ID,
+					       messages = [Msg | Msgs]}
+	      end,
 	  query_next(Query, NewQueryState, Meta, N - 1, DBType);
       drop ->
 	  query_next(Query, QueryState, Meta, N, DBType);
