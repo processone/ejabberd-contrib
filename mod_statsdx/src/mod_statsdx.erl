@@ -790,7 +790,7 @@ received_response(From, {xmlel, <<"iq">>, Attrs, Elc}) ->
 
     <<"result">> = xml:get_attr_s(<<"type">>, Attrs),
     Lang = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
-	       [] -> "unknown";
+	       <<"">> -> "unknown";
 	       L -> binary_to_list(L)
 	   end,
     TableHost = table_name(Host),
