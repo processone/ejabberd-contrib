@@ -1020,11 +1020,10 @@ read_message(Key, Filter, Direction, mnesia) ->
       [#mam_msg{} = Msg] ->
 	  case filter_message(Msg, Filter, Direction) of
 	    pass ->
-		?DEBUG("Message ~p passes filter ~p", [Msg, Filter]),
+		?DEBUG("Message ~p passes filter", [Msg]),
 		Msg;
 	    DropOrStop ->
-		?DEBUG("Message ~p filtered: ~s (~p)", [Msg, DropOrStop,
-							Filter]),
+		?DEBUG("Message ~p filtered: ~s", [Msg, DropOrStop]),
 		DropOrStop
 	  end;
       [] -> not_found
@@ -1052,14 +1051,9 @@ filter_message(Msg, Filter, Direction) ->
 -spec filter_message(mam_filter_type(), mam_msg(), mam_filter(), direction())
       -> pass | drop | stop.
 
-filter_message(start,
-	       _Msg,
-	       #mam_filter{start = undefined},
-	       _Direction) ->
+filter_message(start, _Msg, #mam_filter{start = undefined}, _Direction) ->
     pass;
-filter_message(start,
-	       #mam_msg{time = Time},
-	       #mam_filter{start = Start},
+filter_message(start, #mam_msg{time = Time}, #mam_filter{start = Start},
 	       _Direction) when Time >= Start ->
     pass;
 filter_message(start, _Msg, _Filter, before) ->
@@ -1067,14 +1061,9 @@ filter_message(start, _Msg, _Filter, before) ->
 filter_message(start, _Msg, _Filter, aft) ->
     drop;
 
-filter_message(fin,
-	       _Msg,
-	       #mam_filter{fin = undefined},
-	       _Direction) ->
+filter_message(fin, _Msg, #mam_filter{fin = undefined}, _Direction) ->
     pass;
-filter_message(fin,
-	       #mam_msg{time = Time},
-	       #mam_filter{fin = End},
+filter_message(fin, #mam_msg{time = Time}, #mam_filter{fin = End},
 	       _Direction) when Time =< End ->
     pass;
 filter_message(fin, _Msg, _Filter, aft) ->
@@ -1082,15 +1071,9 @@ filter_message(fin, _Msg, _Filter, aft) ->
 filter_message(fin, _Msg, _Filter, before) ->
     drop;
 
-filter_message(with,
-	       _Msg,
-	       #mam_filter{with = undefined},
-	       _Direction) ->
+filter_message(with, _Msg, #mam_filter{with = undefined}, _Direction) ->
     pass;
-
-filter_message(with,
-	       Msg,
-	       #mam_filter{with = {_U, _S, <<"">>}} = Filter,
+filter_message(with, Msg, #mam_filter{with = {_U, _S, <<"">>}} = Filter,
 	       _Direction) ->
     filter_message_with(bare, Msg, Filter);
 filter_message(with, Msg, Filter, _Direction) ->
@@ -1136,7 +1119,7 @@ filter_message_with(full, _Msg, _Filter) ->
 
 another_message_exists(#mam_query{mam_jid = {U, S},
 				  direction = Direction,
-				  filter = Filter } = Query, ID, DBType) ->
+				  filter = Filter} = Query, ID, DBType) ->
     case read_message({{U, S}, ID}, Filter, Direction, DBType) of
       #mam_msg{} ->
 	  ?DEBUG("Found another message for ~s@~s: ~B", [U, S, ID]),
@@ -1148,13 +1131,12 @@ another_message_exists(#mam_query{mam_jid = {U, S},
 	  ?DEBUG("Found no other unfiltered message for ~s@~s: ~B", [U, S, ID]),
 	  false;
       drop ->
-	  NextID =
-	  case Direction of
-	    before ->
-		ID - 1;
-	    aft ->
-		ID + 1
-	  end,
+	  NextID = case Direction of
+		     before ->
+			 ID - 1;
+		     aft ->
+			 ID + 1
+		   end,
 	  another_message_exists(Query, NextID, DBType)
     end.
 
