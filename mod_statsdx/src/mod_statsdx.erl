@@ -224,7 +224,7 @@ remove_user(_User, Server) ->
 
 user_send_packet(FromJID, ToJID, NewEl) ->
     %% Registrarse para tramitar Host/mod_stats2file
-    case jlib:binary_to_atom(ToJID#jid.lresource) of
+    case catch binary_to_existing_atom(ToJID#jid.lresource, utf8) of
 	?MODULE -> received_response(FromJID, ToJID, NewEl);
 	_ -> ok
     end.
