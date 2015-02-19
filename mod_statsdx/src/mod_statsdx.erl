@@ -1113,7 +1113,7 @@ web_page_main(_, #request{path=[<<"statsdx">> | FilterURL], q = Q, lang = Lang} 
     Filter = parse_url_filter(FilterURL),
     Sort_query = get_sort_query(Q),
     FilterS = io_lib:format("~p", [Filter]),
-    Res = [?XC(<<"h1">>, list_to_binary(?T("Statistics") ++ " Dx222")),
+    Res = [?XC(<<"h1">>, list_to_binary(?T("Statistics") ++ " Dx")),
 	   ?XC(<<"h2">>, list_to_binary("Sessions with: " ++ FilterS)),
 	   ?XE(<<"table">>,
 	       [
