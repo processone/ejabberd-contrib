@@ -6,7 +6,7 @@
 %%% Created : 24 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -18,10 +18,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -29,7 +28,7 @@
 
 -author('alexey@process-one.net').
 
--export([start/0, start_module/3, stop_module/2,
+-export([start/0, start_module/2, start_module/3, stop_module/2,
 	 stop_module_keep_config/2, get_opt/3, get_opt/4,
 	 get_opt_host/3, db_type/1, db_type/2, get_module_opt/5,
 	 get_module_opt_host/3, loaded_modules/1,
@@ -60,6 +59,19 @@ start() ->
 	    [named_table, public,
 	     {keypos, #ejabberd_module.module_host}]),
     ok.
+
+-spec start_module(binary(), atom()) -> any().
+
+start_module(Host, Module) ->
+    Modules = ejabberd_config:get_option(
+		{modules, Host},
+		fun(L) when is_list(L) -> L end, []),
+    case lists:keyfind(Module, 1, Modules) of
+	{_, Opts} ->
+	    start_module(Host, Module, Opts);
+	false ->
+	    {error, not_found_in_config}
+    end.
 
 -spec start_module(binary(), atom(), opts()) -> any().
 
@@ -197,22 +209,26 @@ get_opt_host(Host, Opts, Default) ->
     Val = get_opt(host, Opts, fun iolist_to_binary/1, Default),
     ejabberd_regexp:greplace(Val, <<"@HOST@">>, Host).
 
--spec db_type(opts()) -> odbc | mnesia.
+-spec db_type(opts()) -> odbc | mnesia | riak.
 
 db_type(Opts) ->
     get_opt(db_type, Opts,
             fun(odbc) -> odbc;
                (internal) -> mnesia;
-               (mnesia) -> mnesia end,
+               (mnesia) -> mnesia;
+               (riak) -> riak
+            end,
             mnesia).
 
--spec db_type(binary(), atom()) -> odbc | mnesia.
+-spec db_type(binary(), atom()) -> odbc | mnesia | riak.
 
 db_type(Host, Module) ->
     get_module_opt(Host, Module, db_type,
                    fun(odbc) -> odbc;
                       (internal) -> mnesia;
-                      (mnesia) -> mnesia end,
+                      (mnesia) -> mnesia;
+                      (riak) -> riak
+                   end,
                    mnesia).
 
 -spec loaded_modules(binary()) -> [atom()].
