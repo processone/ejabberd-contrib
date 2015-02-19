@@ -1,0 +1,2 @@
+{'../ejabberd-dev/src/gen_mod', [{outdir, "../ejabberd-dev/ebin"},{i,"../ejabberd-dev/include"}]}.
+{'src/ejabberd_auth_http',     [{outdir, "ebin"},{i,"../ejabberd-dev/include"}]}.
