@@ -54,9 +54,9 @@ web_page_node(Acc, _, _, _, _) -> Acc.
 %%-------------------
 
 get_content(Node, Query, Lang) ->
-    Instruct = ?T(<<"Type a command in a textbox and click Execute.">>),
+    Instruct = ?T("Type a command in a textbox and click Execute."),
     {{CommandCtl, CommandErl, CommandShell}, Res} = case catch parse_and_execute(Query, Node) of
-							{'EXIT', _} -> {{<<"">>, <<"">>, <<"">>}, Instruct};
+							{'EXIT', _} -> {{"", "", ""}, Instruct};
 							Result_tuple -> Result_tuple
 						    end,
     TitleHTML = [
@@ -70,21 +70,21 @@ get_content(Node, Query, Lang) ->
 			 [?XE(<<"tr">>,
 			      [?X(<<"td">>),
 			       ?XCT(<<"td">>, <<"ejabberd_ctl">>),
-			       ?XE(<<"td">>, [?INPUTS(<<"text">>, <<"commandctl">>, CommandCtl, <<"70">>),
+			       ?XE(<<"td">>, [?INPUTS(<<"text">>, <<"commandctl">>, list_to_binary(CommandCtl), <<"70">>),
 					  ?INPUTT(<<"submit">>, <<"executectl">>, <<"Execute">>)])
 			      ]
 			     ),
 			  ?XE(<<"tr">>,
 			      [?X(<<"td">>),
 			       ?XCT(<<"td">>, <<"erlang shell">>),
-			       ?XE(<<"td">>, [?INPUTS(<<"text">>, <<"commanderl">>, CommandErl, <<"70">>),
+			       ?XE(<<"td">>, [?INPUTS(<<"text">>, <<"commanderl">>, list_to_binary(CommandErl), <<"70">>),
 					  ?INPUTT(<<"submit">>, <<"executeerl">>, <<"Execute">>)])
 			      ]
 			     ),
 			  ?XE(<<"tr">>,
 			      [?X(<<"td">>),
 			       ?XCT(<<"td">>, <<"system shell">>),
-			       ?XE(<<"td">>, [?INPUTS(<<"text">>, <<"commandshe">>, CommandShell, <<"70">>),
+			       ?XE(<<"td">>, [?INPUTS(<<"text">>, <<"commandshe">>, list_to_binary(CommandShell), <<"70">>),
 					  ?INPUTT(<<"submit">>, <<"executeshe">>, <<"Execute">>)])
 			      ]
 			     )
@@ -94,7 +94,7 @@ get_content(Node, Query, Lang) ->
     ResHTML =
 	[?XAC(<<"textarea">>, [{<<"wrap">>, <<"off">>}, {<<"style">>, <<"font-family:monospace;">>},
 			   {<<"name">>, <<"result">>}, {<<"rows">>, <<"30">>}, {<<"cols">>, <<"80">>}],
-	      Res)
+	      list_to_binary(Res))
 	],
     TitleHTML ++ CommandHTML ++ ResHTML.
 
