@@ -837,10 +837,10 @@ check_request(_Query) ->
 
 -spec send_iq_result(jid(), iq_request()) -> ok.
 
-send_iq_result(#jid{lserver = Host} = JID, IQ) ->
+send_iq_result(#jid{luser = U, lserver = S} = JID, IQ) ->
     ?DEBUG("Sending IQ result to ~s", [jlib:jid_to_string(JID)]),
     Response = jlib:make_result_iq_reply(jlib:iq_to_xml(IQ#iq{sub_el = []})),
-    ejabberd_router:route(jlib:make_jid(<<"">>, Host, <<"">>), JID, Response).
+    ejabberd_router:route(jlib:make_jid(U, S, <<"">>), JID, Response).
 
 -spec send_mam_messages(jid(), mam_query_id() | undefined, [mam_msg()]) -> ok.
 
@@ -849,7 +849,7 @@ send_mam_messages(JID, QueryID, Msgs) ->
 
 -spec send_mam_message(jid(), mam_query_id() | undefined, mam_msg()) -> ok.
 
-send_mam_message(#jid{lserver = Host} = JID, QueryID,
+send_mam_message(#jid{luser = U, lserver = S} = JID, QueryID,
 		 #mam_msg{key = {_US, MamID}, stanza = Stanza, time = Time}) ->
     ID = jlib:encode_base64(crypto:rand_bytes(9)),
     To = jlib:jid_to_string(JID),
@@ -868,16 +868,16 @@ send_mam_message(#jid{lserver = Host} = JID, QueryID,
 			     {<<"to">>, To},
 			     {<<"id">>, jlib:integer_to_binary(MamID)}]
 			     ++ QueryIDAttr,
-		    children = [jlib:add_delay_info(Forwarded, Host, Time)]},
+		    children = [jlib:add_delay_info(Forwarded, S, Time)]},
     Message = #xmlel{name = <<"message">>,
 		     attrs = [{<<"id">>, ID}, {<<"to">>, To}],
 		     children = [Result, NoCopy]},
     ?DEBUG("Sending MAM message ~B to ~s", [MamID, To]),
-    ejabberd_router:route(jlib:make_jid(<<"">>, Host, <<"">>), JID, Message).
+    ejabberd_router:route(jlib:make_jid(U, S, <<"">>), JID, Message).
 
 -spec send_fin_message(jid(), mam_query_id(), mam_result()) -> ok.
 
-send_fin_message(#jid{lserver = Host} = JID, QueryID,
+send_fin_message(#jid{luser = U, lserver = S} = JID, QueryID,
 		 #mam_result{count = Count,
 			     index = Index,
 			     first = First,
@@ -918,7 +918,7 @@ send_fin_message(#jid{lserver = Host} = JID, QueryID,
 		     attrs = [{<<"id">>, ID}, {<<"to">>, To}],
 		     children = [Fin, NoCopy]},
     ?DEBUG("Sending MAM result to ~s: ~p (~w)", [To, RSM, IsComplete]),
-    ejabberd_router:route(jlib:make_jid(<<"">>, Host, <<"">>), JID, Message).
+    ejabberd_router:route(jlib:make_jid(U, S, <<"">>), JID, Message).
 
 %%--------------------------------------------------------------------
 %% Query MAM archive.
