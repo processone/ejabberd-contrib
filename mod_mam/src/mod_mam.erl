@@ -865,7 +865,6 @@ send_mam_message(#jid{luser = U, lserver = S} = JID, QueryID,
 		       children = [Stanza]},
     Result = #xmlel{name = <<"result">>,
 		    attrs = [{<<"xmlns">>, ?NS_MAM},
-			     {<<"to">>, To},
 			     {<<"id">>, jlib:integer_to_binary(MamID)}]
 			     ++ QueryIDAttr,
 		    children = [jlib:add_delay_info(Forwarded, S, Time)]},
