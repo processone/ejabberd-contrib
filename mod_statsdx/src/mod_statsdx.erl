@@ -973,13 +973,13 @@ localtime_to_string({{Y, Mo, D},{H, Mi, S}}) ->
 %%%% Web Admin Menu
 
 web_menu_main(Acc, Lang) ->
-    Acc ++ [{<<"statsdx">>, ?T(<<"Statistics Dx">>)}].
+    Acc ++ [{<<"statsdx">>, <<(?T(<<"Statistics">>))/binary, " Dx">>}].
 
 web_menu_node(Acc, _Node, Lang) ->
-    Acc ++ [{<<"statsdx">>, ?T(<<"Statistics Dx">>)}].
+    Acc ++ [{<<"statsdx">>, <<(?T(<<"Statistics">>))/binary, " Dx">>}].
 
 web_menu_host(Acc, _Host, Lang) ->
-    Acc ++ [{<<"statsdx">>, ?T(<<"Statistics Dx">>)}].
+    Acc ++ [{<<"statsdx">>, <<(?T(<<"Statistics">>))/binary, " Dx">>}].
 
 %%%==================================
 %%%% Web Admin Page
@@ -1113,7 +1113,7 @@ web_page_main(_, #request{path=[<<"statsdx">> | FilterURL], q = Q, lang = Lang} 
     Filter = parse_url_filter(FilterURL),
     Sort_query = get_sort_query(Q),
     FilterS = io_lib:format("~p", [Filter]),
-    Res = [?XC(<<"h1">>, list_to_binary(?T("Statistics") ++ " Dx")),
+    Res = [?XC(<<"h1">>, <<(?T(<<"Statistics">>))/binary, " Dx">>),
 	   ?XC(<<"h2">>, list_to_binary("Sessions with: " ++ FilterS)),
 	   ?XE(<<"table">>,
 	       [
@@ -1435,7 +1435,7 @@ web_page_host(_, Host,
 	  ],
     {stop, Res};
 web_page_host(_, Host, #request{path=[<<"statsdx">>, <<"top">>, Topic, Topnumber], q = _Q, lang = Lang} = _Request) ->
-    Res = [?XC("h1", ?T("Statistics")++" Dx"),
+    Res = [?XC(<<"h1">>, <<(?T(<<"Statistics">>))/binary, " Dx">>),
 	   case Topic of
 		<<"offlinemsg">> -> ?XCT(<<"h2">>, <<"Top offline message queues">>);
 		<<"vcard">> -> ?XCT(<<"h2">>, <<"Top vCard sizes">>);
@@ -1455,10 +1455,10 @@ web_page_host(_, Host, #request{path=[<<"statsdx">> | FilterURL], q = Q,
 				lang = Lang} = _Request) ->
     Filter = parse_url_filter(FilterURL),
     Sort_query = get_sort_query(Q),
-    Res = [?XC("h1", ?T("Statistics")++" Dx"),
-	   ?XC("h2", "Sessions with: "++ io_lib:format("~p", [Filter])),
-	   ?XAE("table", [],
-		[?XE("tbody",
+    Res = [?XC(<<"h1">>, <<(?T(<<"Statistics">>))/binary, " Dx">>),
+	   ?XC(<<"h2">>, list_to_binary("Sessions with: "++io_lib:format("~p", [Filter]))),
+	   ?XAE(<<"table">>, [],
+		[?XE(<<"tbody">>,
 		     do_sessions_table(global, Lang, Filter, Sort_query, Host)
 		    )
 		])
@@ -1476,15 +1476,15 @@ do_table_element(Counter, Lang, L, StatLink, N) ->
     ?XE(<<"tr">>, [
 	       case Counter of
 		   no_counter -> ?C(<<"">>);
-		   _ -> ?XE(<<"td">>, [?C(integer_to_list(Counter))])
+		   _ -> ?XE(<<"td">>, [?C(list_to_binary(integer_to_list(Counter)))])
                end,
 	       case StatLink of
 		   no_link -> ?XCT(<<"td">>, L);
-		   {fixed_url, Fixedurl} -> ?XE(<<"td">>, [?AC(Fixedurl, L)]);
+		   {fixed_url, Fixedurl} -> ?XE(<<"td">>, [?AC(list_to_binary(Fixedurl), list_to_binary(L))]);
 		   _ -> ?XE(<<"td">>, [?AC(list_to_binary(make_url(StatLink, L)), list_to_binary(L))])
                end,
 	       case N of
-		   {url, NUrl, NName} -> ?XAE(<<"td">>, [{<<"class">>, <<"alignright">>}], [?AC(NUrl, NName)]);
+		   {url, NUrl, NName} -> ?XAE(<<"td">>, [{<<"class">>, <<"alignright">>}], [?AC(list_to_binary(NUrl), list_to_binary(NName))]);
 		   N when is_list(N) -> ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}], list_to_binary(N));
 		   _ -> ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}], N)
                end
@@ -1518,7 +1518,7 @@ do_sessions_table(_Node, _Lang, Filter, {Sort_direction, Sort_column}, Host) ->
 	      User = binary_to_list(JID#jid.luser),
 	      Server = binary_to_list(JID#jid.lserver),
 	      UserURL = "/admin/server/" ++ Server ++ "/user/" ++ User ++ "/",
-	      ?XE("tr", [
+	      ?XE(<<"tr">>, [
 			 ?XE(<<"td">>, [?AC(list_to_binary(UserURL), jlib:jid_to_string(JID))]),
 			 ?XCTB("td", atom_to_list(Client_id)),
 			 ?XCTB("td", atom_to_list(OS_id)),
