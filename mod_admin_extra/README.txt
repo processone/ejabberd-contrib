@@ -58,9 +58,9 @@ Description of some commands:
        'C:/Program Files/ejabberd'
      - Other OS: on the same directory where the .beam files are.
    Example content for the roster file:
-   [{"bob", "example.org", "workers", "Bob"},
-    {"mart", "example.org", "workers", "Mart"},
-    {"Rich", "example.org", "bosses", "Rich"}].
+   [{<<"bob">>, <<"example.org">>, <<"workers">>, <<"Bob">>},
+    {<<"mart">>, <<"example.org">>, <<"workers">>, <<"Mart">>},
+    {<<"Rich">>, <<"example.org">>, <<"bosses">>, <<"Rich">>}].
 
  - srg-create
    If you want to put a group Name with blankspaces, use the characters 
