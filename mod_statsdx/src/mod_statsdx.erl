@@ -877,6 +877,8 @@ list_elem(clients, full) ->
      {"Profanity", profanity},
      {"centerim", centerim},
      {"Conversations", conversations},
+     {"AQQ", aqq},
+     {"WTW", wtw},
      {"yaxim", yaxim},
      {"unknown", unknown}
     ];
