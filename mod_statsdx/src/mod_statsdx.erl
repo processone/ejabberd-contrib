@@ -212,15 +212,17 @@ finish_stats(Host) ->
 %%%==================================
 %%%% Hooks Handlers
 
-register_user(_User, Server) ->
-    Table = table_name(Server),
-    ets:update_counter(Table, {register_user, Server}, 1),
-    ets:update_counter(Table, {register_user, server}, 1).
+register_user(_User, Host) ->
+    TableHost = table_name(Host),
+    TableServer = table_name("server"),
+    ets:update_counter(TableHost, {register_user, Host}, 1),
+    ets:update_counter(TableServer, {register_user, server}, 1).
 
-remove_user(_User, Server) ->
-    Table = table_name(Server),
-    ets:update_counter(Table, {remove_user, Server}, 1),
-    ets:update_counter(Table, {remove_user, server}, 1).
+remove_user(_User, Host) ->
+    TableHost = table_name(Host),
+    TableServer = table_name("server"),
+    ets:update_counter(TableHost, {remove_user, Host}, 1),
+    ets:update_counter(TableServer, {remove_user, server}, 1).
 
 user_send_packet(FromJID, ToJID, NewEl) ->
     %% Registrarse para tramitar Host/mod_stats2file
