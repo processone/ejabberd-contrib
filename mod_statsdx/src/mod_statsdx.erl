@@ -110,7 +110,7 @@ loop(Hosts) ->
 %% Si no existe una tabla de stats del server, crearla.
 %% Deberia ser creada por un proceso que solo muera cuando se detenga el ultimo mod_statsdx del servidor
 prepare_stats_server(CD) ->
-    Table = table_name("server"),
+    Table = table_name(server),
     ets:new(Table, [named_table, public]),
     ets:insert(Table, {{user_login, server}, CD}),
     ets:insert(Table, {{user_logout, server}, CD}),
@@ -191,7 +191,7 @@ finish_stats() ->
     ejabberd_hooks:delete(webadmin_menu_node, ?MODULE, web_menu_node, 50),
     ejabberd_hooks:delete(webadmin_page_main, ?MODULE, web_page_main, 50),
     ejabberd_hooks:delete(webadmin_page_node, ?MODULE, web_page_node, 50),
-    Table = table_name("server"),
+    Table = table_name(server),
     catch ets:delete(Table).
 
 finish_stats(Host) ->
@@ -212,15 +212,17 @@ finish_stats(Host) ->
 %%%==================================
 %%%% Hooks Handlers
 
-register_user(_User, Server) ->
-    Table = table_name(Server),
-    ets:update_counter(Table, {register_user, Server}, 1),
-    ets:update_counter(Table, {register_user, server}, 1).
+register_user(_User, Host) ->
+    TableHost = table_name(Host),
+    TableServer = table_name(server),
+    ets:update_counter(TableHost, {register_user, Host}, 1),
+    ets:update_counter(TableServer, {register_user, server}, 1).
 
-remove_user(_User, Server) ->
-    Table = table_name(Server),
-    ets:update_counter(Table, {remove_user, Server}, 1),
-    ets:update_counter(Table, {remove_user, server}, 1).
+remove_user(_User, Host) ->
+    TableHost = table_name(Host),
+    TableServer = table_name(server),
+    ets:update_counter(TableHost, {remove_user, Host}, 1),
+    ets:update_counter(TableServer, {remove_user, server}, 1).
 
 user_send_packet(FromJID, ToJID, NewEl) ->
     %% Registrarse para tramitar Host/mod_stats2file
@@ -729,7 +731,7 @@ user_login(U) ->
     User = U#jid.luser,
     Host = U#jid.lserver,
     Resource = U#jid.lresource,
-    ets:update_counter(table_name("server"), {user_login, server}, 1),
+    ets:update_counter(table_name(server), {user_login, server}, 1),
     ets:update_counter(table_name(Host), {user_login, Host}, 1),
     request_iqversion(User, Host, Resource).
 
@@ -740,7 +742,7 @@ user_logout_sm(_, JID, _Data) ->
 %% cuando un usuario desconecta, buscar en la tabla su JID/USR y quitarlo
 user_logout(User, Host, Resource, _Status) ->
     TableHost = table_name(Host),
-    TableServer = table_name("server"),
+    TableServer = table_name(server),
     ets:update_counter(TableServer, {user_logout, server}, 1),
     ets:update_counter(TableHost, {user_logout, Host}, 1),
 
@@ -794,7 +796,7 @@ received_response(From, {xmlel, <<"iq">>, Attrs, Elc}) ->
 	       L -> binary_to_list(L)
 	   end,
     TableHost = table_name(Host),
-    TableServer = table_name("server"),
+    TableServer = table_name(server),
     update_counter_create(TableHost, {lang, Host, Lang}, 1),
     update_counter_create(TableServer, {lang, server, Lang}, 1),
 
@@ -810,7 +812,7 @@ received_response(From, {xmlel, <<"iq">>, Attrs, Elc}) ->
     ConnType = get_connection_type(User, Host, Resource),
 
     TableHost = table_name(Host),
-    TableServer = table_name("server"),
+    TableServer = table_name(server),
     ets:update_counter(TableHost, {client, Host, Client_id}, 1),
     ets:update_counter(TableServer, {client, server, Client_id}, 1),
     ets:update_counter(TableHost, {os, Host, OS_id}, 1),
@@ -877,6 +879,8 @@ list_elem(clients, full) ->
      {"Profanity", profanity},
      {"centerim", centerim},
      {"Conversations", conversations},
+     {"AQQ", aqq},
+     {"WTW", wtw},
      {"yaxim", yaxim},
      {"unknown", unknown}
     ];
