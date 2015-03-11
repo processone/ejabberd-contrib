@@ -1,0 +1,11 @@
+listen:
+  -
+    port: 5284
+    module: ejabberd_http
+    request_handlers:
+      "presence": mod_webpresence
+
+modules:
+  mod_presence:
+    access: local
+    pixmaps_path: "/etc/ejabberd/priv/pixmaps"

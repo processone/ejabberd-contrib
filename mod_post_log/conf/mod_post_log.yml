@@ -1,0 +1,3 @@
+modules:
+  mod_post_log:
+    url: "http://foo.bar.com/messages"

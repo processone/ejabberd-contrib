@@ -1,0 +1,5 @@
+author: "Magnus Henoch <henoch at dtek.chalmers.se>"
+category: "listener"
+summary: "IRC server frontend to ejabberd"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"

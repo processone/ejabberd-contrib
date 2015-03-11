@@ -1,0 +1,3 @@
+modules:
+  mod_s2s_log:
+    filename: "/var/log/ejabberd/s2s.log"

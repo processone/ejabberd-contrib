@@ -1,0 +1,10 @@
+modules:
+  mod_statsdx:
+    hooks: true
+  mod_stats2file:
+    interval: 60
+    type: txt
+    split: true
+    basefilename: "/var/www/stats"
+    hosts:
+      - "localhost"

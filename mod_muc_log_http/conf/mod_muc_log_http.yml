@@ -1,0 +1,11 @@
+listen:
+  -
+    port: 5282
+    module: ejabberd_http
+    request_handlers:
+      "muclog": mod_muc_log_http
+
+modules:
+  mod_muc_log:
+    outdir: "/tmp/muclogs"
+  mod_muc_log_http: {}

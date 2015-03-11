@@ -1,0 +1,5 @@
+author: "Badlop <badlop at process-one.net>"
+category: "stats"
+summary: "Calculates and gathers statistics actively"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"

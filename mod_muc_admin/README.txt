@@ -14,17 +14,6 @@ It also implements Web Admin pages to view the list of existing
 rooms.
 
 
-	CONFIGURATION
-	=============
-
-Add the module to your ejabberd.cfg, on the modules section:
-{modules, [
-  ...
-  {mod_muc_admin, []},
-  ...
-]}.
-
-
 	EJABBERD COMMANDS
 	=================
 

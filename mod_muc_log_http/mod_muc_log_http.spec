@@ -1,0 +1,5 @@
+author: "Badlop <badlop at process-one.net>"
+category: "log"
+summary: "Serve MUC logs on the web"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"

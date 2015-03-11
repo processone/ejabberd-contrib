@@ -1,0 +1,5 @@
+author: "Olivier Goffart <ogoffart at kde.org>"
+category: "archive"
+summary: "Supports almost all the XEP-0136 version 0.6 except otr"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"

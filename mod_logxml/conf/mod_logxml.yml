@@ -1,0 +1,17 @@
+modules:
+  mod_logxml:
+     stanza:
+       - iq
+       - other
+     direction:
+       - external
+     orientation:
+       - send
+       - recv
+     logdir: "/tmp/logs/"
+     timezone: universal
+     show_ip: false
+     rotate_days: 1
+     rotate_megs: 100
+     rotate_kpackets: no
+     check_rotate_kpackets: 1

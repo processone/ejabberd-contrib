@@ -1,0 +1,3 @@
+modules:
+  mod_logsession:
+    sessionlog: "/var/log/ejabberd/session_@HOST@.log"

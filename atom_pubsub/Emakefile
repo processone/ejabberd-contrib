@@ -1,4 +1,0 @@
-{'../ejabberd-dev/src/gen_mod', [{outdir, "../ejabberd-dev/ebin"},{i,"../ejabberd-dev/include"}]}.
-{'src/atom_microblog',     [{outdir, "ebin"},{i,"../ejabberd-dev/include"}]}.
-{'src/atom_pubsub',     [{outdir, "ebin"},{i,"../ejabberd-dev/include"}]}.
-{'src/mod_couch',     [{outdir, "ebin"},{i,"../ejabberd-dev/include"}]}.

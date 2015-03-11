@@ -1,0 +1,5 @@
+author: "Badlop <badlop at process-one.net>"
+category: "service"
+summary: "Extended Stanza Addressing (XEP-0033) support"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"

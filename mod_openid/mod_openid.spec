@@ -1,0 +1,5 @@
+author: "Olivier Goffart <ogoffart at kde.org>"
+category: "service"
+summary: "Transform the Jabber Server in an openid provider"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"

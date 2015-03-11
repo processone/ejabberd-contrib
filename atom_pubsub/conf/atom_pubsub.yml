@@ -1,0 +1,7 @@
+listen:
+  -
+    port: 8080
+    module: ejabberd_http
+    request_handlers:
+      "pep": atom_microblog
+      "pubsub": atom_pubsub

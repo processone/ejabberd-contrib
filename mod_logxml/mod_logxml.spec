@@ -1,0 +1,5 @@
+author: "Badlop <badlop at process-one.net>"
+category: "log"
+summary: "Log XMPP packets to XML file"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"

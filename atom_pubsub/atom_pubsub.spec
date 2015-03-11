@@ -1,0 +1,5 @@
+author: "Eric Cestari <eric at ohmforce.com>"
+category: "pubsub"
+summary: "Provides access to all PEP nodes via an AtomPub interface"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/atom_pubsub"
+url: "git@github.com:processone/ejabberd-contrib.git"
