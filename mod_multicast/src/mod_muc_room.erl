@@ -174,7 +174,7 @@ normal_state({route, From, <<"">>,
 		Now = now_to_usec(now()),
 		MinMessageInterval =
 		    trunc(gen_mod:get_module_opt(StateData#state.server_host,
-						 mod_muc, min_message_interval, fun(MMI) when is_integer(MMI) -> MMI end, 0)
+						 mod_muc, min_message_interval, fun(MMI) when is_number(MMI) -> MMI end, 0)
                           * 1000000),
 		Size = element_size(Packet),
 		{MessageShaper, MessageShaperInterval} =
@@ -1509,15 +1509,17 @@ get_user_activity(JID, StateData) ->
 
 store_user_activity(JID, UserActivity, StateData) ->
     MinMessageInterval =
-	gen_mod:get_module_opt(StateData#state.server_host,
-			       mod_muc, min_message_interval,
-                               fun(I) when is_integer(I), I>=0 -> I end,
-                               0),
+	trunc(gen_mod:get_module_opt(StateData#state.server_host,
+				     mod_muc, min_message_interval,
+				     fun(I) when is_number(I), I>=0 -> I end,
+				     0)
+	      * 1000),
     MinPresenceInterval =
-	gen_mod:get_module_opt(StateData#state.server_host,
-			       mod_muc, min_presence_interval,
-                               fun(I) when is_integer(I), I>=0 -> I end,
-                               0),
+	trunc(gen_mod:get_module_opt(StateData#state.server_host,
+				     mod_muc, min_presence_interval,
+				     fun(I) when is_number(I), I>=0 -> I end,
+				     0)
+	      * 1000),
     Key = jlib:jid_tolower(JID),
     Now = now_to_usec(now()),
     Activity1 = clean_treap(StateData#state.activity,
@@ -1548,8 +1550,8 @@ store_user_activity(JID, UserActivity, StateData) ->
 					       100000),
 			     Delay = lists:max([MessageShaperInterval,
 						PresenceShaperInterval,
-						MinMessageInterval * 1000,
-						MinPresenceInterval * 1000])
+						MinMessageInterval,
+						MinPresenceInterval])
 				       * 1000,
 			     Priority = {1, -(Now + Delay)},
 			     StateData#state{activity =
@@ -2428,24 +2430,21 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 		    false -> false;
 		    _ -> true
 		  end,
-    TimeStamp = calendar:now_to_universal_time(now()),
+    TimeStamp = now(),
     SenderJid = case
 		  (StateData#state.config)#config.anonymous
 		    of
 		  true -> StateData#state.jid;
 		  false -> FromJID
 		end,
-    TSPacket = xml:append_subtags(Packet,
-				  [jlib:timestamp_to_xml(TimeStamp, utc,
-							 SenderJid, <<"">>),
-				   jlib:timestamp_to_xml(TimeStamp)]),
+    TSPacket = jlib:add_delay_info(Packet, SenderJid, TimeStamp),
     SPacket =
 	jlib:replace_from_to(jlib:jid_replace_resource(StateData#state.jid,
 						       FromNick),
 			     StateData#state.jid, TSPacket),
     Size = element_size(SPacket),
     Q1 = lqueue_in({FromNick, TSPacket, HaveSubject,
-		    TimeStamp, Size},
+		    calendar:now_to_universal_time(TimeStamp), Size},
 		   StateData#state.history),
     add_to_log(text, {FromNick, Packet}, StateData),
     StateData#state{history = Q1}.
