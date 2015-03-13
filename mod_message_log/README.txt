@@ -2,7 +2,6 @@
 	mod_message_log - Log one line per message transmission
 
 	Author: Holger Weiss <holger@zedat.fu-berlin.de>
-	Requirements: ejabberd 13.x or newer
 
 
 	DESCRIPTION

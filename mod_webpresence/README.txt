@@ -32,7 +32,7 @@ No web server, database, additional libraries or programs are required.
 
 3. Copy the directory data/pixmaps to a directory you prefer.
 
-4. Edit ejabberd.cfg and add the HTTP and module definitions:
+4. Edit ejabberd.yml and add the HTTP and module definitions:
 
 listen:
   -
@@ -43,7 +43,6 @@ listen:
       "presence": mod_webpresence
 
 modules:
-  [...]
   mod_webpresence:
     pixmaps_path: "/path/to/pixmaps"
 
@@ -122,12 +121,10 @@ listen:
   -
     port: 5280
     module: ejabberd_http
-    [...]
     request_handlers:
       "presence": mod_webpresence
 
 modules:
-  [...]
   mod_webpresence:
     pixmaps_path: "/path/to/pixmaps"
 
@@ -139,12 +136,10 @@ listen:
   -
     port: 80
     module: ejabberd_http
-    [...]
     request_handlers:
       "status": mod_webpresence
 
 modules:
-  [...]
   mod_webpresence:
     host: "webstatus.@HOST@"
     access: local

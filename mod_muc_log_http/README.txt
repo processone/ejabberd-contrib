@@ -4,7 +4,6 @@
 
 	Homepage: http://ejabberd.im/mod_muc_log_http
 	Author: Badlop
-	Requirement: ejabberd git master
 
 
 	DESCRIPTION

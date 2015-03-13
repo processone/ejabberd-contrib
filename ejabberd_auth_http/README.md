@@ -21,7 +21,7 @@ ejabberd has to validate it externally.
 ### How to enable
 
 The simplest way is to just replace default `auth_method` option in
-`ejabberd.cfg` with `{auth_method, http}`.
+`ejabberd.yml` with `auth_method: http`.
 
 However, enabling the module **is not enough!** Please follow
 instructions below.
@@ -29,12 +29,12 @@ instructions below.
 ### Configuration options
 
 `ejabberd_auth_http` requires some parameters to function
-properly. The following options can be set in `auth_opts` tuple in
-`ejabberd.cfg`:
+properly. The following options can be set in `auth_opts` in
+`ejabberd.yml`:
 
 * `host` (mandatory, `string`) - consists of protocol, hostname (or IP) and port (optional). Examples:
-  * `{host, "http://localhost:12000"}`
-  * `{host, "https://10.20.30.40"}`  
+  * `host: "http://localhost:12000"`
+  * `host: "https://10.20.30.40"`
 * `connection_pool_size` (optional, `integer`, default: 10) - the
   number of connections open to auth service
 * `connection_opts` (optional, default: `[]`) - extra options for
