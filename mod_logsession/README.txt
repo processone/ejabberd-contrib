@@ -22,7 +22,7 @@ Note: to log the failed authentication attempts, you need to patch ejabberd.
 
 1 Copy this file to ejabberd/src/mod_logsession.erl
 2 Recompile ejabberd
-3 Add to ejabberd.cfg, 'modules' section the basic configuration:
+3 Add to ejabberd.yml, 'modules' section the basic configuration:
     mod_logsession: {}
 4 With this configuration, the log files are:
     /tmp/ejabberd_logsession_@HOST@.log

@@ -62,6 +62,6 @@ administrators.
 	BASIC CONFIGURATION
 	===================
 
-Add the module to your ejabberd.cfg, on the modules section:
+Add the module to your ejabberd.yml, on the modules section:
 modules:
   mod_shcommands: {}

@@ -3,7 +3,6 @@
 
 	http://www.ejabberd.im/mod_cron
 	Author: Badlop
-	Requirements: ejabberd git master
 
 
 This module allows advanced ejabberd administrators to schedule commands for

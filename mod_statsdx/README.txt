@@ -3,7 +3,6 @@
 
         Homepage: http://www.ejabberd.im/mod_statsdx
         Author: Badlop
-        Requirements: ejabberd 2.1.x
 
 
 	mod_statsdx
@@ -16,11 +15,9 @@ Web Admin and two ejabberd commands to view the information.
 	CONFIGURE
 	---------
 
-Enable the module in ejabberd.cfg for example with a basic configuration:
-{modules, [
-  ...
-  {mod_statsdx, []}
- ]}.
+Enable the module in ejabberd.yml for example with a basic configuration:
+modules:
+  mod_statsdx: {}
 
 Configurable options:
   hooks: Set to 'true' to enable hooks and related statistics.
@@ -32,10 +29,9 @@ Configurable options:
 	EXAMPLE CONFIGURATION
 	---------------------
 
-{modules, [
-  ...
-  {mod_statsdx, [{hooks, true}]}
- ]}.
+modules:
+  mod_statsdx:
+    hooks: true
 
 
 	FEATURE REQUESTS
@@ -65,11 +61,9 @@ text file with descriptions and raw text file (for MRTG, RRDTool...).
 
 This module requires mod_statsdx. 
 
-Enable the module in ejabberd.cfg for example with a basic configuration:
-{modules, [
-  ...
-  {mod_stats2file, []}
- ]}.
+Enable the module in ejabberd.yml for example with a basic configuration:
+modules:
+  mod_stats2file: {}
 
 Configurable options:
   interval: Time between updates, in minutes (default: 5)
@@ -82,14 +76,11 @@ Configurable options:
 	EXAMPLE CONFIGURATION
 	---------------------
 
-{modules, [
-  ...
-  {mod_stats2file, [{interval, 60},
-                    {type, txt},
-                    {split, true},
-                    {basefilename, "/var/www/stats"},
-                    {hosts, ["localhost", "server3.com"]}
-                   ]}
- ]}.
-
+modules:
+  mod_stats2file:
+    interval: 60
+    type: txt
+    split: true
+    basefilename: "/var/www/stats"
+    hosts: ["localhost", "server3.com"]
 

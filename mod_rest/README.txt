@@ -4,8 +4,6 @@
 	Author: Nolan Eakins <sneakin@semanticgap.com>
 	Copyright (C) 2008 Nolan Eakins
 
-	Requirements: ejabberd trunk SVN 2025 (ejabberd 2.1.0, once released)
-
 
 
 This is an ejabberd module that adds an HTTP handler that allows HTTP
@@ -20,27 +18,21 @@ This module can also be used as a frontend to execute ejabberd commands.
 	=============
 
 To use this module, follow the general build instructions, and configure
-in ejabberd.cfg as described.
+in ejabberd.yml as described.
 
 Enable the module:
-{modules,
- [
-  {mod_rest, [ {allowed_ips, [ {127,0,0,1} ]} ]},
-  ...
- ]
-}.
+modules:
+  mod_rest:
+    allowed_ips:
+      - "> {127,0,0,1} ."
 
 And enable the HTTP request handler in the listen section:
-{listen,
- [
-  ...
-  {5285, ejabberd_http, [
-                         {request_handlers, [
-                                             {["rest"], mod_rest}
-                                            ]}
-                        ]}
- ]
-}.
+listen:
+  - 
+    port: 5285
+    module: ejabberd_http
+    request_handlers:
+       "/rest": mod_rest
 
 With that configuration, you can send HTTP POST requests to the URL:
   http://localhost:5285/rest
@@ -70,7 +62,7 @@ Configurable options:
   There is more information about AccessCommands in the ejabberd Guide.
   Default value: []
 
-Complex example configuration:
+Complex example configuration (works only when set in an old-format ejabberd.cfg file:
 {modules,
  [
   {mod_rest, [

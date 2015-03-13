@@ -4,21 +4,14 @@
 
 	Author: Badlop
 	Homepage: http://www.ejabberd.im/mod_admin_extra
-	Requirements: ejabberd 2.1.10 newer
-
-	This module DOES NOT WORK with any ejabberd 2.0.x or older.
-	If you have some ejabberd 2.0.x, you can still use mod_ctlextra.
 
 
 	CONFIGURATION
 	=============
 
-Add the module to your ejabberd.cfg, on the modules section:
-{modules, [
-  ...
-  {mod_admin_extra, []},
-  ...
-]}.
+Add the module to your ejabberd.yml, on the modules section:
+modules:
+  mod_admin_extra: {}
 
 The configurable options are:
 - module_resource:
@@ -30,16 +23,18 @@ In this example configuration, the users vcards can only be modified
 by executing mod_admin_extra commands.
 Notice that this needs the patch
  https://support.process-one.net/browse/EJAB-797
-{acl, adminextraresource, {resource, "modadminextraf8x,31ad"}}.
-{access, vcard_set, [
-    {allow, adminextraresource},
-    {deny, all}]
-}.
-{modules, [
-  {mod_admin_extra, [ {module_resource, "modadminextraf8x,31ad"} ]},
-  {mod_vcard,       [ {access_set, vcard_set} ]},
-  ...
-]}.
+acl:
+  adminextraresource:
+    resource: "modadminextraf8x,31ad"
+access:
+  vcard_set:
+    adminextraresource: allow
+    all: deny
+modules:
+  mod_admin_extra:
+    module_resource: "modadminextraf8x,31ad"
+  mod_vcard:
+    access_set: vcard_set
 
 
 	USAGE
