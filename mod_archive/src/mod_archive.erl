@@ -41,7 +41,6 @@
 -define(NS_ARCHIVE_MANAGE, "urn:xmpp:archive:manage").
 -define(NS_ARCHIVE_PREF, "urn:xmpp:archive:pref").
 -define(NS_ARCHIVE_MANUAL, "urn:xmpp:archive:manual").
-
 -define(INFINITY, calendar:datetime_to_gregorian_seconds({{2038,1,19},{0,0,0}})).
 
 -define(MYDEBUG(Format, Args),
