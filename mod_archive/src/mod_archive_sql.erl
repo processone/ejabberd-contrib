@@ -38,14 +38,10 @@
 		session_duration}).
 
 -define(PROCNAME, ejabberd_mod_archive_sql).
--define(NS_ARCHIVE,
-	"http://www.xmpp.org/extensions/xep-0136.html#ns").
--define(NS_ARCHIVE_MANAGE,
-	"http://www.xmpp.org/extensions/xep-0136.html#ns-manage").
--define(NS_ARCHIVE_PREF,
-	"http://www.xmpp.org/extensions/xep-0136.html#ns-pref").
--define(NS_ARCHIVE_MANUAL,
-	"http://www.xmpp.org/extensions/xep-0136.html#ns-manual").
+-define(NS_ARCHIVE, "urn:xmpp:archive").
+-define(NS_ARCHIVE_MANAGE, "urn:xmpp:archive:manage").
+-define(NS_ARCHIVE_PREF, "urn:xmpp:archive:pref").
+-define(NS_ARCHIVE_MANUAL, "urn:xmpp:archive:manual").
 -define(INFINITY, calendar:datetime_to_gregorian_seconds({{2038,1,19},{0,0,0}})).
 -define(DICT, dict).
 
