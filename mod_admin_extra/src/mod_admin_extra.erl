@@ -308,18 +308,17 @@ commands() ->
 			tags = [session],
 			desc = "Set presence of a session",
 			module = ?MODULE, function = set_presence,
-			args = [{user, string}, {host, string},
-				{resource, string}, {type, string},
-				{show, string}, {status, string},
-				{priority, string}],
+			args = [{user, binary}, {host, binary},
+				{resource, binary}, {type, binary},
+				{show, binary}, {status, binary},
+				{priority, binary}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = set_nickname, tags = [vcard],
 			desc = "Set nickname in a user's vCard",
 			module = ?MODULE, function = set_nickname,
-			args = [{user, string}, {host, string}, {nickname, string}],
+			args = [{user, binary}, {host, binary}, {nickname, binary}],
 			result = {res, rescode}},
-
      #ejabberd_commands{name = get_vcard, tags = [vcard],
 			desc = "Get content from a vCard field",
 			longdesc = Vcard1FieldsString ++ "\n" ++ Vcard2FieldsString ++ "\n\n" ++ VcardXEP,
@@ -333,11 +332,11 @@ commands() ->
 			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}],
 			result = {content, string}},
      #ejabberd_commands{name = get_vcard2_multi, tags = [vcard],
-			desc = "Get multiple contents from a vCard field (requires exmpp installed)",
+			desc = "Get multiple contents from a vCard field",
 			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = get_vcard_multi,
 			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}],
-			result = {contents, {list, string}}},
+			result = {contents, {list, {value, string}}}},
 
      #ejabberd_commands{name = set_vcard, tags = [vcard],
 			desc = "Set content in a vCard field",
@@ -546,10 +545,7 @@ commands() ->
 %%%
 
 compile(File) ->
-    case compile:file(File) of
-	ok -> ok;
-	_ -> error
-    end.
+    compile:file(File).
 
 load_config(Path) ->
     ok = ejabberd_config:load_file(Path).
@@ -771,7 +767,7 @@ set_random_password(User, Server, Reason) ->
 build_random_password(Reason) ->
     Date = jlib:timestamp_to_iso(calendar:universal_time()),
     RandomString = randoms:get_string(),
-    "BANNED_ACCOUNT--" ++ Date ++ "--" ++ RandomString ++ "--" ++ Reason.
+    <<"BANNED_ACCOUNT--", Date/binary, "--", RandomString/binary, "--", Reason/binary>>.
 
 set_password_auth(User, Server, Password) ->
     ok = ejabberd_auth:set_password(User, Server, Password).
@@ -804,11 +800,9 @@ kick_session(User, Server, Resource, ReasonText) ->
     ok.
 
 kick_this_session(User, Server, Resource, Reason) ->
-    ejabberd_router:route(
-      jlib:make_jid(<<>>, <<>>, <<>>),
-      jlib:make_jid(User, Server, Resource),
-      {broadcast, {exit, Reason}}).
-
+    ejabberd_sm:route(jlib:make_jid(<<"">>, <<"">>, <<"">>),
+                      jlib:make_jid(User, Server, Resource),
+                      {broadcast, {exit, Reason}}).
 
 status_num(Host, Status) ->
     length(get_status_list(Host, Status)).
@@ -886,8 +880,8 @@ stringize(String) ->
 
 set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
     Pid = ejabberd_sm:get_session_pid(User, Host, Resource),
-    USR = User ++ "@" ++ Host ++ "/" ++ Resource,
-    US = User ++ "@" ++ Host,
+    USR = jlib:jid_to_string(jlib:make_jid(User, Host, Resource)),
+    US = jlib:jid_to_string(jlib:make_jid(User, Host, <<>>)),
     Message = {route_xmlstreamelement,
 	       {xmlel, <<"presence">>,
 		[{<<"from">>, USR}, {<<"to">>, US}, {<<"type">>, Type}],
@@ -938,7 +932,7 @@ set_nickname(User, Host, Nickname) ->
             ]
 	  }}),
     case R of
-	{iq, [], result, [], _L, []} ->
+	{iq, <<>>, result, <<>>, _L, []} ->
 	    ok;
 	_ ->
 	    error
@@ -978,10 +972,10 @@ get_vcard_content(User, Server, Data) ->
     IQr = Module:Function(JID, JID, IQ),
     [A1] = IQr#iq.sub_el,
     case A1#xmlel.children of
-	[_] ->
+	[_|_] ->
 	    case get_vcard(Data, A1) of
 		[false] -> throw(error_no_value_found_in_vcard);
-		ElemList -> [xml:get_tag_cdata(Elem) || Elem <- ElemList]
+		ElemList -> ?DEBUG("ELS ~p", [ElemList]), [xml:get_tag_cdata(Elem) || Elem <- ElemList]
 	    end;
 	[] ->
 	    throw(error_no_vcard_found)
@@ -993,7 +987,7 @@ get_vcard([<<"TEL">>, TelType], {_, _, _, OldEls}) ->
 
 get_vcard([Data1, Data2], A1) ->
     case get_subtag(A1, Data1) of
-    	false -> false;
+	[false] -> [false];
 	A2List ->
 	    lists:flatten([get_vcard([Data2], A2) || A2 <- A2List])
     end;
@@ -1002,20 +996,7 @@ get_vcard([Data], A1) ->
     get_subtag(A1, Data).
 
 get_subtag(Xmlelement, Name) ->
-    case code:ensure_loaded(exmpp_xml) of
-	{error, _} ->
-	    [get_subtag_xml(Xmlelement, Name)];
-	{module, exmpp_xml} ->
-	    get_subtag_exmpp(Xmlelement, Name)
-    end.
-
-get_subtag_xml(Xmlelement, Name) ->
-    xml:get_subtag(Xmlelement, Name).
-
-get_subtag_exmpp(Xmlelement, Name) ->
-    Xmlel = exmpp_xml:xmlelement_to_xmlel(Xmlelement),
-    XmlelList = exmpp_xml:get_elements(Xmlel, Name),
-    [exmpp_xml:xmlel_to_xmlelement(Xmlel2) || Xmlel2 <- XmlelList].
+    [xml:get_subtag(Xmlelement, Name)].
 
 set_vcard_content(User, Server, Data, SomeContent) ->
     ContentList = case SomeContent of
@@ -1205,7 +1186,7 @@ push_roster_item(LU, LS, U, S, Action) ->
 push_roster_item(LU, LS, R, U, S, Action) ->
     LJID = jlib:make_jid(LU, LS, R),
     BroadcastEl = build_broadcast(U, S, Action),
-    ejabberd_router:route(LJID, LJID, BroadcastEl),
+    ejabberd_sm:route(LJID, LJID, BroadcastEl),
     Item = build_roster_item(U, S, Action),
     ResIQ = build_iq_roster_push(Item),
     ejabberd_router:route(LJID, LJID, ResIQ).
@@ -1342,8 +1323,7 @@ srg_get_info(Group, Host) ->
 	Os when is_list(Os) -> Os;
 	error -> []
     end,
-    [{io_lib:format("~p", [Title]),
-      io_lib:format("~p", [Value])} || {Title, Value} <- Opts].
+    [{jlib:atom_to_binary(Title), Value} || {Title, Value} <- Opts].
 
 srg_get_members(Group, Host) ->
     Members = mod_shared_roster:get_group_explicit_users(Host,Group),
@@ -1421,8 +1401,8 @@ send_stanza_c2s(Username, Host, Resource, Stanza) ->
     p1_fsm:send_event(C2sPid, {xmlstreamelement, XmlEl}).
 
 privacy_set(Username, Host, QueryS) ->
-    From = jlib:string_to_jid(Username ++ "@" ++ Host),
-    To = jlib:string_to_jid(Host),
+    From = jlib:make_jid(Username, Host, <<"">>),
+    To = jlib:make_jid(<<"">>, Host, <<"">>),
     QueryEl = xml_stream:parse_element(QueryS),
     StanzaEl = {xmlel, <<"iq">>, [{<<"type">>, <<"set">>}], [QueryEl]},
     IQ = jlib:iq_query_info(StanzaEl),
@@ -1496,24 +1476,14 @@ process_rosteritems(ActionS, SubsS, AsksS, UsersS, ContactsS) ->
 		 [S || S <- string:tokens(ContactsS, ":")]
 		),
 
-    case rosteritem_purge({Action, Subs, Asks, Users, Contacts}) of
-	{atomic, Res} ->
-	    Res;
-	{error, Reason} ->
-	    io:format("Error purging rosteritems: ~p~n", [Reason]),
-	    error;
-	{badrpc, Reason} ->
-	    io:format("BadRPC purging rosteritems: ~p~n", [Reason]),
-	    error
-    end.
+    rosteritem_purge({Action, Subs, Asks, Users, Contacts}).
 
 %% @spec ({Action::atom(), Subs::[atom()], Asks::[atom()], User::string(), Contact::string()}) -> {atomic, ok}
 rosteritem_purge(Options) ->
     Num_rosteritems = mnesia:table_info(roster, size),
     io:format("There are ~p roster items in total.~n", [Num_rosteritems]),
     Key = mnesia:dirty_first(roster),
-    Res = rip(Key, Options, {0, Num_rosteritems, 0, 0}, []),
-    {atomic, Res}.
+    rip(Key, Options, {0, Num_rosteritems, 0, 0}, []).
 
 rip('$end_of_table', _Options, Counters, Res) ->
     print_progress_line(Counters),
@@ -1535,8 +1505,8 @@ rip(Key, Options, {Pr, NT, NV, ND}, Res) ->
 apply_action(list, Key) ->
     {User, Server, JID} = Key,
     {RUser, RServer, _} = JID,
-    Jid1string = User ++ "@" ++ Server,
-    Jid2string = RUser ++ "@" ++ RServer,
+    Jid1string = <<User/binary, "@", Server/binary>>,
+    Jid2string = <<RUser/binary, "@", RServer/binary>>,
     io:format("Matches: ~s ~s~n", [Jid1string, Jid2string]),
     {Jid1string, Jid2string};
 apply_action(delete, Key) ->
@@ -1544,6 +1514,8 @@ apply_action(delete, Key) ->
     mnesia:dirty_delete(roster, Key),
     R.
 
+print_progress_line({_Pr, 0, _NV, _ND}) ->
+    ok;
 print_progress_line({Pr, NT, NV, ND}) ->
     Pr2 = trunc((NV/NT)*100),
     case Pr == Pr2 of
@@ -1571,14 +1543,14 @@ decide_rip_jid({UName, UServer, _UResource}, Match_list) ->
 decide_rip_jid({UName, UServer}, Match_list) ->
     lists:any(
       fun(Match_string) ->
-	      MJID = jlib:string_to_jid(Match_string),
+	      MJID = jlib:string_to_jid(list_to_binary(Match_string)),
 	      MName = MJID#jid.luser,
 	      MServer = MJID#jid.lserver,
 	      Is_server = is_glob_match(UServer, MServer),
 	      case MName of
-		  [] when UName == [] ->
+		  <<>> when UName == <<>> ->
 		      Is_server;
-		  [] ->
+		  <<>> ->
 		      false;
 		  _ ->
 		      Is_server
@@ -1600,7 +1572,7 @@ is_regexp_match(String, RegExp) ->
 	      [RegExp, ErrDesc]),
 	    false
     end.
-is_glob_match(String, [$! | Glob]) ->
+is_glob_match(String, <<"!", Glob/binary>>) ->
     not is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob));
 is_glob_match(String, Glob) ->
     is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob)).
