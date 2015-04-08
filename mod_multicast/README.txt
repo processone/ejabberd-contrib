@@ -2,8 +2,11 @@
 
 	mod_multicast - Extended Stanza Addressing (XEP-0033) support
 
+        NOTE: This module is included in ejabberd since 15.04
+
 	Homepage: http://ejabberd.jabber.ru/mod_multicast
 	Author: Badlop
+
 
 
 	DESCRIPTION

@@ -2,9 +2,10 @@
 
 	mod_muc_admin - Administrative features for MUC
 
+	NOTE: This module is included in ejabberd since 15.04
+
 	Homepage: http://www.ejabberd.im/mod_muc_admin
 	Author: Badlop
-
 
 This module implements several ejabberd commands that can be
 executed using ejabberdctl.
