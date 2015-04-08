@@ -2,6 +2,8 @@
 
 	mod_admin_extra - Additional ejabberd commands
 
+	NOTE: This module is included in ejabberd since 15.04
+
 	Author: Badlop
 	Homepage: http://www.ejabberd.im/mod_admin_extra
 
