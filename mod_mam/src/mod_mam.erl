@@ -52,8 +52,7 @@
 %% ejabberd_hooks callbacks.
 -export([receive_stanza/4,
 	 send_stanza/3,
-	 remove_user/2,
-	 drop_mam_error/4]).
+	 remove_user/2]).
 
 %% gen_iq_handler callback.
 -export([handle_iq/3]).
@@ -202,8 +201,6 @@ init({Host, Opts}) ->
 		       remove_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, Host, ?MODULE,
 		       remove_user, 50),
-    ejabberd_hooks:add(c2s_filter_packet_in, Host, ?MODULE,
-		       drop_mam_error, 50),
     AccessMaxMsgs =
 	gen_mod:get_opt(access_max_user_messages, Opts,
 			fun(A) when is_atom(A) -> A end, max_user_mam_messages),
@@ -249,9 +246,7 @@ terminate(Reason, #state{host = Host}) ->
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, Host, ?MODULE,
-			  remove_user, 50),
-    ejabberd_hooks:delete(c2s_filter_packet_in, Host, ?MODULE,
-			  drop_mam_error, 50).
+			  remove_user, 50).
 
 -spec code_change({down, _} | _, state(), _) -> {ok, state()}.
 
@@ -1265,33 +1260,3 @@ remove_user(LUser, LServer, mnesia) ->
 	end,
     {atomic, ok} = mnesia:sync_transaction(Remove),
     manage_mnesia_fragments(true).
-
-%%--------------------------------------------------------------------
-%% Drop MAM error bounces.
-%%--------------------------------------------------------------------
-
-drop_mam_error(#xmlel{name = <<"message">>, attrs = Attrs} = Message, _JID,
-	       From, #jid{lresource = <<"">>} = To) ->
-    case xml:get_attr_s(<<"type">>, Attrs) of
-      <<"error">> ->
-	  case xml:get_subtag_with_xmlns(Message, <<"result">>, ?NS_MAM) of
-	    #xmlel{} ->
-		?DEBUG("Dropping MAM result error message from ~s to ~s",
-		       [jlib:jid_to_string(From),
-			jlib:jid_to_string(To)]),
-		drop;
-	    false ->
-		case xml:get_subtag_with_xmlns(Message, <<"fin">>, ?NS_MAM) of
-		  #xmlel{} ->
-		      ?DEBUG("Dropping MAM fin error message from ~s to ~s",
-			     [jlib:jid_to_string(From),
-			      jlib:jid_to_string(To)]),
-		      drop;
-		  false ->
-		      Message
-		end
-	  end;
-      _ ->
-	  Message
-    end;
-drop_mam_error(Acc, _JID, _From, _To) -> Acc.
