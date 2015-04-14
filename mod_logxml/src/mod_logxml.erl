@@ -263,7 +263,7 @@ get_now_iso(Timezone) ->
 		end,
     binary_to_list(jlib:timestamp_to_iso(TimeStamp)).
 
-calc_div(A, B) when is_integer(A) and is_integer(B) and B =/= 0 ->
+calc_div(A, B) when is_integer(A) and is_integer(B) and (B /= 0) ->
     A/B;
 calc_div(_A, _B) ->
     0.5. %% This ensures that no rotation is performed
