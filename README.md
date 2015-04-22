@@ -33,6 +33,18 @@ The following organization has been set up for the development:
   it compiles correctly before commit your work. Sources of your module
   must be located in $CONTRIB\_MODULES\_PATH/sources/<module>
 
+- Compilation can by done manually (if you know what you are doing)
+  so you don't need ejabberd running:
+  ```
+  cd /path/of/module
+  mkdir ebin
+  /path/of/ejabberd's/erlc \
+     -o ebin \
+     -I include -I /path/of/ejabberd/lib/ejabberd-XX.YY/include \
+     -DLAGER -DNO_EXT_LIB \
+     src/*erl
+  ```
+
 - The module directory structure is usually the following:
     * `README.txt`: Module description.
     * `COPYING`: License for the module.
