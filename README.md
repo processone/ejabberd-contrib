@@ -10,18 +10,22 @@ For users
 
 To use an ejabberd module coming from this repository:
 
-- You need to have Ejabberd installed.
+- You need to have ejabberd installed.
 
-- Run `ejabberdctl module_install <module>` to get the sources, compile and
-  install the beams file in ejabberd path. This path is either ~/.ejabberd-modules
-  or defined by CONTRIB\_MODULES\_PATH in ejabberdctl.cfg.
+- Run `ejabberdctl module_install <module>` to get the source code and to
+  compile and install the `beam` file into ejabberd's module search path.
+  This path is either `~/.ejabberd-modules` or defined by the
+  `CONTRIB_MODULES_PATH` setting in `ejabberdctl.cfg`.
 
-- Edit the configuration file provided in the `conf` dir of the installed
-  module to update to your needs. Then apply the changes to your main ejabberd
-  configuration. On future release, ejabberd will automatically add this file
-  to its runtime configuration without changes.
+- Edit the configuration file provided in the `conf` directory of the
+  installed module and update it to your needs. Then apply the changes to
+  your main ejabberd configuration. In a future release, ejabberd will
+  automatically add this file to its runtime configuration without
+  changes.
 
-- Run `ejabberdctl module_uninstall <module>` to remove a module from ejabberd.
+- Run `ejabberdctl module_uninstall <module>` to remove a module from
+  ejabberd.
+
 
 For developers
 --------------
@@ -29,12 +33,12 @@ For developers
 The following organization has been set up for the development:
 
 - Development and compilation of modules is done by ejabberd. You need
-  Ejabberd installed. Use `ejabberdctl module_check <module>` to ensure
-  it compiles correctly before commit your work. Sources of your module
-  must be located in $CONTRIB\_MODULES\_PATH/sources/<module>
+  ejabberd installed. Use `ejabberdctl module_check <module>` to ensure it
+  compiles correctly before committing your work. The sources of your
+  module must be located in `$CONTRIB_MODULES_PATH/sources/<module>`.
 
-- Compilation can by done manually (if you know what you are doing)
-  so you don't need ejabberd running:
+- Compilation can by done manually (if you know what you are doing) so you
+  don't need ejabberd running:
   ```
   cd /path/of/module
   mkdir ebin
