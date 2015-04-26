@@ -50,7 +50,8 @@
 	 code_change/3]).
 
 %% ejabberd_hooks callbacks.
--export([receive_stanza/4,
+-export([disco_features/5,
+	 receive_stanza/4,
 	 send_stanza/3,
 	 remove_user/2]).
 
@@ -157,7 +158,9 @@ start(Host, Opts) ->
 			     parallel),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM, ?MODULE,
 				  handle_iq, IQDisc),
+    %% Set up MAM feature announcement.
     mod_disco:register_feature(Host, ?NS_MAM),
+    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, disco_features, 50),
     %% Set up message storage process.
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     Spec = {Proc, {?MODULE, start_link, [Host, Opts]}, permanent, 3000, worker,
@@ -167,6 +170,8 @@ start(Host, Opts) ->
 -spec stop(binary()) -> ok.
 
 stop(Host) ->
+    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, disco_features, 50),
+    %% Stop message storage process.
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     ok = supervisor:terminate_child(ejabberd_sup, Proc),
     ok = supervisor:delete_child(ejabberd_sup, Proc).
@@ -257,6 +262,17 @@ code_change(_OldVsn, #state{host = Host} = State, _Extra) ->
 %%--------------------------------------------------------------------
 %% ejabberd_hooks callbacks.
 %%--------------------------------------------------------------------
+
+-spec disco_features(empty | {result, [binary()]}, jid(), jid(), binary(),
+		     binary()) -> {result, [binary()]}.
+
+disco_features(empty, From, To, Node, Lang) ->
+    disco_features({result, []}, From, To, Node, Lang);
+disco_features({result, OtherFeatures},
+	       #jid{luser = U, lserver = S},
+	       #jid{luser = U, lserver = S}, <<"">>, _Lang) ->
+    {result, OtherFeatures ++ [?NS_MAM]};
+disco_features(Acc, _From, _To, _Node, _Lang) -> Acc.
 
 -spec receive_stanza(jid(), jid(), jid(), xmlel()) -> ok.
 
