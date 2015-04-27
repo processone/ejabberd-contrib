@@ -1,0 +1,5 @@
+author: "Rael Max"
+category: "http"
+summary: "POST offline messages to a web"
+home: "https://github.com/raelmax/mod_http_offline/tree/master/"
+url: "git@github.com:raelmax/mod_http_offline.git"

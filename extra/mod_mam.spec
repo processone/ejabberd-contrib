@@ -1,0 +1,5 @@
+author: "Gregor Uhlenheuer <kongo2002 at gmail.com>"
+category: "archive"
+summary: "Message Archive Management (XEP-0313)"
+home: "https://github.com/kongo2002/ejabberd-mod-mam/tree/master/"
+url: "git@github.com:kongo2002/ejabberd-mod-mam.git"

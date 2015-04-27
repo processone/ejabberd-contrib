@@ -1,0 +1,5 @@
+author: "Jonas Ådahl <jadahl at gmail.com>"
+category: "http"
+summary: "RESTful API for ejabberd"
+home: "https://github.com/jadahl/mod_restful/tree/master/"
+url: "git@github.com:jadahl/mod_restful.git"
