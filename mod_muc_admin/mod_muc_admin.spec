@@ -1,5 +1,0 @@
-author: "Badlop <badlop at process-one.net>"
-category: "admin"
-summary: "Administrative features for MUC"
-home: "https://github.com/processone/ejabberd-contrib/tree/master/"
-url: "git@github.com:processone/ejabberd-contrib.git"
