@@ -16,7 +16,9 @@
 	 log_packet_send/3,
 	 log_packet_receive/4]).
 
+-ifndef(LAGER).
 -define(LAGER, 1).
+-endif.
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
