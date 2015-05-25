@@ -37,7 +37,8 @@
 
 -spec start(binary()) -> ok.
 start(Host) ->
-    AuthOpts = ejabberd_config:get_local_option(auth_opts, Host),
+    AuthOpts = ejabberd_config:get_local_option(auth_opts, fun(A) when is_list(A) -> A end,
+	<<"localhost">>),
     {_, AuthHost} = lists:keyfind(host, 1, AuthOpts),
     PoolSize = proplists:get_value(connection_pool_size, AuthOpts, 10),
     Opts = proplists:get_value(connection_opts, AuthOpts, []),
@@ -223,7 +224,8 @@ remove_user_req(LUser, LServer, Password, Method) ->
 make_req(_, _, LUser, LServer, _) when LUser == error orelse LServer == error ->
     {error, {prep_failed, LUser, LServer}};
 make_req(Method, Path, LUser, LServer, Password) -> 
-    AuthOpts = ejabberd_config:get_local_option(auth_opts, LServer),
+    AuthOpts = ejabberd_config:get_local_option(auth_opts, fun(A) when is_list(A) -> A end,
+	<<"localhost">>),
     BasicAuth = case lists:keyfind(basic_auth, 1, AuthOpts) of
                     {_, BasicAuth0} -> BasicAuth0;
                     _ -> ""
