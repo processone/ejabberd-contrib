@@ -25,8 +25,8 @@
 	 code_change/3]).
 
 %% ejabberd_hooks callbacks.
--export([log_packet_send/3,
-	 log_packet_receive/4,
+-export([log_packet_send/4,
+	 log_packet_receive/5,
 	 log_packet_offline/3,
 	 reopen_log/0]).
 
@@ -140,15 +140,17 @@ code_change(_OldVsn, State, _Extra) ->
 %% ejabberd_hooks callbacks.
 %% -------------------------------------------------------------------
 
--spec log_packet_send(jid(), jid(), xmlel()) -> any().
+-spec log_packet_send(xmlel(), term(), jid(), jid()) -> xmlel().
 
-log_packet_send(From, To, Packet) ->
-    log_packet(outgoing, From, To, Packet).
+log_packet_send(Packet, _C2SState, From, To) ->
+    log_packet(outgoing, From, To, Packet),
+    Packet.
 
--spec log_packet_receive(jid(), jid(), jid(), xmlel()) -> any().
+-spec log_packet_receive(xmlel(), term(), jid(), jid(), jid()) -> xmlel().
 
-log_packet_receive(JID, From, _To, Packet) ->
-    log_packet(incoming, From, JID, Packet).
+log_packet_receive(Packet, _C2SState, JID, From, _To) ->
+    log_packet(incoming, From, JID, Packet),
+    Packet.
 
 -spec log_packet_offline(jid(), jid(), xmlel()) -> any().
 
