@@ -12,7 +12,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, init/7, stop/1,
-	 send_packet/3, receive_packet/4]).
+	 send_packet/4, receive_packet/5]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -166,15 +166,17 @@ loop(Host, IoDevice, Filename, Logdir, CheckRKP, RotateO, PacketC,
 		 Gregorian_day, Timezone, ShowIP, FilterO)
     end.
 
-send_packet(FromJID, ToJID, P) ->
+send_packet(P, _C2SState, FromJID, ToJID) ->
     Host = FromJID#jid.lserver,
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    Proc ! {addlog, {send, FromJID, ToJID, P}}.
+    Proc ! {addlog, {send, FromJID, ToJID, P}},
+    P.
 
-receive_packet(_JID, From, To, P) ->
+receive_packet(P, _C2SState, _JID, From, To) ->
     Host = To#jid.lserver,
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    Proc ! {addlog, {recv, From, To, P}}.
+    Proc ! {addlog, {recv, From, To, P}},
+    P.
 
 add_log(Io, Timezone, ShowIP, {Orientation, From, To, Packet}, _OSD) ->
     %%{Orientation, Stanza, Direction} = OSD, 
