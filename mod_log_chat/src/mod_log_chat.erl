@@ -88,10 +88,10 @@ log_packet_receive(_JID, From, To, Packet) ->
 log_packet(From, To, Packet = #xmlel{name = <<"message">>, attrs = Attrs}, Host) ->
     case xml:get_attr_s(<<"type">>, Attrs) of
 	<<"groupchat">> -> %% mod_muc_log already does it
-	    ?DEBUG("dropping groupchat: ~s", [xml:element_to_string(Packet)]),
+	    ?DEBUG("dropping groupchat: ~s", [xml:element_to_binary(Packet)]),
 	    ok;
 	<<"error">> -> %% we don't log errors
-	    ?DEBUG("dropping error: ~s", [xml:element_to_string(Packet)]),
+	    ?DEBUG("dropping error: ~s", [xml:element_to_binary(Packet)]),
 	    ok;
 	_ ->
 	    write_packet(From, To, Packet, Host)
