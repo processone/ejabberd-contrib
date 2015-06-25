@@ -1,5 +1,5 @@
 
-	mod_mam - Message Archive Management (XEP-0313)
+	mod_mam_mnesia - Message Archive Management (XEP-0313)
 
 	Author: Holger Weiss <holger@zedat.fu-berlin.de>
 	Requirements: ejabberd 14.12 or newer
@@ -19,7 +19,7 @@ synchronization of multiple clients.
 In order to use this module with the default settings, add the following
 line to the 'modules' section of your ejabberd.yml file:
 
-  mod_mam: {}
+  mod_mam_mnesia: {}
 
 The configurable options are:
 

@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% File    : mod_mam.erl
+%%% File    : mod_mam_mnesia.erl
 %%% Author  : Holger Weiss <holger@zedat.fu-berlin.de>
 %%% Purpose : Message Archive Management (XEP-0313)
 %%% Created : 25 Jan 2015 by Holger Weiss <holger@zedat.fu-berlin.de>
@@ -23,7 +23,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--module(mod_mam).
+-module(mod_mam_mnesia).
 -author('holger@zedat.fu-berlin.de').
 
 -define(NS_MAM, <<"urn:xmpp:mam:0">>).

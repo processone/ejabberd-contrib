@@ -1,5 +1,5 @@
 
-	Feature requests for mod_mam
+	Feature requests for mod_mam_mnesia
 
 - Add ODBC support.
 - Support archiving preferences (XEP-0313, section 6).

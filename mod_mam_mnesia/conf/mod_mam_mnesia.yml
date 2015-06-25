@@ -1,4 +1,4 @@
 modules:
-  mod_mam:
+  mod_mam_mnesia:
     default_page_size: 25
     max_page_size: 100
