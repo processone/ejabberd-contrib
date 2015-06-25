@@ -51,8 +51,8 @@
 
 %% ejabberd_hooks callbacks.
 -export([disco_features/5,
-	 receive_stanza/4,
-	 send_stanza/3,
+	 receive_stanza/5,
+	 send_stanza/4,
 	 remove_user/2]).
 
 %% gen_iq_handler callback.
@@ -274,10 +274,10 @@ disco_features({result, OtherFeatures},
     {result, OtherFeatures ++ [?NS_MAM]};
 disco_features(Acc, _From, _To, _Node, _Lang) -> Acc.
 
--spec receive_stanza(jid(), jid(), jid(), xmlel()) -> ok.
+-spec receive_stanza(xmlel(), term(), jid(), jid(), jid()) -> xmlel().
 
-receive_stanza(#jid{luser = U, lserver = S} = JID, From, To,
-	       #xmlel{name = <<"message">>} = Stanza) ->
+receive_stanza(#xmlel{name = <<"message">>} = Stanza, _C2SState,
+	       #jid{luser = U, lserver = S} = JID, From, To) ->
     case is_desired(incoming, JID, To, Stanza) of
       true ->
 	  Proc = gen_mod:get_module_proc(S, ?PROCNAME),
@@ -288,15 +288,15 @@ receive_stanza(#jid{luser = U, lserver = S} = JID, From, To,
 	  ?GEN_SERVER:cast(Proc, {store, {U, S}, Msg});
       false ->
 	  ?DEBUG("Won't archive undesired incoming stanza for ~s",
-		 [jlib:jid_to_string(To)]),
-	  ok
-    end;
-receive_stanza(_JID, _From, _To, _Stanza) -> ok.
+		 [jlib:jid_to_string(To)])
+    end,
+    Stanza;
+receive_stanza(Stanza, _C2SState, _JID, _From, _To) -> Stanza.
 
--spec send_stanza(jid(), jid(), xmlel()) -> ok.
+-spec send_stanza(xmlel(), term(), jid(), jid()) -> xmlel().
 
-send_stanza(#jid{luser = U, lserver = S} = From, To,
-	    #xmlel{name = <<"message">>} = Stanza) ->
+send_stanza(#xmlel{name = <<"message">>} = Stanza, _C2SState,
+	    #jid{luser = U, lserver = S} = From, To) ->
     case is_desired(outgoing, From, To, Stanza) of
       true ->
 	  Proc = gen_mod:get_module_proc(S, ?PROCNAME),
@@ -307,10 +307,10 @@ send_stanza(#jid{luser = U, lserver = S} = From, To,
 	  ?GEN_SERVER:cast(Proc, {store, {U, S}, Msg});
       false ->
 	  ?DEBUG("Won't archive undesired outgoing stanza from ~s",
-		 [jlib:jid_to_string(From)]),
-	  ok
-    end;
-send_stanza(_From, _To, _Stanza) -> ok.
+		 [jlib:jid_to_string(From)])
+    end,
+    Stanza;
+send_stanza(Stanza, _C2SState, _From, _To) -> Stanza.
 
 %%--------------------------------------------------------------------
 %% Check whether stanza should be stored.
