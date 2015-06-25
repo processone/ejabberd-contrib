@@ -22,8 +22,8 @@
 	 web_menu_node/3, web_page_node/5,
 	 web_menu_host/3, web_page_host/3,
 	 %% Hooks
-	 register_user/2, remove_user/2, user_send_packet/3,
-         user_send_packet_traffic/3, user_receive_packet_traffic/4,
+	 register_user/2, remove_user/2, user_send_packet/4,
+         user_send_packet_traffic/4, user_receive_packet_traffic/5,
 	 user_login/1, user_logout/4, user_logout_sm/3]).
 
 -include("ejabberd.hrl").
@@ -224,14 +224,15 @@ remove_user(_User, Host) ->
     ets:update_counter(TableHost, {remove_user, Host}, 1),
     ets:update_counter(TableServer, {remove_user, server}, 1).
 
-user_send_packet(FromJID, ToJID, NewEl) ->
+user_send_packet(NewEl, _C2SState, FromJID, ToJID) ->
     %% Registrarse para tramitar Host/mod_stats2file
     case catch binary_to_existing_atom(ToJID#jid.lresource, utf8) of
 	?MODULE -> received_response(FromJID, ToJID, NewEl);
 	_ -> ok
-    end.
+    end,
+    NewEl.
 
-user_send_packet_traffic(FromJID, ToJID, NewEl) ->
+user_send_packet_traffic(NewEl, _C2SState, FromJID, ToJID) ->
     %% Only required for traffic stats
     Host = FromJID#jid.lserver,
     HostTo = ToJID#jid.lserver,
@@ -246,10 +247,11 @@ user_send_packet_traffic(FromJID, ToJID, NewEl) ->
     	       false -> out
     	   end,
     Table = table_name(Host),
-    ets:update_counter(Table, {send, Host, Type2, Dest}, 1).
+    ets:update_counter(Table, {send, Host, Type2, Dest}, 1),
+    NewEl.
 
 %% Only required for traffic stats
-user_receive_packet_traffic(_JID, From, To, FixedPacket) ->
+user_receive_packet_traffic(FixedPacket, _C2SState, _JID, From, To) ->
     HostFrom = From#jid.lserver,
     Host = To#jid.lserver,
     {xmlel, Type, _, _} = FixedPacket,
@@ -263,7 +265,8 @@ user_receive_packet_traffic(_JID, From, To, FixedPacket) ->
 	       false -> out
 	   end,
     Table = table_name(Host),
-    ets:update_counter(Table, {recv, Host, Type2, Dest}, 1).
+    ets:update_counter(Table, {recv, Host, Type2, Dest}, 1),
+    FixedPacket.
 
 
 %%%==================================
