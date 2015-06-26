@@ -24,11 +24,12 @@
 %%%
 %%%----------------------------------------------------------------------
 
--module(scram).
+-module(scram2).
 
 -author('stephen.roettger@googlemail.com').
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 %% External exports
 %% ejabberd doesn't implement SASLPREP, so we use the similar RESOURCEPREP instead
@@ -56,7 +57,6 @@
 -export([scram_to_tuple/1]).
 
 -define(SALT_LENGTH, 16).
--define(SCRAM_DEFAULT_ITERATION_COUNT, 4096).
 -define(SCRAM_SERIAL_PREFIX, "==SCRAM==,").
 
 -spec salted_password(binary(), binary(), non_neg_integer()) -> binary().
@@ -106,7 +106,7 @@ hi_round(Password, UPrev, IterationCount) ->
 
 
 enabled(Host) ->
-    case ejabberd_config:get_local_option(auth_opts, Host) of
+    case ejabberd_config:get_option({auth_opts, Host}, fun(V) -> V end) of
         undefined ->
             false;
         AuthOpts ->
@@ -116,7 +116,7 @@ enabled(Host) ->
 iterations() -> ?SCRAM_DEFAULT_ITERATION_COUNT.
 
 iterations(Host) ->
-    case ejabberd_config:get_local_option(auth_opts, Host) of
+    case ejabberd_config:get_option({auth_opts, Host}, fun(V) -> V end) of
         undefined ->
             iterations();
         AuthOpts ->
@@ -134,7 +134,7 @@ password_to_scram(#scram{} = Password, _) ->
 password_to_scram(Password, IterationCount) ->
     Salt = crypto:rand_bytes(?SALT_LENGTH),
     SaltedPassword = salted_password(Password, Salt, IterationCount),
-    StoredKey = stored_key(scram:client_key(SaltedPassword)),
+    StoredKey = stored_key(scram2:client_key(SaltedPassword)),
     ServerKey = server_key(SaltedPassword),
     #scram{storedkey = base64:encode(StoredKey),
            serverkey = base64:encode(ServerKey),
