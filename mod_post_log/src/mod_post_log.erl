@@ -14,7 +14,7 @@
 
 -export([start/2,
          stop/1,
-         log_user_send/3,
+         log_user_send/4,
          post_result/1]).
 
 -include("ejabberd.hrl").
@@ -36,8 +36,9 @@ stop(Host) ->
                           ?MODULE, log_user_send, 50),
     ok.
 
-log_user_send(From, To, Packet) ->
-    ok = log_packet(From, To, Packet).
+log_user_send(Packet, _C2SState, From, To) ->
+    ok = log_packet(From, To, Packet),
+    Packet.
 
 log_packet(From, To, #xmlel{name = <<"message">>} = Packet) ->
     ok = log_message(From, To, Packet);
