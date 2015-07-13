@@ -24,7 +24,8 @@
 	 %% Hooks
 	 register_user/2, remove_user/2, user_send_packet/4,
          user_send_packet_traffic/4, user_receive_packet_traffic/5,
-	 user_login/1, user_logout/4, user_logout_sm/3]).
+	 %%user_logout_sm/3,
+	 user_login/1, user_logout/4]).
 
 -include("ejabberd.hrl").
 -include("ejabberd_commands.hrl").
@@ -169,8 +170,8 @@ prepare_stats_host(Host, Hooks, CD) ->
 	    ejabberd_hooks:add(register_user, Host, ?MODULE, register_user, 90),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 90),
 	    ejabberd_hooks:add(user_available_hook, Host, ?MODULE, user_login, 90),
-	    %%ejabberd_hooks:add(unset_presence_hook, Host, ?MODULE, user_logout, 90),
-	    ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
+	    ejabberd_hooks:add(unset_presence_hook, Host, ?MODULE, user_logout, 90),
+	    %%ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
 	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 90);
 	traffic ->
 	    ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, user_receive_packet_traffic, 92),
@@ -178,7 +179,8 @@ prepare_stats_host(Host, Hooks, CD) ->
 	    ejabberd_hooks:add(register_user, Host, ?MODULE, register_user, 90),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 90),
 	    ejabberd_hooks:add(user_available_hook, Host, ?MODULE, user_login, 90),
-	    ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
+	    ejabberd_hooks:add(unset_presence_hook, Host, ?MODULE, user_logout, 90),
+	    %%ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
 	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 90);
 	false ->
 	    ok
@@ -196,8 +198,8 @@ finish_stats() ->
 
 finish_stats(Host) ->
     ejabberd_hooks:delete(user_available_hook, Host, ?MODULE, user_login, 90),
-    %%ejabberd_hooks:delete(unset_presence_hook, Host, ?MODULE, user_logout, 90),
-    ejabberd_hooks:delete(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
+    ejabberd_hooks:delete(unset_presence_hook, Host, ?MODULE, user_logout, 90),
+    %%ejabberd_hooks:delete(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, user_send_packet, 90),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, user_send_packet_traffic, 92),
     ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE, user_receive_packet_traffic, 92),
@@ -739,8 +741,8 @@ user_login(U) ->
     request_iqversion(User, Host, Resource).
 
 
-user_logout_sm(_, JID, _Data) ->
-    user_logout(JID#jid.luser, JID#jid.lserver, JID#jid.lresource, no_status).
+%%user_logout_sm(_, JID, _Data) ->
+%%    user_logout(JID#jid.luser, JID#jid.lserver, JID#jid.lresource, no_status).
 
 %% cuando un usuario desconecta, buscar en la tabla su JID/USR y quitarlo
 user_logout(User, Host, Resource, _Status) ->
