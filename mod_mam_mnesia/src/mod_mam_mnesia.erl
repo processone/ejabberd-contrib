@@ -352,7 +352,7 @@ message_type(#xmlel{attrs = Attrs}) ->
 
 has_non_empty_body(Message) ->
     xml:get_subtag_cdata(Message, <<"body">>) =/= <<"">> orelse
-    xml:get_subtag_cdata(Message, <<"axolotl_message">>) =/= <<"">>.
+    xml:get_subtag(Message, <<"axolotl_message">>) =/= false.
 
 -spec has_no_storage_hint(xmlel()) -> boolean().
 
