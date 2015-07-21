@@ -321,7 +321,7 @@ send_stanza(Stanza, _C2SState, _From, _To) -> Stanza.
 is_desired(Route, JID, To, Message) ->
     is_chat_or_normal_message(Message) andalso
     has_non_empty_body(Message) andalso
-    not has_no_storage_hint(Message) andalso
+    not has_no_store_hint(Message) andalso
     not is_bare_copy(Route, JID, To) andalso
     not is_resent(Message).
 
@@ -354,10 +354,14 @@ has_non_empty_body(Message) ->
     xml:get_subtag_cdata(Message, <<"body">>) =/= <<"">> orelse
     xml:get_subtag(Message, <<"axolotl_message">>) =/= false.
 
--spec has_no_storage_hint(xmlel()) -> boolean().
+-spec has_no_store_hint(xmlel()) -> boolean().
 
-has_no_storage_hint(Message) ->
+has_no_store_hint(Message) ->
+    xml:get_subtag_with_xmlns(Message, <<"no-store">>, ?NS_HINTS)
+	=/= false orelse
     xml:get_subtag_with_xmlns(Message, <<"no-storage">>, ?NS_HINTS)
+	=/= false orelse
+    xml:get_subtag_with_xmlns(Message, <<"no-permanent-store">>, ?NS_HINTS)
 	=/= false orelse
     xml:get_subtag_with_xmlns(Message, <<"no-permanent-storage">>, ?NS_HINTS)
 	=/= false.
