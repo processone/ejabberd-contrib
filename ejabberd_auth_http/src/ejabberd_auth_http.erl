@@ -65,12 +65,9 @@ start(Host) ->
 plain_password_required() ->
     false.
 
--spec store_type(binary()) -> plain | scram.
-store_type(Server) ->
-    case scram2:enabled(Server) of
-        false -> plain;
-        true -> scram
-    end.
+-spec store_type() -> plain | scram.
+store_type() ->
+    ejabberd_auth_odbc:store_type().
 
 -spec check_password(ejabberd:luser(), ejabberd:lserver(), binary()) -> boolean().
 check_password(LUser, LServer, Password) ->

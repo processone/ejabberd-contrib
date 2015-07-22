@@ -171,23 +171,23 @@ configuration along with use cases.
 An Auth token is provided as a password.
 
 * **Service implements:** `check_password`, `user_exists`
-* **ejabberd config:** `password format`: `plain`, `mod_register` disabled
+* **ejabberd config:** `auth_password format`: `plain`, `mod_register` disabled
 * **Client side:** MUST NOT use `DIGEST-MD5` mechanism; use `PLAIN`
 
 ### Central database of plaintext passwords
 
 * **Service implements:** `check_password`, `get_password`, `user_exists`
-* **ejabberd config:** `password format`: `plain`, `mod_register` disabled
+* **ejabberd config:** `auth_password_format`: `plain`, `mod_register` disabled
 * **Client side:** May use any available auth method
 
 ### Central database able to process SCRAM
 
 * **Service implements:** `get_password`, `user_exists`
-* **ejabberd config:** `password format`: `scram`, `mod_register` disabled
+* **ejabberd config:** `auth_password_format`: `scram`, `mod_register` disabled
 * **Client side:** May use any available auth method
 
 ### All-included
 
 * **Service implements:** all methods
-* **ejabberd config:** `password format`: `scram` (recommended) or `plain`, `mod_register` enabled
+* **ejabberd config:** `auth_password_format`: `scram` (recommended) or `plain`, `mod_register` enabled
 * **Client side:** May use any available auth method
