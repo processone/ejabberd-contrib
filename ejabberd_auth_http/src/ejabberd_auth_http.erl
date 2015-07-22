@@ -8,7 +8,7 @@
 -module(ejabberd_auth_http).
 -author('piotr.nosek@erlang-solutions.com').
 
--behaviour(ejabberd_gen_auth).
+-behaviour(ejabberd_auth).
 
 -behaviour(ejabberd_config).
 
