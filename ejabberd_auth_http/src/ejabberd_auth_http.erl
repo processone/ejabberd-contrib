@@ -29,7 +29,7 @@
          remove_user/2,
          remove_user/3,
          plain_password_required/0,
-         store_type/1,
+         store_type/0,
          login/2,
          get_password/3,
          opt_type/1,
