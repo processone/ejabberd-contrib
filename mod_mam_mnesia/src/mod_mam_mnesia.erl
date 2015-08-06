@@ -352,7 +352,7 @@ message_type(#xmlel{attrs = Attrs}) ->
 
 has_non_empty_body(Message) ->
     xml:get_subtag_cdata(Message, <<"body">>) =/= <<"">> orelse
-    xml:get_subtag(Message, <<"axolotl_message">>) =/= false.
+    xml:get_subtag(Message, <<"encrypted">>) =/= false.
 
 -spec has_no_store_hint(xmlel()) -> boolean().
 
