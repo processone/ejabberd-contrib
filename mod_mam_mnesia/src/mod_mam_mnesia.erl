@@ -730,6 +730,10 @@ parse_form(#xmlel{} = Query) ->
 	    #mam_filter{}
     end;
 parse_form(Fields) when is_list(Fields) ->
+    StripCData =
+	fun(#xmlel{children = Els} = Field) ->
+		Field#xmlel{children = xml:remove_cdata(Els)}
+	end,
     Parse =
 	fun(#xmlel{name = <<"field">>,
 		   attrs = Attrs,
@@ -770,7 +774,7 @@ parse_form(Fields) when is_list(Fields) ->
 		?DEBUG("Got unexpected form element: ~p", [El]),
 		Form
 	end,
-    lists:foldl(Parse, #mam_filter{}, Fields).
+    lists:foldl(Parse, #mam_filter{}, lists:map(StripCData, Fields)).
 
 -spec get_page_size_conf(binary()) -> mam_page_size_conf().
 
