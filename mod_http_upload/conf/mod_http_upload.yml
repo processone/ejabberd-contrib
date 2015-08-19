@@ -1,0 +1,12 @@
+listen:
+  -
+    module: ejabberd_http
+    port: 5443
+    tls: true
+    certfile: "/etc/ejabberd/example.com.pem"
+    request_handlers:
+      "": mod_http_upload
+
+modules:
+  mod_http_upload:
+    docroot: "/home/xmpp/upload"
