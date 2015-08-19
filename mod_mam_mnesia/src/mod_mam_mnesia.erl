@@ -725,7 +725,7 @@ parse_request(Host, Query) ->
 parse_form(#xmlel{} = Query) ->
     case xml:get_subtag_with_xmlns(Query, <<"x">>, ?NS_XDATA) of
 	#xmlel{children = Fields} ->
-	    parse_form(Fields);
+	    parse_form(xml:remove_cdata(Fields));
 	false ->
 	    #mam_filter{}
     end;
