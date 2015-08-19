@@ -737,13 +737,13 @@ parse_form(Fields) when is_list(Fields) ->
     Parse =
 	fun(#xmlel{name = <<"field">>,
 		   attrs = Attrs,
-		   children = [#xmlel{name = <<"value">>, children = [Value]}]},
+		   children = [#xmlel{name = <<"value">>, children = Els}]},
 	    Form) ->
 		case xml:get_attr_s(<<"var">>, Attrs) of
 		  <<"FORM_TYPE">> ->
 		      Form;
 		  <<"start">> ->
-		      CData = xml:get_cdata([Value]),
+		      CData = get_cdata_without_whitespace(Els),
 		      case jlib:datetime_string_to_timestamp(CData) of
 			undefined ->
 			    Form#mam_filter{start = error};
@@ -751,7 +751,7 @@ parse_form(Fields) when is_list(Fields) ->
 			    Form#mam_filter{start = Start}
 		      end;
 		  <<"end">> ->
-		      CData = xml:get_cdata([Value]),
+		      CData = get_cdata_without_whitespace(Els),
 		      case jlib:datetime_string_to_timestamp(CData) of
 			undefined ->
 			    Form#mam_filter{fin = error};
@@ -759,7 +759,7 @@ parse_form(Fields) when is_list(Fields) ->
 			    Form#mam_filter{fin = End}
 		      end;
 		  <<"with">> ->
-		      CData = xml:get_cdata([Value]),
+		      CData = get_cdata_without_whitespace(Els),
 		      case jlib:string_to_jid(CData) of
 			error ->
 			    Form#mam_filter{with = error};
@@ -855,6 +855,12 @@ check_request(#mam_query{index = Index, filter = Filter})
     {error, ?ERR_FEATURE_NOT_IMPLEMENTED};
 check_request(_Query) ->
     ok.
+
+-spec get_cdata_without_whitespace([xmlel() | cdata()]) -> binary().
+
+get_cdata_without_whitespace(Els) ->
+    CData = xml:get_cdata(Els),
+    re:replace(CData, <<"[[:space:]]">>, <<"">>, [global, {return, binary}]).
 
 %%--------------------------------------------------------------------
 %% Send responses.
