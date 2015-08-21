@@ -75,6 +75,7 @@
 	 name                   :: binary(),
 	 access                 :: atom(),
 	 max_size               :: pos_integer() | infinity,
+	 secret_length          :: pos_integer(),
 	 jid_in_url             :: sha1 | node,
 	 docroot                :: binary(),
 	 put_url                :: binary(),
@@ -143,6 +144,8 @@ mod_opt_type(max_size) ->
     fun (I) when is_integer(I), I > 0 -> I;
         (infinity) -> infinity
     end;
+mod_opt_type(secret_length) ->
+    fun (I) when is_integer(I), I >= 8-> I end;
 mod_opt_type(jid_in_url) ->
     fun(sha1) -> sha1;
        (node) -> node
@@ -162,7 +165,7 @@ mod_opt_type(service_url) ->
        (<<"https://", _/binary>> = URL) -> URL
     end;
 mod_opt_type(_) ->
-    [host, name, access, max_size, jid_in_url, docroot,
+    [host, name, access, max_size, secret_length, jid_in_url, docroot,
      put_url, get_url, service_url].
 
 %%--------------------------------------------------------------------
@@ -182,6 +185,9 @@ init({ServerHost, Opts}) ->
 			      fun (I) when is_integer(I), I > 0 -> I;
 				  (infinity) -> infinity
 			      end, 104857600),
+    SecretLength = gen_mod:get_opt(secret_length, Opts,
+				   fun(I) when is_integer(I), I >= 8 -> I end,
+				   40),
     JIDinURL = gen_mod:get_opt(jid_in_url, Opts,
 				   fun(sha1) -> sha1;
 				      (node) -> node
@@ -222,7 +228,7 @@ init({ServerHost, Opts}) ->
     ejabberd_router:register_route(Host),
     {ok, #state{server_host = ServerHost, host = Host, name = Name,
 		access = Access, max_size = MaxSize,
-		jid_in_url = JIDinURL,
+		secret_length = SecretLength, jid_in_url = JIDinURL,
 		docroot = DocRoot,
 		put_url = str:strip(PutURL, right, $/),
 		get_url = str:strip(GetURL, right, $/),
@@ -454,10 +460,11 @@ create_slot(#state{service_url = undefined, max_size = MaxSize},
 	      [File, User, Size]),
     {error, ?ERRT_NOT_ACCEPTABLE(Lang, Text)};
 create_slot(#state{service_url = undefined,
-		   jid_in_url = JIDinURL},
+		   jid_in_url = JIDinURL,
+		   secret_length = SecretLength},
 	    User, File, _Size, _ContentType, _Lang) ->
     UserStr = make_user_string(User, JIDinURL),
-    RandStr = make_rand_string(40),
+    RandStr = make_rand_string(SecretLength),
     SaneFile = re:replace(File, <<"[^a-zA-Z0-9_.-]">>, <<$_>>,
 			  [global, {return, binary}]),
     ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)", [User, File]),
