@@ -108,7 +108,8 @@ start(ServerHost, Opts) ->
 			     fun(<<"http://", _/binary>> = URL) -> URL;
 				(<<"https://", _/binary>> = URL) -> URL;
 				(_) -> <<"https://", ServerHost/binary>>
-			     end, <<"https://", ServerHost/binary>>),
+			     end,
+			     <<"https://", ServerHost/binary>>),
     [_, ProcHost | _] = binary:split(PutURL,
 				     [<<"http://">>, <<"https://">>,
 				      <<":">>, <<"/">>], [global]),
@@ -139,9 +140,9 @@ mod_opt_type(host) ->
 mod_opt_type(name) ->
     fun iolist_to_binary/1;
 mod_opt_type(access) ->
-    fun (A) when is_atom(A) -> A end;
+    fun(A) when is_atom(A) -> A end;
 mod_opt_type(max_size) ->
-    fun (I) when is_integer(I), I > 0 -> I;
+    fun(I) when is_integer(I), I > 0 -> I;
         (infinity) -> infinity
     end;
 mod_opt_type(secret_length) ->
@@ -177,14 +178,17 @@ mod_opt_type(_) ->
 init({ServerHost, Opts}) ->
     process_flag(trap_exit, true),
     Host = gen_mod:get_opt_host(ServerHost, Opts, <<"upload.@HOST@">>),
-    Name = gen_mod:get_opt(name, Opts, fun iolist_to_binary/1,
+    Name = gen_mod:get_opt(name, Opts,
+			   fun iolist_to_binary/1,
 			   <<"HTTP File Upload">>),
-    Access = gen_mod:get_opt(access, Opts, fun(A) when is_atom(A) -> A end,
+    Access = gen_mod:get_opt(access, Opts,
+			     fun(A) when is_atom(A) -> A end,
 			     local),
     MaxSize = gen_mod:get_opt(max_size, Opts,
 			      fun (I) when is_integer(I), I > 0 -> I;
 				  (infinity) -> infinity
-			      end, 104857600),
+			      end,
+			      104857600),
     SecretLength = gen_mod:get_opt(secret_length, Opts,
 				   fun(I) when is_integer(I), I >= 8 -> I end,
 				   40),
@@ -193,20 +197,24 @@ init({ServerHost, Opts}) ->
 				      (node) -> node
 				   end,
 				   sha1),
-    DocRoot = gen_mod:get_opt(docroot, Opts, fun iolist_to_binary/1,
+    DocRoot = gen_mod:get_opt(docroot, Opts,
+			      fun iolist_to_binary/1,
 			      undefined),
     PutURL = gen_mod:get_opt(put_url, Opts,
 			     fun(<<"http://", _/binary>> = URL) -> URL;
 				(<<"https://", _/binary>> = URL) -> URL
-			     end, <<"https://", ServerHost/binary, ":5443">>),
+			     end,
+			     <<"https://", ServerHost/binary, ":5443">>),
     GetURL = gen_mod:get_opt(get_url, Opts,
 			     fun(<<"http://", _/binary>> = URL) -> URL;
 				(<<"https://", _/binary>> = URL) -> URL
-			     end, PutURL),
+			     end,
+			     PutURL),
     ServiceURL = gen_mod:get_opt(service_url, Opts,
 				 fun(<<"http://", _/binary>> = URL) -> URL;
 				    (<<"https://", _/binary>> = URL) -> URL
-				 end, undefined),
+				 end,
+				 undefined),
     case {DocRoot, ServiceURL} of
       {undefined, undefined} ->
 	  ?ERROR_MSG("A mod_http_upload 'docroot' MUST be specified", []),
@@ -465,10 +473,9 @@ create_slot(#state{service_url = undefined,
 	    User, File, _Size, _ContentType, _Lang) ->
     UserStr = make_user_string(User, JIDinURL),
     RandStr = make_rand_string(SecretLength),
-    SaneFile = re:replace(File, <<"[^a-zA-Z0-9_.-]">>, <<$_>>,
-			  [global, {return, binary}]),
+    FileStr = make_file_string(File),
     ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)", [User, File]),
-    {ok, [UserStr, RandStr, SaneFile]};
+    {ok, [UserStr, RandStr, FileStr]};
 create_slot(#state{service_url = ServiceURL}, User, File, Size, ContentType,
 	    _Lang) ->
     Options = [{body_format, binary}, {full_result, false}],
@@ -548,6 +555,11 @@ make_user_string(User, sha1) ->
 make_user_string(User, node) ->
     [Node, _Domain] = binary:split(User, <<$@>>),
     re:replace(Node, <<"[^a-zA-Z0-9_.-]">>, <<$_>>, [global, {return, binary}]).
+
+-spec make_file_string(binary()) -> binary().
+
+make_file_string(File) ->
+    re:replace(File, <<"[^a-zA-Z0-9_.-]">>, <<$_>>, [global, {return, binary}]).
 
 -spec make_rand_string(non_neg_integer()) -> binary().
 
