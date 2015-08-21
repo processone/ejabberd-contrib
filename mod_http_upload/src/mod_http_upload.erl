@@ -75,6 +75,7 @@
 	 name                   :: binary(),
 	 access                 :: atom(),
 	 max_size               :: pos_integer() | infinity,
+	 jid_in_url             :: sha1 | node,
 	 docroot                :: binary(),
 	 put_url                :: binary(),
 	 get_url                :: binary(),
@@ -142,6 +143,10 @@ mod_opt_type(max_size) ->
     fun (I) when is_integer(I), I > 0 -> I;
         (infinity) -> infinity
     end;
+mod_opt_type(jid_in_url) ->
+    fun(sha1) -> sha1;
+       (node) -> node
+    end;
 mod_opt_type(docroot) ->
     fun iolist_to_binary/1;
 mod_opt_type(put_url) ->
@@ -157,7 +162,8 @@ mod_opt_type(service_url) ->
        (<<"https://", _/binary>> = URL) -> URL
     end;
 mod_opt_type(_) ->
-    [host, name, access, max_size, docroot, put_url, get_url, service_url].
+    [host, name, access, max_size, jid_in_url, docroot,
+     put_url, get_url, service_url].
 
 %%--------------------------------------------------------------------
 %% gen_server callbacks.
@@ -176,6 +182,11 @@ init({ServerHost, Opts}) ->
 			      fun (I) when is_integer(I), I > 0 -> I;
 				  (infinity) -> infinity
 			      end, 104857600),
+    JIDinURL = gen_mod:get_opt(jid_in_url, Opts,
+				   fun(sha1) -> sha1;
+				      (node) -> node
+				   end,
+				   sha1),
     DocRoot = gen_mod:get_opt(docroot, Opts, fun iolist_to_binary/1,
 			      undefined),
     PutURL = gen_mod:get_opt(put_url, Opts,
@@ -210,7 +221,9 @@ init({ServerHost, Opts}) ->
     end,
     ejabberd_router:register_route(Host),
     {ok, #state{server_host = ServerHost, host = Host, name = Name,
-		access = Access, max_size = MaxSize, docroot = DocRoot,
+		access = Access, max_size = MaxSize,
+		jid_in_url = JIDinURL,
+		docroot = DocRoot,
 		put_url = str:strip(PutURL, right, $/),
 		get_url = str:strip(GetURL, right, $/),
 		service_url = ServiceURL}}.
@@ -440,14 +453,15 @@ create_slot(#state{service_url = undefined, max_size = MaxSize},
     ?INFO_MSG("Rejecting file ~s from ~s (too large: ~B bytes)",
 	      [File, User, Size]),
     {error, ?ERRT_NOT_ACCEPTABLE(Lang, Text)};
-create_slot(#state{service_url = undefined}, User, File, _Size, _ContentType,
-	    _Lang) ->
-    UserHash = p1_sha:sha(User),
+create_slot(#state{service_url = undefined,
+		   jid_in_url = JIDinURL},
+	    User, File, _Size, _ContentType, _Lang) ->
+    UserStr = make_user_string(User, JIDinURL),
     RandStr = make_rand_string(40),
     SaneFile = re:replace(File, <<"[^a-zA-Z0-9_.-]">>, <<$_>>,
 			  [global, {return, binary}]),
     ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)", [User, File]),
-    {ok, [UserHash, RandStr, SaneFile]};
+    {ok, [UserStr, RandStr, SaneFile]};
 create_slot(#state{service_url = ServiceURL}, User, File, Size, ContentType,
 	    _Lang) ->
     Options = [{body_format, binary}, {full_result, false}],
@@ -519,6 +533,14 @@ slot_el(PutURL, GetURL) ->
 			      children = [{xmlcdata, PutURL}]},
 		       #xmlel{name = <<"get">>,
 			      children = [{xmlcdata, GetURL}]}]}.
+
+-spec make_user_string(binary(), sha1 | node) -> binary().
+
+make_user_string(User, sha1) ->
+    p1_sha:sha(User);
+make_user_string(User, node) ->
+    [Node, _Domain] = binary:split(User, <<$@>>),
+    re:replace(Node, <<"[^a-zA-Z0-9_.-]">>, <<$_>>, [global, {return, binary}]).
 
 -spec make_rand_string(non_neg_integer()) -> binary().
 
@@ -630,8 +652,14 @@ remove_user(User, Server) ->
       undefined ->
 	  ok;
       DocRoot ->
-	  UserHash = p1_sha:sha(LUser),
-	  UserDir = str:join([DocRoot, UserHash], <<$/>>),
+	  JIDinURL = gen_mod:get_module_opt(LServer, ?MODULE, jid_in_url,
+					    fun(sha1) -> sha1;
+					       (node) -> node
+					    end,
+					    sha1),
+	  UserStr = make_user_string(<<LUser/binary, $@, LServer/binary>>,
+				     JIDinURL),
+	  UserDir = str:join([DocRoot, UserStr], <<$/>>),
 	  case del_tree(UserDir) of
 	      ok ->
 		  ?INFO_MSG("Removed HTTP upload directory of ~s@~s",
