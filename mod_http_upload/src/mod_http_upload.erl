@@ -158,7 +158,7 @@ mod_opt_type(max_size) ->
         (infinity) -> infinity
     end;
 mod_opt_type(secret_length) ->
-    fun (I) when is_integer(I), I >= 8-> I end;
+    fun(I) when is_integer(I), I >= 8 -> I end;
 mod_opt_type(jid_in_url) ->
     fun(sha1) -> sha1;
        (node) -> node
@@ -199,7 +199,7 @@ init({ServerHost, Opts}) ->
 			     fun(A) when is_atom(A) -> A end,
 			     local),
     MaxSize = gen_mod:get_opt(max_size, Opts,
-			      fun (I) when is_integer(I), I > 0 -> I;
+			      fun(I) when is_integer(I), I > 0 -> I;
 				  (infinity) -> infinity
 			      end,
 			      104857600),
@@ -227,8 +227,7 @@ init({ServerHost, Opts}) ->
     ServiceURL = gen_mod:get_opt(service_url, Opts,
 				 fun(<<"http://", _/binary>> = URL) -> URL;
 				    (<<"https://", _/binary>> = URL) -> URL
-				 end,
-				 undefined),
+				 end),
     case ServiceURL of
       undefined ->
 	  ok;
@@ -244,7 +243,7 @@ init({ServerHost, Opts}) ->
     {ok, #state{server_host = ServerHost, host = Host, name = Name,
 		access = Access, max_size = MaxSize,
 		secret_length = SecretLength, jid_in_url = JIDinURL,
-		docroot = expand_home(DocRoot),
+		docroot = expand_home(str:strip(DocRoot, right, $/)),
 		put_url = expand_host(str:strip(PutURL, right, $/), ServerHost),
 		get_url = expand_host(str:strip(GetURL, right, $/), ServerHost),
 		service_url = expand_host(ServiceURL, ServerHost)}}.

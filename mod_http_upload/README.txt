@@ -15,11 +15,11 @@ the file and another URL from which that file can later be downloaded.
 PLEASE NOTE: This module implements an experimental protocol which has NOT
 been approved by the XMPP Standards Foundation and may change at any time:
 
-  http://xmpp.org/extensions/inbox/http-upload.html
+http://xmpp.org/extensions/inbox/http-upload.html
 
 There are already suggestions for improvements, e.g. from ProcessOne:
 
-  https://github.com/processone/ejabberd-saas-docs/blob/master/xmpp-specs/http-filetransfer/http-filetransfer.md
+https://github.com/processone/ejabberd-saas-docs/blob/master/xmpp-specs/http-filetransfer/http-filetransfer.md
 
 
 	CONFIGURATION
@@ -109,7 +109,7 @@ The configurable mod_http_upload options are:
   An HTTP GET query such as the following is issued whenever an HTTP upload
   slot request is accepted as per the 'access' rule:
 
-    http://localhost:5444/?jid=juliet%40example.com&size=10240&name=example.jpg
+  http://localhost:5444/?jid=juliet%40example.com&size=10240&name=example.jpg
 
   In order to accept the request, the service must return an HTTP status
   code of 200 or 201 and two lines of text/plain output.  The first line is
