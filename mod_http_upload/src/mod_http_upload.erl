@@ -246,7 +246,7 @@ init({ServerHost, Opts}) ->
 		docroot = expand_home(str:strip(DocRoot, right, $/)),
 		put_url = expand_host(str:strip(PutURL, right, $/), ServerHost),
 		get_url = expand_host(str:strip(GetURL, right, $/), ServerHost),
-		service_url = expand_host(ServiceURL, ServerHost)}}.
+		service_url = ServiceURL}}.
 
 -spec handle_call(_, {pid(), _}, state()) -> {noreply, state()}.
 
