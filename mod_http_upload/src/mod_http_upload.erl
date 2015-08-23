@@ -100,10 +100,16 @@ start_link(ServerHost, ProcHost, Opts) ->
 -spec start(binary(), gen_mod:opts()) -> {ok, _} | {ok, _, _} | {error, _}.
 
 start(ServerHost, Opts) ->
-    ejabberd_hooks:add(remove_user, ServerHost, ?MODULE,
-		       remove_user, 50),
-    ejabberd_hooks:add(anonymous_purge_hook, ServerHost, ?MODULE,
-		       remove_user, 50),
+    case gen_mod:get_opt(rm_on_unregister, Opts,
+			 fun(B) when is_boolean(B) -> B end,
+			 true) of
+      true ->
+	  ejabberd_hooks:add(remove_user, ServerHost, ?MODULE,
+			     remove_user, 50),
+	  ejabberd_hooks:add(anonymous_purge_hook, ServerHost, ?MODULE,
+			     remove_user, 50);
+      false -> ok
+    end,
     PutURL = gen_mod:get_opt(put_url, Opts,
 			     fun(<<"http://", _/binary>> = URL) -> URL;
 				(<<"https://", _/binary>> = URL) -> URL;
@@ -125,10 +131,16 @@ start(ServerHost, Opts) ->
 -spec stop(binary()) -> ok.
 
 stop(ServerHost) ->
-    ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE,
-			  remove_user, 50),
-    ejabberd_hooks:delete(anonymous_purge_hook, ServerHost, ?MODULE,
-			  remove_user, 50),
+    case gen_mod:get_module_opt(ServerHost, ?MODULE, rm_on_unregister,
+				fun(B) when is_boolean(B) -> B end,
+			        true) of
+      true ->
+	  ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE,
+				remove_user, 50),
+	  ejabberd_hooks:delete(anonymous_purge_hook, ServerHost, ?MODULE,
+				remove_user, 50);
+      false -> ok
+    end,
     Proc = gen_mod:get_module_proc(ServerHost, ?PROCNAME),
     ok = supervisor:terminate_child(ejabberd_sup, Proc),
     ok = supervisor:delete_child(ejabberd_sup, Proc).
@@ -165,9 +177,11 @@ mod_opt_type(service_url) ->
     fun(<<"http://", _/binary>> = URL) -> URL;
        (<<"https://", _/binary>> = URL) -> URL
     end;
+mod_opt_type(rm_on_unregister) ->
+    fun(B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
     [host, name, access, max_size, secret_length, jid_in_url, docroot,
-     put_url, get_url, service_url].
+     put_url, get_url, service_url, rm_on_unregister].
 
 %%--------------------------------------------------------------------
 %% gen_server callbacks.

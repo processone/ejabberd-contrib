@@ -132,3 +132,9 @@ The configurable mod_http_upload options are:
 
   In any other case, a 'service-unavailable' error stanza is sent to the
   client.
+
+- rm_on_unregister (default: 'true')
+
+  This option specifies whether files uploaded by a user should be removed
+  when that user is unregistered.  It must be set to 'false' if this is not
+  desired.
