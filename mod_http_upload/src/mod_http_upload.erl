@@ -113,10 +113,10 @@ start(ServerHost, Opts) ->
     PutURL = gen_mod:get_opt(put_url, Opts,
 			     fun(<<"http://", _/binary>> = URL) -> URL;
 				(<<"https://", _/binary>> = URL) -> URL;
-				(_) -> <<"https://", ServerHost/binary>>
+				(_) -> <<"https://@HOST@">>
 			     end,
-			     <<"https://", ServerHost/binary>>),
-    [_, ProcHost | _] = binary:split(PutURL,
+			     <<"https://@HOST@">>),
+    [_, ProcHost | _] = binary:split(expand_host(PutURL, ServerHost),
 				     [<<"http://">>, <<"https://">>,
 				      <<":">>, <<"/">>], [global]),
     Proc = gen_mod:get_module_proc(ProcHost, ?PROCNAME),
@@ -218,7 +218,7 @@ init({ServerHost, Opts}) ->
 			     fun(<<"http://", _/binary>> = URL) -> URL;
 				(<<"https://", _/binary>> = URL) -> URL
 			     end,
-			     <<"https://", ServerHost/binary, ":5443">>),
+			     <<"https://@HOST@:5443">>),
     GetURL = gen_mod:get_opt(get_url, Opts,
 			     fun(<<"http://", _/binary>> = URL) -> URL;
 				(<<"https://", _/binary>> = URL) -> URL
@@ -251,10 +251,10 @@ init({ServerHost, Opts}) ->
     {ok, #state{server_host = ServerHost, host = Host, name = Name,
 		access = Access, max_size = MaxSize,
 		secret_length = SecretLength, jid_in_url = JIDinURL,
-		docroot = DocRoot,
-		put_url = str:strip(PutURL, right, $/),
-		get_url = str:strip(GetURL, right, $/),
-		service_url = ServiceURL}}.
+		docroot = expand_home(DocRoot),
+		put_url = expand_host(str:strip(PutURL, right, $/), ServerHost),
+		get_url = expand_host(str:strip(GetURL, right, $/), ServerHost),
+		service_url = expand_host(ServiceURL, ServerHost)}}.
 
 -spec handle_call(_, {pid(), _}, state()) -> {noreply, state()}.
 
@@ -596,6 +596,19 @@ map_int_to_char(N) when N =<  9 -> N + 48; % Digit.
 map_int_to_char(N) when N =< 35 -> N + 55; % Upper-case character.
 map_int_to_char(N) when N =< 61 -> N + 61. % Lower-case character.
 
+-spec expand_home(binary()) -> binary().
+
+expand_home(Subject) ->
+    {ok, [[Home]]} = init:get_argument(home),
+    Parts = binary:split(Subject, <<"@HOME@">>, [global]),
+    str:join(Parts, list_to_binary(Home)).
+
+-spec expand_host(binary(), binary()) -> binary().
+
+expand_host(Subject, Host) ->
+    Parts = binary:split(Subject, <<"@HOST@">>, [global]),
+    str:join(Parts, Host).
+
 -spec yield_content_type(binary()) -> binary().
 
 yield_content_type(<<"">>) -> <<"application/octet-stream">>;
@@ -692,7 +705,7 @@ remove_user(User, Server) ->
 					    sha1),
 	  UserStr = make_user_string(<<LUser/binary, $@, LServer/binary>>,
 				     JIDinURL),
-	  UserDir = str:join([DocRoot, UserStr], <<$/>>),
+	  UserDir = str:join([expand_home(DocRoot), UserStr], <<$/>>),
 	  case del_tree(UserDir) of
 	      ok ->
 		  ?INFO_MSG("Removed HTTP upload directory of ~s@~s",

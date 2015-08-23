@@ -83,28 +83,30 @@ The configurable mod_http_upload options are:
 
   Uploaded files are stored below the directory specified (as an absolute
   path) with this option.  It is mandatory to specify either this option or
-  the 'service_url' option.
+  the 'service_url' option.  The keyword @HOME@ is replaced with the home
+  directory of the user running ejabberd.
 
 - put_url (default: "https://@HOST@:5443")
 
   This option specifies the initial part of the PUT URLs used for file
-  uploads.  Note that @HOST@ can NOT be specified for this option in the
-  configuration file, but the virtual host name is used as part of the URL
-  by default.
+  uploads.  The keyword @HOST@ is replaced with the virtual host name.
 
 - get_url (default: $put_url)
 
   This option specifies the initial part of the GET URLs used for
   downloading the files.  By default, it is set to the same value as the
   'put_url', but you can set it to a different value in order to have the
-  files served by a proper HTTP server such as Nginx or Apache.
+  files served by a proper HTTP server such as Nginx or Apache.  The keyword
+  @HOST@ is replaced with the virtual host name.
 
 - service_url (default: 'undefined')
 
   If a 'service_url' is specified, HTTP upload slot requests are forwarded
   to this external service instead of being handled by mod_http_upload
-  itself.  An HTTP GET query such as the following is issued whenever an
-  HTTP upload slot request is accepted as per the 'access' rule:
+  itself.  The keyword @HOST@ is replaced with the virtual host name.
+
+  An HTTP GET query such as the following is issued whenever an HTTP upload
+  slot request is accepted as per the 'access' rule:
 
     http://localhost:5444/?jid=juliet%40example.com&size=10240&name=example.jpg
 
