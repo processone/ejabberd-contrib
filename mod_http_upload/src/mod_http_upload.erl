@@ -113,9 +113,9 @@ start(ServerHost, Opts) ->
     PutURL = gen_mod:get_opt(put_url, Opts,
 			     fun(<<"http://", _/binary>> = URL) -> URL;
 				(<<"https://", _/binary>> = URL) -> URL;
-				(_) -> <<"https://@HOST@">>
+				(_) -> <<"http://@HOST@">>
 			     end,
-			     <<"https://@HOST@">>),
+			     <<"http://@HOST@">>),
     [_, ProcHost | _] = binary:split(expand_host(PutURL, ServerHost),
 				     [<<"http://">>, <<"https://">>,
 				      <<":">>, <<"/">>], [global]),
@@ -213,12 +213,12 @@ init({ServerHost, Opts}) ->
 				   sha1),
     DocRoot = gen_mod:get_opt(docroot, Opts,
 			      fun iolist_to_binary/1,
-			      undefined),
+			      <<"@HOME@/upload">>),
     PutURL = gen_mod:get_opt(put_url, Opts,
 			     fun(<<"http://", _/binary>> = URL) -> URL;
 				(<<"https://", _/binary>> = URL) -> URL
 			     end,
-			     <<"https://@HOST@:5443">>),
+			     <<"http://@HOST@:5444">>),
     GetURL = gen_mod:get_opt(get_url, Opts,
 			     fun(<<"http://", _/binary>> = URL) -> URL;
 				(<<"https://", _/binary>> = URL) -> URL
@@ -229,13 +229,6 @@ init({ServerHost, Opts}) ->
 				    (<<"https://", _/binary>> = URL) -> URL
 				 end,
 				 undefined),
-    case {DocRoot, ServiceURL} of
-      {undefined, undefined} ->
-	  ?ERROR_MSG("A mod_http_upload 'docroot' MUST be specified", []),
-	  erlang:error(configuration_error);
-      _ ->
-	  ok
-    end,
     case ServiceURL of
       undefined ->
 	  ok;
@@ -693,32 +686,26 @@ code_to_message(500) -> <<"Internal server error.">>.
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    case gen_mod:get_module_opt(LServer, ?MODULE, docroot,
-				fun iolist_to_binary/1) of
-      undefined ->
-	  ok;
-      DocRoot ->
-	  JIDinURL = gen_mod:get_module_opt(LServer, ?MODULE, jid_in_url,
-					    fun(sha1) -> sha1;
-					       (node) -> node
-					    end,
-					    sha1),
-	  UserStr = make_user_string(<<LUser/binary, $@, LServer/binary>>,
-				     JIDinURL),
-	  UserDir = str:join([expand_home(DocRoot), UserStr], <<$/>>),
-	  case del_tree(UserDir) of
-	      ok ->
-		  ?INFO_MSG("Removed HTTP upload directory of ~s@~s",
-			    [User, Server]);
-	      {error, enoent} ->
-		  ?DEBUG("Found no HTTP upload directory of ~s@~s",
-			 [User, Server]);
-	      {error, Error} ->
-		  ?ERROR_MSG("Cannot remove HTTP upload directory of ~s@~s: ~p",
-			     [User, Server, Error])
-	  end,
-	  ok
-    end.
+    DocRoot = gen_mod:get_module_opt(LServer, ?MODULE, docroot,
+				     fun iolist_to_binary/1,
+				     <<"@HOME@/upload">>),
+    JIDinURL = gen_mod:get_module_opt(LServer, ?MODULE, jid_in_url,
+				      fun(sha1) -> sha1;
+					 (node) -> node
+				      end,
+				      sha1),
+    UserStr = make_user_string(<<LUser/binary, $@, LServer/binary>>, JIDinURL),
+    UserDir = str:join([expand_home(DocRoot), UserStr], <<$/>>),
+    case del_tree(UserDir) of
+	ok ->
+	    ?INFO_MSG("Removed HTTP upload directory of ~s@~s", [User, Server]);
+	{error, enoent} ->
+	    ?DEBUG("Found no HTTP upload directory of ~s@~s", [User, Server]);
+	{error, Error} ->
+	    ?ERROR_MSG("Cannot remove HTTP upload directory of ~s@~s: ~p",
+		       [User, Server, Error])
+    end,
+    ok.
 
 -spec del_tree(file:filename_all()) -> ok | {error, term()}.
 

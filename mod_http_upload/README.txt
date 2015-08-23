@@ -42,6 +42,7 @@ following to your ejabberd.yml file:
     # [...]
     mod_http_upload:
       docroot: "/home/xmpp/upload"
+      put_url: "https://@HOST@:5443"
 
 The configurable mod_http_upload options are:
 
@@ -79,14 +80,14 @@ The configurable mod_http_upload options are:
   mod_http_upload.  Otherwise, a SHA-1 hash of the user's bare JID is
   included instead.
 
-- docroot (default: 'undefined')
+- docroot (default: "@HOME@/upload")
 
   Uploaded files are stored below the directory specified (as an absolute
   path) with this option.  It is mandatory to specify either this option or
   the 'service_url' option.  The keyword @HOME@ is replaced with the home
   directory of the user running ejabberd.
 
-- put_url (default: "https://@HOST@:5443")
+- put_url (default: "http://@HOST@:5444")
 
   This option specifies the initial part of the PUT URLs used for file
   uploads.  The keyword @HOST@ is replaced with the virtual host name.
