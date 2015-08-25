@@ -280,9 +280,15 @@ handle_info({route, From, To, #xmlel{name = <<"iq">>} = Stanza}, State) ->
 			  R when is_record(R, iq) ->
 			      {R, State};
 			  {R, S} ->
-			      {R, S}
+			      {R, S};
+			  not_request ->
+			      {none, State}
 			end,
-    ejabberd_router:route(To, From, jlib:iq_to_xml(Reply)),
+    if Reply /= none ->
+	    ejabberd_router:route(To, From, jlib:iq_to_xml(Reply));
+       true ->
+	    ok
+    end,
     {noreply, NewState};
 handle_info({slot_timed_out, Slot}, State) ->
     NewState = del_slot(Slot, State),
@@ -392,8 +398,8 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP}) ->
 
 %% XMPP request handling.
 
--spec process_iq(jid(), iq_request(), state())
-      -> {iq_reply(), state()} | iq_reply().
+-spec process_iq(jid(), iq_request() | reply | invalid, state())
+      -> {iq_reply(), state()} | iq_reply() | not_request.
 
 process_iq(_From,
 	   #iq{type = get, xmlns = ?NS_DISCO_INFO, lang = Lang} = IQ,
@@ -434,7 +440,11 @@ process_iq(#jid{luser = LUser, lserver = LServer} = From,
 	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]}
     end;
 process_iq(_From, #iq{sub_el = SubEl} = IQ, _State) ->
-    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
+    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+process_iq(_From, reply, _State) ->
+    not_request;
+process_iq(_From, invalid, _State) ->
+    not_request.
 
 -spec parse_request(xmlel(), binary())
       -> {ok, binary(), pos_integer(), binary()} | {error, xmlel()}.
