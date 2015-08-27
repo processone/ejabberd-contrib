@@ -1,7 +1,7 @@
 %%%-------------------------------------------------------------------
 %%% File    : mod_http_upload.erl
 %%% Author  : Holger Weiss <holger@zedat.fu-berlin.de>
-%%% Purpose : HTTP File Upload
+%%% Purpose : HTTP File Upload (XEP-0363)
 %%% Created : 20 Aug 2015 by Holger Weiss <holger@zedat.fu-berlin.de>
 %%%-------------------------------------------------------------------
 

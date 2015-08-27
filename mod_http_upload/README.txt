@@ -1,5 +1,5 @@
 
-	mod_http_upload - HTTP File Upload
+	mod_http_upload - HTTP File Upload (XEP-0363)
 
 	Author: Holger Weiss <holger@zedat.fu-berlin.de>
 	Requirements: ejabberd 13.06 or newer
@@ -12,12 +12,9 @@ This module allows for requesting permissions to upload a file via HTTP.
 If the request is accepted, the client receives a URL to use for uploading
 the file and another URL from which that file can later be downloaded.
 
-PLEASE NOTE: This module implements an experimental protocol which has NOT
-been approved by the XMPP Standards Foundation and may change at any time:
-
-http://xmpp.org/extensions/inbox/http-upload.html
-
-There are already suggestions for improvements, e.g. from ProcessOne:
+PLEASE NOTE: This module implements an experimental protocol which may
+change at any time.  There are already suggestions for improvements, e.g.
+from ProcessOne:
 
 https://github.com/processone/ejabberd-saas-docs/blob/master/xmpp-specs/http-filetransfer/http-filetransfer.md
 
