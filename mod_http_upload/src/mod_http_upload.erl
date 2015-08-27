@@ -456,7 +456,7 @@ parse_request(#xmlel{name = <<"request">>, attrs = Attrs} = Request, Lang) ->
 		xml:get_subtag_cdata(Request, <<"size">>),
 		xml:get_subtag_cdata(Request, <<"content-type">>)} of
 	    {File, SizeStr, ContentType} when byte_size(File) > 0 ->
-		case catch binary_to_integer(SizeStr) of
+		case catch jlib:binary_to_integer(SizeStr) of
 		  Size when is_integer(Size), Size > 0 ->
 		      {ok, File, Size, yield_content_type(ContentType)};
 		  _ ->
@@ -479,7 +479,8 @@ parse_request(_El, _Lang) -> {error, ?ERR_BAD_REQUEST}.
 create_slot(#state{service_url = undefined, max_size = MaxSize},
 	    User, File, Size, _ContentType, Lang) when MaxSize /= infinity,
 						       Size > MaxSize ->
-    Text = <<"File larger than ", (integer_to_binary(MaxSize))/binary, " B.">>,
+    Text = <<"File larger than ", (jlib:integer_to_binary(MaxSize))/binary,
+	     " B.">>,
     ?INFO_MSG("Rejecting file ~s from ~s (too large: ~B bytes)",
 	      [File, User, Size]),
     {error, ?ERRT_NOT_ACCEPTABLE(Lang, Text)};
@@ -496,7 +497,7 @@ create_slot(#state{service_url = ServiceURL}, User, File, Size, ContentType,
 	    _Lang) ->
     Options = [{body_format, binary}, {full_result, false}],
     HttpOptions = [{timeout, ?SERVICE_REQUEST_TIMEOUT}],
-    SizeStr = integer_to_binary(Size),
+    SizeStr = jlib:integer_to_binary(Size),
     GetRequest = binary_to_list(ServiceURL) ++
 		     "?jid=" ++ ?URL_ENC(User) ++
 		     "&name=" ++ ?URL_ENC(File) ++
