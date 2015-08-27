@@ -200,7 +200,7 @@ init({ServerHost, Opts}) ->
 			     local),
     MaxSize = gen_mod:get_opt(max_size, Opts,
 			      fun(I) when is_integer(I), I > 0 -> I;
-				  (infinity) -> infinity
+				 (infinity) -> infinity
 			      end,
 			      104857600),
     SecretLength = gen_mod:get_opt(secret_length, Opts,
@@ -480,7 +480,7 @@ create_slot(#state{service_url = undefined, max_size = MaxSize},
 	    User, File, Size, _ContentType, Lang) when MaxSize /= infinity,
 						       Size > MaxSize ->
     Text = <<"File larger than ", (jlib:integer_to_binary(MaxSize))/binary,
-	     " B.">>,
+	     " Bytes.">>,
     ?INFO_MSG("Rejecting file ~s from ~s (too large: ~B bytes)",
 	      [File, User, Size]),
     {error, ?ERRT_NOT_ACCEPTABLE(Lang, Text)};
