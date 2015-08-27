@@ -9,7 +9,8 @@
 -author('holger@zedat.fu-berlin.de').
 
 -define(GEN_SERVER, gen_server).
--define(NS_UPLOAD, <<"eu:siacs:conversations:http:upload">>).
+-define(NS_HTTP_UPLOAD, <<"urn:xmpp:http:upload">>).
+-define(NS_HTTP_UPLOAD_OLD, <<"eu:siacs:conversations:http:upload">>).
 -define(SERVICE_REQUEST_TIMEOUT, 5000). % 5 seconds.
 -define(SLOT_TIMEOUT, 600000). % 10 minutes.
 -define(PROCNAME, ?MODULE).
@@ -411,9 +412,10 @@ process_iq(_From,
 			   attrs = [{<<"xmlns">>, ?NS_DISCO_INFO}],
 			   children = iq_disco_info(Lang, Name) ++ AddInfo}]};
 process_iq(#jid{luser = LUser, lserver = LServer} = From,
-	   #iq{type = get, xmlns = ?NS_UPLOAD, lang = Lang,
-	       sub_el = SubEl} = IQ,
-	   #state{server_host = ServerHost, access = Access} = State) ->
+	   #iq{type = get, xmlns = XMLNS, lang = Lang, sub_el = SubEl} = IQ,
+	   #state{server_host = ServerHost, access = Access} = State)
+    when XMLNS == ?NS_HTTP_UPLOAD;
+	 XMLNS == ?NS_HTTP_UPLOAD_OLD ->
     User = <<LUser/binary, $@, LServer/binary>>,
     case acl:match_rule(ServerHost, Access, From) of
       allow ->
@@ -424,10 +426,11 @@ process_iq(#jid{luser = LUser, lserver = LServer} = From,
 		      {ok, Timer} = timer:send_after(?SLOT_TIMEOUT,
 						     {slot_timed_out, Slot}),
 		      NewState = add_slot(Slot, Size, Timer, State),
-		      {IQ#iq{type = result, sub_el = [slot_el(Slot, State)]},
-		       NewState};
+		      SlotEl = slot_el(Slot, State, XMLNS),
+		      {IQ#iq{type = result, sub_el = [SlotEl]}, NewState};
 		  {ok, PutURL, GetURL} ->
-		      IQ#iq{type = result, sub_el = [slot_el(PutURL, GetURL)]};
+		      SlotEl = slot_el(PutURL, GetURL, XMLNS),
+		      IQ#iq{type = result, sub_el = [SlotEl]};
 		  {error, Error} ->
 		      IQ#iq{type = error, sub_el = [SubEl, Error]}
 		end;
@@ -451,7 +454,8 @@ process_iq(_From, invalid, _State) ->
 
 parse_request(#xmlel{name = <<"request">>, attrs = Attrs} = Request, Lang) ->
     case xml:get_attr(<<"xmlns">>, Attrs) of
-      {value, ?NS_UPLOAD} ->
+      {value, XMLNS} when XMLNS == ?NS_HTTP_UPLOAD;
+			  XMLNS == ?NS_HTTP_UPLOAD_OLD ->
 	  case {xml:get_subtag_cdata(Request, <<"filename">>),
 		xml:get_subtag_cdata(Request, <<"size">>),
 		xml:get_subtag_cdata(Request, <<"content-type">>)} of
@@ -551,15 +555,15 @@ del_slot(Slot, #state{slots = Slots} = State) ->
     NewSlots = dict:erase(Slot, Slots),
     State#state{slots = NewSlots}.
 
--spec slot_el(slot() | binary(), state() | binary()) -> xmlel().
+-spec slot_el(slot() | binary(), state() | binary(), binary()) -> xmlel().
 
-slot_el(Slot, #state{put_url = PutPrefix, get_url = GetPrefix}) ->
+slot_el(Slot, #state{put_url = PutPrefix, get_url = GetPrefix}, XMLNS) ->
     PutURL = str:join([PutPrefix | Slot], <<$/>>),
     GetURL = str:join([GetPrefix | Slot], <<$/>>),
-    slot_el(PutURL, GetURL);
-slot_el(PutURL, GetURL) ->
+    slot_el(PutURL, GetURL, XMLNS);
+slot_el(PutURL, GetURL, XMLNS) ->
     #xmlel{name = <<"slot">>,
-	   attrs = [{<<"xmlns">>, ?NS_UPLOAD}],
+	   attrs = [{<<"xmlns">>, XMLNS}],
 	   children = [#xmlel{name = <<"put">>,
 			      children = [{xmlcdata, PutURL}]},
 		       #xmlel{name = <<"get">>,
@@ -625,7 +629,9 @@ iq_disco_info(Lang, Name) ->
 		     {<<"type">>, <<"file">>},
 		     {<<"name">>, translate:translate(Lang, Name)}]},
      #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_UPLOAD}]}].
+	    attrs = [{<<"var">>, ?NS_HTTP_UPLOAD}]},
+     #xmlel{name = <<"feature">>,
+	    attrs = [{<<"var">>, ?NS_HTTP_UPLOAD_OLD}]}].
 
 %% HTTP request handling.
 
