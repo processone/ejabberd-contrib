@@ -519,16 +519,16 @@ create_slot(#state{service_url = ServiceURL}, User, File, Size, ContentType,
 			   [User, ServiceURL, Lines]),
 		{error, ?ERR_SERVICE_UNAVAILABLE}
 	  end;
-      {error, {402, _Body}} ->
+      {ok, {402, _Body}} ->
 	  ?INFO_MSG("Got status code 402 for ~s from <~s>", [User, ServiceURL]),
 	  {error, ?ERR_RESOURCE_CONSTRAINT};
-      {error, {403, _Body}} ->
+      {ok, {403, _Body}} ->
 	  ?INFO_MSG("Got status code 403 for ~s from <~s>", [User, ServiceURL]),
 	  {error, ?ERR_NOT_ALLOWED};
-      {error, {413, _Body}} ->
+      {ok, {413, _Body}} ->
 	  ?INFO_MSG("Got status code 413 for ~s from <~s>", [User, ServiceURL]),
 	  {error, ?ERR_NOT_ACCEPTABLE};
-      {error, {Code, _Body}} ->
+      {ok, {Code, _Body}} ->
 	  ?ERROR_MSG("Got unexpected status code ~s from <~s>: ~B",
 		     [User, ServiceURL, Code]),
 	  {error, ?ERR_SERVICE_UNAVAILABLE};
