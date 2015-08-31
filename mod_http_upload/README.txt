@@ -77,6 +77,19 @@ The configurable mod_http_upload options are:
   mod_http_upload.  Otherwise, a SHA-1 hash of the user's bare JID is
   included instead.
 
+- file_mode (default: 'undefined')
+
+  This option defines the permission bits of uploaded files.  The bits are
+  specified as an octal number (see the chmod(1) manual page) within double
+  quotes.  For example: "0644".
+
+- dir_mode (default: 'undefined')
+
+  This option defines the permission bits of the 'docroot' directory and any
+  directories created during file uploads.  The bits are specified as an
+  octal number (see the chmod(1) manual page) within double quotes.  For
+  example: "0755".
+
 - docroot (default: "@HOME@/upload")
 
   Uploaded files are stored below the directory specified (as an absolute

@@ -16,6 +16,7 @@
 -define(PROCNAME, ?MODULE).
 -define(URL_ENC(URL), binary_to_list(ejabberd_http:url_encode(URL))).
 -define(ADDR_TO_STR(IP), ejabberd_config:may_hide_data(jlib:ip_to_list(IP))).
+-define(STR_TO_INT(Str, B), jlib:binary_to_integer(iolist_to_binary(Str), B)).
 -define(DEFAULT_CONTENT_TYPE, <<"application/octet-stream">>).
 -define(CONTENT_TYPES,
 	[{<<".avi">>, <<"video/avi">>},
@@ -78,6 +79,8 @@
 	 max_size               :: pos_integer() | infinity,
 	 secret_length          :: pos_integer(),
 	 jid_in_url             :: sha1 | node,
+	 file_mode              :: integer() | undefined,
+	 dir_mode               :: integer() | undefined,
 	 docroot                :: binary(),
 	 put_url                :: binary(),
 	 get_url                :: binary(),
@@ -164,6 +167,10 @@ mod_opt_type(jid_in_url) ->
     fun(sha1) -> sha1;
        (node) -> node
     end;
+mod_opt_type(file_mode) ->
+    fun(Mode) -> ?STR_TO_INT(Mode, 8) end;
+mod_opt_type(dir_mode) ->
+    fun(Mode) -> ?STR_TO_INT(Mode, 8) end;
 mod_opt_type(docroot) ->
     fun iolist_to_binary/1;
 mod_opt_type(put_url) ->
@@ -181,8 +188,8 @@ mod_opt_type(service_url) ->
 mod_opt_type(rm_on_unregister) ->
     fun(B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
-    [host, name, access, max_size, secret_length, jid_in_url, docroot,
-     put_url, get_url, service_url, rm_on_unregister].
+    [host, name, access, max_size, secret_length, jid_in_url, file_mode,
+     dir_mode, docroot, put_url, get_url, service_url, rm_on_unregister].
 
 %%--------------------------------------------------------------------
 %% gen_server callbacks.
@@ -215,6 +222,10 @@ init({ServerHost, Opts}) ->
     DocRoot = gen_mod:get_opt(docroot, Opts,
 			      fun iolist_to_binary/1,
 			      <<"@HOME@/upload">>),
+    FileMode = gen_mod:get_opt(file_mode, Opts,
+			       fun(Mode) -> ?STR_TO_INT(Mode, 8) end),
+    DirMode = gen_mod:get_opt(dir_mode, Opts,
+			      fun(Mode) -> ?STR_TO_INT(Mode, 8) end),
     PutURL = gen_mod:get_opt(put_url, Opts,
 			     fun(<<"http://", _/binary>> = URL) -> URL;
 				(<<"https://", _/binary>> = URL) -> URL
@@ -240,10 +251,17 @@ init({ServerHost, Opts}) ->
 	  application:start(public_key),
 	  application:start(ssl)
     end,
+    case DirMode of
+      undefined ->
+	  ok;
+      Mode ->
+	  file:change_mode(DocRoot, Mode)
+    end,
     ejabberd_router:register_route(Host),
     {ok, #state{server_host = ServerHost, host = Host, name = Name,
 		access = Access, max_size = MaxSize,
 		secret_length = SecretLength, jid_in_url = JIDinURL,
+		file_mode = FileMode, dir_mode = DirMode,
 		docroot = expand_home(str:strip(DocRoot, right, $/)),
 		put_url = expand_host(str:strip(PutURL, right, $/), ServerHost),
 		get_url = expand_host(str:strip(GetURL, right, $/), ServerHost),
@@ -251,13 +269,15 @@ init({ServerHost, Opts}) ->
 
 -spec handle_call(_, {pid(), _}, state()) -> {noreply, state()}.
 
-handle_call({use_slot, Slot}, _From, #state{docroot = DocRoot} = State) ->
+handle_call({use_slot, Slot}, _From, #state{file_mode = FileMode,
+					    dir_mode = DirMode,
+					    docroot = DocRoot} = State) ->
     case get_slot(Slot, State) of
       {ok, {Size, Timer}} ->
 	  timer:cancel(Timer),
 	  NewState = del_slot(Slot, State),
 	  Path = str:join([DocRoot | Slot], <<$/>>),
-	  {reply, {ok, Size, Path}, NewState};
+	  {reply, {ok, Size, Path, FileMode, DirMode}, NewState};
       error ->
 	  {reply, {error, <<"Invalid slot">>}, State}
     end;
@@ -322,10 +342,10 @@ process(LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 			    data = Data}) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     case catch gen_server:call(Proc, {use_slot, LocalPath}) of
-      {ok, Size, Path} when byte_size(Data) == Size ->
+      {ok, Size, Path, FileMode, DirMode} when byte_size(Data) == Size ->
 	  ?DEBUG("Storing file from ~s for ~s: ~s",
 		 [?ADDR_TO_STR(IP), Host, Path]),
-	  case store_file(Path, Data) of
+	  case store_file(Path, Data, FileMode, DirMode) of
 	    ok ->
 		http_response(201);
 	    {error, Error} ->
@@ -635,15 +655,26 @@ iq_disco_info(Lang, Name) ->
 
 %% HTTP request handling.
 
--spec store_file(file:filename_all(), binary()) -> ok | {error, term()}.
+-spec store_file(file:filename_all(), binary(), integer(), integer())
+      -> ok | {error, term()}.
 
-store_file(Path, Data) ->
+store_file(Path, Data, FileMode, DirMode) ->
     try
 	ok = filelib:ensure_dir(Path),
 	{ok, Io} = file:open(Path, [write, exclusive, raw]),
 	Ok = file:write(Io, Data),
-	ok = file:close(Io), % Close file even if file:write/2 failed.
-	ok = Ok              % But raise an exception in that case.
+	ok = file:close(Io),
+	ok = if is_integer(FileMode) ->
+		     file:change_mode(Path, FileMode);
+		FileMode == undefined ->
+		     ok
+	     end,
+	ok = if is_integer(DirMode) ->
+		     file:change_mode(filename:dirname(Path), DirMode);
+		DirMode == undefined ->
+		     ok
+	     end,
+	ok = Ok % Raise an exception if file:write/2 failed.
     catch
       _:{badmatch, {error, Error}} ->
 	  {error, Error};
