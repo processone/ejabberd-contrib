@@ -638,7 +638,7 @@ expand_host(Subject, Host) ->
 
 -spec yield_content_type(binary()) -> binary().
 
-yield_content_type(<<"">>) -> <<"application/octet-stream">>;
+yield_content_type(<<"">>) -> ?DEFAULT_CONTENT_TYPE;
 yield_content_type(Type) -> Type.
 
 -spec iq_disco_info(binary(), binary()) -> [xmlel()].
