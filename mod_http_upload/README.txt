@@ -146,6 +146,15 @@ The configurable mod_http_upload options are:
   In any other case, a 'service-unavailable' error stanza is sent to the
   client.
 
+- custom_headers (default: [])
+
+  This option specifies additional header fields to be included in all HTTP
+  responses.  For example:
+
+    custom_headers:
+      "Access-Control-Allow-Origin": "*"
+      "Access-Control-Allow-Methods": "GET, PUT"
+
 - rm_on_unregister (default: 'true')
 
   This option specifies whether files uploaded by a user should be removed

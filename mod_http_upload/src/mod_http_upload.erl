@@ -185,11 +185,18 @@ mod_opt_type(service_url) ->
     fun(<<"http://", _/binary>> = URL) -> URL;
        (<<"https://", _/binary>> = URL) -> URL
     end;
+mod_opt_type(custom_headers) ->
+    fun(Headers) ->
+	    lists:map(fun({K, V}) ->
+			      {iolist_to_binary(K), iolist_to_binary(V)}
+		      end, Headers)
+    end;
 mod_opt_type(rm_on_unregister) ->
     fun(B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
     [host, name, access, max_size, secret_length, jid_in_url, file_mode,
-     dir_mode, docroot, put_url, get_url, service_url, rm_on_unregister].
+     dir_mode, docroot, put_url, get_url, service_url, custom_headers,
+     rm_on_unregister].
 
 %%--------------------------------------------------------------------
 %% gen_server callbacks.
@@ -347,24 +354,24 @@ process(LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 		 [?ADDR_TO_STR(IP), Host, Path]),
 	  case store_file(Path, Data, FileMode, DirMode) of
 	    ok ->
-		http_response(201);
+		http_response(Host, 201);
 	    {error, Error} ->
 		?ERROR_MSG("Cannot store file ~s from ~s for ~s: ~s",
 			   [Path, ?ADDR_TO_STR(IP), Host, Error]),
-		http_response(500)
+		http_response(Host, 500)
 	  end;
       {ok, Size, Path} ->
 	  ?INFO_MSG("Rejecting file ~s from ~s for ~s: Size is ~B, not ~B",
 		    [Path, ?ADDR_TO_STR(IP), Host, byte_size(Data), Size]),
-	  http_response(413);
+	  http_response(Host, 413);
       {error, Error} ->
 	  ?INFO_MSG("Rejecting file from ~s for ~s: ~p",
 		    [?ADDR_TO_STR(IP), Host, Error]),
-	  http_response(403);
+	  http_response(Host, 403);
       Error ->
 	  ?ERROR_MSG("Cannot handle PUT request from ~s for ~s: ~p",
 		     [?ADDR_TO_STR(IP), Host, Error]),
-	  http_response(500)
+	  http_response(Host, 500)
     end;
 process(LocalPath, #request{method = 'GET', host = Host, ip = IP}) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
@@ -385,33 +392,33 @@ process(LocalPath, #request{method = 'GET', host = Host, ip = IP}) ->
 				     $", FileName/binary, $">>}]
 			   end,
 		Headers2 = [{<<"Content-Type">>, ContentType} | Headers1],
-		http_response(200, Headers2, Data);
+		http_response(Host, 200, Headers2, Data);
 	    {error, eacces} ->
 		?INFO_MSG("Cannot serve ~s to ~s: Permission denied",
 			  [Path, ?ADDR_TO_STR(IP)]),
-		http_response(403);
+		http_response(Host, 403);
 	    {error, enoent} ->
 		?INFO_MSG("Cannot serve ~s to ~s: No such file or directory",
 			  [Path, ?ADDR_TO_STR(IP)]),
-		http_response(404);
+		http_response(Host, 404);
 	    {error, eisdir} ->
 		?INFO_MSG("Cannot serve ~s to ~s: Is a directory",
 			  [Path, ?ADDR_TO_STR(IP)]),
-		http_response(404);
+		http_response(Host, 404);
 	    {error, Error} ->
 		?INFO_MSG("Cannot serve ~s to ~s: ~p",
 			  [Path, ?ADDR_TO_STR(IP), Error]),
-		http_response(500)
+		http_response(Host, 500)
 	  end;
       Error ->
 	  ?ERROR_MSG("Cannot handle GET request from ~s for ~s: ~p",
 		     [?ADDR_TO_STR(IP), Host, Error]),
-	  http_response(500)
+	  http_response(Host, 500)
     end;
 process(_LocalPath, #request{method = Method, host = Host, ip = IP}) ->
     ?DEBUG("Rejecting ~s request from ~s for ~s",
 	   [Method, ?ADDR_TO_STR(IP), Host]),
-    http_response(405, [{<<"Allow">>, <<"GET, PUT">>}]).
+    http_response(Host, 405, [{<<"Allow">>, <<"GET, PUT">>}]).
 
 %%--------------------------------------------------------------------
 %% Internal functions.
@@ -689,30 +696,40 @@ guess_content_type(FileName) ->
 				     ?DEFAULT_CONTENT_TYPE,
 				     ?CONTENT_TYPES).
 
--spec http_response(100..599)
+-spec http_response(binary(), 100..599)
       -> {pos_integer(), [{binary(), binary()}], binary()}.
 
-http_response(Code) ->
-    http_response(Code, []).
+http_response(Host, Code) ->
+    http_response(Host, Code, []).
 
--spec http_response(100..599, [{binary(), binary()}])
+-spec http_response(binary(), 100..599, [{binary(), binary()}])
       -> {pos_integer(), [{binary(), binary()}], binary()}.
 
-http_response(Code, ExtraHeaders) ->
-    http_response(Code, ExtraHeaders, <<(code_to_message(Code))/binary, $\n>>).
+http_response(Host, Code, ExtraHeaders) ->
+    Message = <<(code_to_message(Code))/binary, $\n>>,
+    http_response(Host, Code, ExtraHeaders, Message).
 
--spec http_response(100..599, [{binary(), binary()}], binary())
+-spec http_response(binary(), 100..599, [{binary(), binary()}], binary())
       -> {pos_integer(), [{binary(), binary()}], binary()}.
 
-http_response(Code, ExtraHeaders, Body) ->
+http_response(Host, Code, ExtraHeaders, Body) ->
     ServerHeader = {<<"Server">>, <<"ejabberd ", (?VERSION)/binary>>},
+    CustomHeaders =
+	gen_mod:get_module_opt(Host, ?MODULE, custom_headers,
+			       fun(Headers) ->
+				       lists:map(fun({K, V}) ->
+							 {iolist_to_binary(K),
+							  iolist_to_binary(V)}
+						 end, Headers)
+			       end,
+			       []),
     Headers = case proplists:is_defined(<<"Content-Type">>, ExtraHeaders) of
 		true ->
 		    [ServerHeader | ExtraHeaders];
 		false ->
 		    [ServerHeader, {<<"Content-Type">>, <<"text/plain">>} |
 		     ExtraHeaders]
-	      end,
+	      end ++ CustomHeaders,
     {Code, Headers, Body}.
 
 -spec code_to_message(100..599) -> binary().
