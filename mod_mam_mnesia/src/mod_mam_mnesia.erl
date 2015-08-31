@@ -319,11 +319,16 @@ send_stanza(Stanza, _C2SState, _From, _To) -> Stanza.
 -spec is_desired(route(), jid(), jid(), xmlel()) -> boolean().
 
 is_desired(Route, JID, To, Message) ->
-    is_chat_or_normal_message(Message) andalso
-    has_non_empty_body(Message) andalso
+    looks_interesting(Message) andalso
     not has_no_store_hint(Message) andalso
     not is_bare_copy(Route, JID, To) andalso
     not is_resent(Message).
+
+-spec looks_interesting(xmlel()) -> boolean().
+
+looks_interesting(Message) ->
+    (is_chat_or_normal_message(Message) andalso has_non_empty_body(Message))
+    orelse has_store_hint(Message).
 
 -spec is_chat_or_normal_message(xmlel()) -> boolean().
 
@@ -353,6 +358,14 @@ message_type(#xmlel{attrs = Attrs}) ->
 has_non_empty_body(Message) ->
     xml:get_subtag_cdata(Message, <<"body">>) =/= <<"">> orelse
     xml:get_subtag(Message, <<"encrypted">>) =/= false.
+
+-spec has_store_hint(xmlel()) -> boolean().
+
+has_store_hint(Message) ->
+    xml:get_subtag_with_xmlns(Message, <<"store">>, ?NS_HINTS)
+	=/= false orelse
+    xml:get_subtag_with_xmlns(Message, <<"pretty-please-store">>, ?NS_HINTS)
+	=/= false.
 
 -spec has_no_store_hint(xmlel()) -> boolean().
 
