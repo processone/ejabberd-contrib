@@ -6,6 +6,6 @@ listen:
       "presence": mod_webpresence
 
 modules:
-  mod_presence:
+  mod_webpresence:
     access: local
     pixmaps_path: "/etc/ejabberd/priv/pixmaps"
