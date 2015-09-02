@@ -327,21 +327,10 @@ is_desired(Route, JID, To, Message) ->
 -spec looks_interesting(xmlel()) -> boolean().
 
 looks_interesting(Message) ->
-    (is_chat_or_normal_message(Message) andalso has_non_empty_body(Message))
-    orelse has_store_hint(Message).
-
--spec is_chat_or_normal_message(xmlel()) -> boolean().
-
-is_chat_or_normal_message(#xmlel{name = <<"message">>} = Message) ->
-    case message_type(Message) of
-      <<"chat">> ->
-	  true;
-      <<"normal">> ->
-	  true;
-      _ ->
-	  false
-    end;
-is_chat_or_normal_message(_Message) -> false.
+    Type = message_type(Message),
+    (is_chat_or_normal(Type) andalso has_non_empty_body(Message))
+    orelse
+    (has_store_hint(Message) andalso not is_error(Type)).
 
 -spec message_type(xmlel()) -> binary().
 
@@ -352,6 +341,17 @@ message_type(#xmlel{attrs = Attrs}) ->
       false ->
 	  <<"normal">>
     end.
+
+-spec is_chat_or_normal(binary()) -> boolean().
+
+is_chat_or_normal(<<"chat">>) -> true;
+is_chat_or_normal(<<"normal">>) -> true;
+is_chat_or_normal(_Type) -> false.
+
+-spec is_error(binary()) -> boolean().
+
+is_error(<<"error">>) -> true;
+is_error(_Type) -> false.
 
 -spec has_non_empty_body(xmlel()) -> boolean().
 
