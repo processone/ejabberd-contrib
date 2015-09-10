@@ -47,6 +47,17 @@ properly. The following options can be set in `auth_opts` in
 * `path_prefix` (optional, default: `"/"`) - a path prefix to be
   inserted between `host` and method name; must be terminated with `/`
 
+Example configuration:
+```
+auth_method: http
+auth_opts:
+  host: "http://localhost:12000"
+  connection_pool_size: 10
+  connection_opts: []
+  basic_auth: ""
+  path_prefix: "/"
+```
+
 ## SCRAM support
 
 `ejabberd_auth_http` can use the SCRAM method. When SCRAM is enabled,
