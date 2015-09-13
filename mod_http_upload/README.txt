@@ -116,7 +116,11 @@ The configurable mod_http_upload options are:
 
   If a 'service_url' is specified, HTTP upload slot requests are forwarded
   to this external service instead of being handled by mod_http_upload
-  itself.  An HTTP GET query such as the following is issued whenever an
+  itself.  Such a service is available as a Django app, for example:
+
+  https://github.com/mathiasertl/django-xmpp-http-upload
+
+  An HTTP GET query such as the following is issued whenever an
   HTTP upload slot request is accepted as per the 'access' rule:
 
   http://localhost:5444/?jid=juliet%40example.com&size=10240&name=example.jpg
