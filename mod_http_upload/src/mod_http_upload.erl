@@ -661,16 +661,19 @@ store_file(Path, Data, FileMode, DirMode) ->
 	{ok, Io} = file:open(Path, [write, exclusive, raw]),
 	Ok = file:write(Io, Data),
 	ok = file:close(Io),
-	ok = if is_integer(FileMode) ->
-		     file:change_mode(Path, FileMode);
-		FileMode == undefined ->
-		     ok
-	     end,
-	ok = if is_integer(DirMode) ->
-		     file:change_mode(filename:dirname(Path), DirMode);
-		DirMode == undefined ->
-		     ok
-	     end,
+	if is_integer(FileMode) ->
+		ok = file:change_mode(Path, FileMode);
+	   FileMode == undefined ->
+		ok
+	end,
+	if is_integer(DirMode) ->
+		RandDir = filename:dirname(Path),
+		UserDir = filename:dirname(RandDir),
+		ok = file:change_mode(RandDir, DirMode),
+		ok = file:change_mode(UserDir, DirMode);
+	   DirMode == undefined ->
+		ok
+	end,
 	ok = Ok % Raise an exception if file:write/2 failed.
     catch
       _:{badmatch, {error, Error}} ->
