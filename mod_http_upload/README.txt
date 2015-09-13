@@ -164,3 +164,16 @@ The configurable mod_http_upload options are:
   This option specifies whether files uploaded by a user should be removed
   when that user is unregistered.  It must be set to 'false' if this is not
   desired.
+
+
+	REMOVING OLD FILES
+	------------------
+
+You might want to use cron(8) to remove uploaded files that are older than
+some number of days:
+
+0 1 * * * find /home/xmpp/upload -type f -ctime +365 -exec rm -f '{}' ';'
+0 2 * * * find /home/xmpp/upload -type d -exec rmdir '{}' ';' 2>/dev/null
+
+Note that /home/xmpp/upload must be replaced with your actual 'docroot'
+path, and 365 with the desired number of days.
