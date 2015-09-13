@@ -94,11 +94,10 @@
 %% gen_mod/supervisor callbacks.
 %%--------------------------------------------------------------------
 
--spec start_link(binary(), binary(), gen_mod:opts())
+-spec start_link(binary(), atom(), gen_mod:opts())
       -> {ok, pid()} | ignore | {error, _}.
 
-start_link(ServerHost, ProcHost, Opts) ->
-    Proc = gen_mod:get_module_proc(ProcHost, ?PROCNAME),
+start_link(ServerHost, Proc, Opts) ->
     ?GEN_SERVER:start_link({local, Proc}, ?MODULE, {ServerHost, Opts}, []).
 
 -spec start(binary(), gen_mod:opts()) -> {ok, _} | {ok, _, _} | {error, _}.
@@ -114,18 +113,9 @@ start(ServerHost, Opts) ->
 			     remove_user, 50);
       false -> ok
     end,
-    PutURL = gen_mod:get_opt(put_url, Opts,
-			     fun(<<"http://", _/binary>> = URL) -> URL;
-				(<<"https://", _/binary>> = URL) -> URL;
-				(_) -> <<"http://@HOST@">>
-			     end,
-			     <<"http://@HOST@">>),
-    [_, ProcHost | _] = binary:split(expand_host(PutURL, ServerHost),
-				     [<<"http://">>, <<"https://">>,
-				      <<":">>, <<"/">>], [global]),
-    Proc = gen_mod:get_module_proc(ProcHost, ?PROCNAME),
+    Proc = get_proc_name(ServerHost),
     Spec = {Proc,
-	    {?MODULE, start_link, [ServerHost, ProcHost, Opts]},
+	    {?MODULE, start_link, [ServerHost, Proc, Opts]},
 	    permanent,
 	    3000,
 	    worker,
@@ -145,7 +135,7 @@ stop(ServerHost) ->
 				remove_user, 50);
       false -> ok
     end,
-    Proc = gen_mod:get_module_proc(ServerHost, ?PROCNAME),
+    Proc = get_proc_name(ServerHost),
     ok = supervisor:terminate_child(ejabberd_sup, Proc),
     ok = supervisor:delete_child(ejabberd_sup, Proc).
 
@@ -740,6 +730,22 @@ code_to_message(404) -> <<"Not found.">>;
 code_to_message(405) -> <<"Method not allowed.">>;
 code_to_message(413) -> <<"File size doesn't match requested size.">>;
 code_to_message(500) -> <<"Internal server error.">>.
+
+%% Miscellaneous helpers.
+
+-spec get_proc_name(binary()) -> atom().
+
+get_proc_name(ServerHost) ->
+    PutURL = gen_mod:get_module_opt(ServerHost, ?MODULE, put_url,
+				    fun(<<"http://", _/binary>> = URL) -> URL;
+				       (<<"https://", _/binary>> = URL) -> URL;
+				       (_) -> <<"http://@HOST@">>
+				    end,
+				    <<"http://@HOST@">>),
+    [_, ProcHost | _] = binary:split(expand_host(PutURL, ServerHost),
+				     [<<"http://">>, <<"https://">>,
+				      <<":">>, <<"/">>], [global]),
+    gen_mod:get_module_proc(ProcHost, ?PROCNAME).
 
 %%--------------------------------------------------------------------
 %% Remove user.
