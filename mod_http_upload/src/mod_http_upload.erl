@@ -363,7 +363,9 @@ process(LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 		     [?ADDR_TO_STR(IP), Host, Error]),
 	  http_response(Host, 500)
     end;
-process(LocalPath, #request{method = 'GET', host = Host, ip = IP}) ->
+process(LocalPath, #request{method = Method, host = Host, ip = IP})
+    when Method == 'GET';
+	 Method == 'HEAD' ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     case catch gen_server:call(Proc, get_docroot) of
       {ok, DocRoot} ->
@@ -401,14 +403,18 @@ process(LocalPath, #request{method = 'GET', host = Host, ip = IP}) ->
 		http_response(Host, 500)
 	  end;
       Error ->
-	  ?ERROR_MSG("Cannot handle GET request from ~s for ~s: ~p",
-		     [?ADDR_TO_STR(IP), Host, Error]),
+	  ?ERROR_MSG("Cannot handle ~s request from ~s for ~s: ~p",
+		     [Method, ?ADDR_TO_STR(IP), Host, Error]),
 	  http_response(Host, 500)
     end;
+process(_LocalPath, #request{method = 'OPTIONS', host = Host, ip = IP}) ->
+    ?DEBUG("Responding to OPTIONS request from ~s for ~s",
+	   [?ADDR_TO_STR(IP), Host]),
+    http_response(Host, 200);
 process(_LocalPath, #request{method = Method, host = Host, ip = IP}) ->
     ?DEBUG("Rejecting ~s request from ~s for ~s",
 	   [Method, ?ADDR_TO_STR(IP), Host]),
-    http_response(Host, 405, [{<<"Allow">>, <<"GET, PUT">>}]).
+    http_response(Host, 405, [{<<"Allow">>, <<"OPTIONS, HEAD, GET, PUT">>}]).
 
 %%--------------------------------------------------------------------
 %% Internal functions.
@@ -732,7 +738,8 @@ code_to_message(403) -> <<"Forbidden.">>;
 code_to_message(404) -> <<"Not found.">>;
 code_to_message(405) -> <<"Method not allowed.">>;
 code_to_message(413) -> <<"File size doesn't match requested size.">>;
-code_to_message(500) -> <<"Internal server error.">>.
+code_to_message(500) -> <<"Internal server error.">>;
+code_to_message(_Code) -> <<"">>.
 
 %% Miscellaneous helpers.
 

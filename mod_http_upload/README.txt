@@ -157,7 +157,7 @@ The configurable mod_http_upload options are:
 
     custom_headers:
       "Access-Control-Allow-Origin": "*"
-      "Access-Control-Allow-Methods": "GET, PUT"
+      "Access-Control-Allow-Methods": "OPTIONS, HEAD, GET, PUT"
 
 - rm_on_unregister (default: 'true')
 
