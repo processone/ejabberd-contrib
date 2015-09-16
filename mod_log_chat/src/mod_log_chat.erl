@@ -14,7 +14,8 @@
          init/1,
 	 stop/1,
 	 log_packet_send/4,
-	 log_packet_receive/5]).
+	 log_packet_receive/5,
+	 mod_opt_type/1]).
 
 -ifndef(LAGER).
 -define(LAGER, 1).
@@ -268,3 +269,9 @@ css() ->
 	".ressource {color: #336699; }~n"++
 	".messagetext {color: black; margin: 0.2em; clear: both; display: block;}~n"++
 	"//-->~n</style>~n".
+
+mod_opt_type(path) -> fun iolist_to_binary/1;
+mod_opt_type(format) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(_) ->
+    [path, format].
