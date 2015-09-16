@@ -1,20 +1,20 @@
-; edit this file to fit your needs
+# edit this file to fit your needs
 
-; log all vhosts chats in /var/log/ejabberd/chat directory in html
+# log all vhosts chats in /var/log/ejabberd/chat directory in html
 modules:
   mod_log_chat:
     path: "/var/log/ejabberd/chat"
     format: html
 
 
-; log only vh1.myjabberserver.net vhost in /var/log/ejabberd/vh1.myjabberserver.net directory
-; in HTML format and vh2.myjabberserver.net vhost in /var/log/ejabberd/vh2.myjabberserver.net directory
-; in text format
-;  mod_log_chat:
-;    host_config:
-;      - "vh1.myjabberserver.net":
-;          - path: "/var/log/ejabberd/vh1.myjabberserver.net"
-;          - format: html
-;      - "vh2.myjabberserver.net":
-;          - path: "/var/log/ejabberd/vh2.myjabberserver.net"
-;          - format: text
+# log only vh1.myjabberserver.net vhost in /var/log/ejabberd/vh1.myjabberserver.net directory
+# in HTML format and vh2.myjabberserver.net vhost in /var/log/ejabberd/vh2.myjabberserver.net directory
+# in text format
+#  mod_log_chat:
+#    host_config:
+#      - "vh1.myjabberserver.net":
+#          - path: "/var/log/ejabberd/vh1.myjabberserver.net"
+#          - format: html
+#      - "vh2.myjabberserver.net":
+#          - path: "/var/log/ejabberd/vh2.myjabberserver.net"
+#          - format: text
