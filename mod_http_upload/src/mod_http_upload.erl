@@ -245,6 +245,7 @@ init({ServerHost, Opts}) ->
       <<"https://", _/binary>> ->
 	  application:start(inets),
 	  application:start(crypto),
+	  application:start(asn1),
 	  application:start(public_key),
 	  application:start(ssl)
     end,
