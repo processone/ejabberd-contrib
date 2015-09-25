@@ -552,7 +552,7 @@ create_slot(#state{service_url = ServiceURL}, User, File, Size, ContentType,
 	  ?INFO_MSG("Got status code 413 for ~s from <~s>", [User, ServiceURL]),
 	  {error, ?ERR_NOT_ACCEPTABLE};
       {ok, {Code, _Body}} ->
-	  ?ERROR_MSG("Got unexpected status code ~s from <~s>: ~B",
+	  ?ERROR_MSG("Got unexpected status code for ~s from <~s>: ~B",
 		     [User, ServiceURL, Code]),
 	  {error, ?ERR_SERVICE_UNAVAILABLE};
       {error, Reason} ->
