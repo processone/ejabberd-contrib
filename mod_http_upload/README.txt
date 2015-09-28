@@ -2,7 +2,7 @@
 	mod_http_upload - HTTP File Upload (XEP-0363)
 
 	Author: Holger Weiss <holger@zedat.fu-berlin.de>
-	Requirements: ejabberd 13.06 or newer
+	Requirements: ejabberd 15.06 or newer
 
 
 	DESCRIPTION
