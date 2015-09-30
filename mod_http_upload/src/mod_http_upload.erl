@@ -265,7 +265,11 @@ init({ServerHost, Opts}) ->
 		get_url = expand_host(str:strip(GetURL, right, $/), ServerHost),
 		service_url = ServiceURL}}.
 
--spec handle_call(_, {pid(), _}, state()) -> {noreply, state()}.
+-spec handle_call(_, {pid(), _}, state())
+      -> {reply, {ok, pos_integer(), binary(),
+		      pos_integer() | undefined,
+		      pos_integer() | undefined}, state()} |
+	 {reply, {error, binary()}, state()} | {noreply, state()}.
 
 handle_call({use_slot, Slot}, _From, #state{file_mode = FileMode,
 					    dir_mode = DirMode,
