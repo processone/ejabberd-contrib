@@ -1618,6 +1618,7 @@ commands() ->
     [
      #ejabberd_commands{name = get_top_users, tags = [stats],
 			desc = "Get top X users with larger offlinemsg, vcard or roster.",
+			policy = admin,
 			module = ?MODULE, function = get_top_users,
 			args = [{topnumber, integer}, {topic, string}],
 			result = {top, {list,
@@ -1629,11 +1630,13 @@ commands() ->
 				       }}},
      #ejabberd_commands{name = getstatsdx, tags = [stats],
 			desc = "Get statistical value.",
+			policy = admin,
 			module = ?MODULE, function = getstatsdx,
 			args = [{name, string}],
 			result = {stat, integer}},
      #ejabberd_commands{name = getstatsdx_host, tags = [stats],
 			desc = "Get statistical value for this host.",
+			policy = admin,
 			module = ?MODULE, function = getstatsdx,
 			args = [{name, string}, {host, string}],
 			result = {stat, integer}}
