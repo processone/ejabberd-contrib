@@ -13,7 +13,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, loop/1, stop/1, get_statistic/2,
+-export([start/2, loop/1, stop/1, mod_opt_type/1, get_statistic/2,
 	 %% Commands
 	 getstatsdx/1, getstatsdx/2,
 	 get_top_users/2,
@@ -78,6 +78,8 @@ stop(Host) ->
 	_ -> ?PROCNAME ! {stop, Host}
     end.
 
+mod_opt_type(hooks) -> fun (B) when is_boolean(B) or (B==traffic) -> B end;
+mod_opt_type(_) -> [hooks].
 
 %%%==================================
 %%%% Stats Server
