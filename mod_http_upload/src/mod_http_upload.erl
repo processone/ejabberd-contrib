@@ -139,7 +139,7 @@ stop(ServerHost) ->
     ok = supervisor:terminate_child(ejabberd_sup, Proc),
     ok = supervisor:delete_child(ejabberd_sup, Proc).
 
--spec mod_opt_type(atom()) -> fun((term()) -> term()).
+-spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
 
 mod_opt_type(host) ->
     fun iolist_to_binary/1;
