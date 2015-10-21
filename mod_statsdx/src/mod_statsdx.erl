@@ -456,10 +456,14 @@ get(N, ["httppollusers"]) -> rpc:call(N, mnesia, table_info, [http_poll, size]);
 get(_, ["httpbindusers", title]) -> "HTTP-Bind users (aprox)";
 get(N, ["httpbindusers"]) -> rpc:call(N, mnesia, table_info, [http_bind, size]);
 
-get(_, ["s2sconnections", title]) -> "Outgoing S2S connections";
+get(_, ["s2sconnectionsoutgoing", title]) -> "Outgoing S2S connections";
+get(_, ["s2sconnectionsoutgoing"]) -> ejabberd_s2s:outgoing_s2s_number();
+get(_, ["s2sconnectionsincoming", title]) -> "Incoming S2S connections";
+get(_, ["s2sconnectionsincoming"]) -> ejabberd_s2s:incoming_s2s_number();
+get(_, ["s2sconnections", title]) -> "S2S connections";
 get(_, ["s2sconnections"]) -> length(get_S2SConns());
 get(_, ["s2sconnections", Host]) -> get_s2sconnections(Host);
-get(_, ["s2sservers", title]) -> "Outgoing S2S servers";
+get(_, ["s2sservers", title]) -> "S2S servers";
 get(_, ["s2sservers"]) -> length(lists:usort([element(2, C) || C <- get_S2SConns()]));
 
 get(_, ["offlinemsg", title]) -> "Offline messages";
