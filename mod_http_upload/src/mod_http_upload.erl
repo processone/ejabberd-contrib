@@ -12,7 +12,7 @@
 -define(NS_HTTP_UPLOAD, <<"urn:xmpp:http:upload">>).
 -define(NS_HTTP_UPLOAD_OLD, <<"eu:siacs:conversations:http:upload">>).
 -define(SERVICE_REQUEST_TIMEOUT, 5000). % 5 seconds.
--define(SLOT_TIMEOUT, 600000). % 10 minutes.
+-define(SLOT_TIMEOUT, 18000000). % 5 hours.
 -define(PROCNAME, ?MODULE).
 -define(URL_ENC(URL), binary_to_list(ejabberd_http:url_encode(URL))).
 -define(ADDR_TO_STR(IP), ejabberd_config:may_hide_data(jlib:ip_to_list(IP))).
