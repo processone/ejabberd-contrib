@@ -8,9 +8,9 @@
 	DESCRIPTION
 	-----------
 
-This module allows for requesting permissions to upload a file via HTTP.
-If the request is accepted, the client receives a URL to use for uploading
-the file and another URL from which that file can later be downloaded.
+This module allows for requesting permissions to upload a file via HTTP.  If
+the request is accepted, the client receives a URL to use for uploading the
+file and another URL from which that file can later be downloaded.
 
 Automatic quota management can be configured by also enabling
 mod_http_upload_quota.

@@ -153,7 +153,7 @@ mod_opt_type(access) ->
     fun(A) when is_atom(A) -> A end;
 mod_opt_type(max_size) ->
     fun(I) when is_integer(I), I > 0 -> I;
-        (infinity) -> infinity
+       (infinity) -> infinity
     end;
 mod_opt_type(secret_length) ->
     fun(I) when is_integer(I), I >= 8 -> I end;
