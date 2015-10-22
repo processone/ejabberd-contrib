@@ -20,7 +20,7 @@ mod_http_upload_quota.
 	-------------
 
 In order to use this module, add configuration snippets such as the
-following to your ejabberd.yml file:
+following:
 
   listen:
     # [...]
