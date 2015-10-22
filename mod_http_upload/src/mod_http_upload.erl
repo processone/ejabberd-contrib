@@ -439,17 +439,16 @@ process_iq(_From,
 	  sub_el = [#xmlel{name = <<"query">>,
 			   attrs = [{<<"xmlns">>, ?NS_DISCO_INFO}],
 			   children = iq_disco_info(Lang, Name) ++ AddInfo}]};
-process_iq(#jid{luser = LUser, lserver = LServer} = From,
+process_iq(From,
 	   #iq{type = get, xmlns = XMLNS, lang = Lang, sub_el = SubEl} = IQ,
 	   #state{server_host = ServerHost, access = Access} = State)
     when XMLNS == ?NS_HTTP_UPLOAD;
 	 XMLNS == ?NS_HTTP_UPLOAD_OLD ->
-    User = <<LUser/binary, $@, LServer/binary>>,
     case acl:match_rule(ServerHost, Access, From) of
       allow ->
 	  case parse_request(SubEl, Lang) of
 	    {ok, File, Size, ContentType} ->
-		case create_slot(State, User, File, Size, ContentType, Lang) of
+		case create_slot(State, From, File, Size, ContentType, Lang) of
 		  {ok, Slot} ->
 		      {ok, Timer} = timer:send_after(?SLOT_TIMEOUT,
 						     {slot_timed_out, Slot}),
@@ -463,11 +462,13 @@ process_iq(#jid{luser = LUser, lserver = LServer} = From,
 		      IQ#iq{type = error, sub_el = [SubEl, Error]}
 		end;
 	    {error, Error} ->
-		?DEBUG("Cannot parse request from ~s", [User]),
+		?DEBUG("Cannot parse request from ~s",
+		       [jlib:jid_to_string(From)]),
 		IQ#iq{type = error, sub_el = [SubEl, Error]}
 	  end;
       deny ->
-	  ?DEBUG("Denying HTTP upload slot request from ~s", [User]),
+	  ?DEBUG("Denying HTTP upload slot request from ~s",
+		 [jlib:jid_to_string(From)]),
 	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]}
     end;
 process_iq(_From, #iq{sub_el = SubEl} = IQ, _State) ->
@@ -504,34 +505,46 @@ parse_request(#xmlel{name = <<"request">>, attrs = Attrs} = Request, Lang) ->
     end;
 parse_request(_El, _Lang) -> {error, ?ERR_BAD_REQUEST}.
 
--spec create_slot(state(), binary(), binary(), pos_integer(), binary(),
-		  binary())
+-spec create_slot(state(), jid(), binary(), pos_integer(), binary(), binary())
       -> {ok, slot()} | {ok, binary(), binary()} | {error, xmlel()}.
 
 create_slot(#state{service_url = undefined, max_size = MaxSize},
-	    User, File, Size, _ContentType, Lang) when MaxSize /= infinity,
-						       Size > MaxSize ->
+	    JID, File, Size, _ContentType, Lang) when MaxSize /= infinity,
+						      Size > MaxSize ->
     Text = <<"File larger than ", (jlib:integer_to_binary(MaxSize))/binary,
 	     " Bytes.">>,
     ?INFO_MSG("Rejecting file ~s from ~s (too large: ~B bytes)",
-	      [File, User, Size]),
+	      [File, jlib:jid_to_string(JID), Size]),
     {error, ?ERRT_NOT_ACCEPTABLE(Lang, Text)};
 create_slot(#state{service_url = undefined,
 		   jid_in_url = JIDinURL,
-		   secret_length = SecretLength},
-	    User, File, _Size, _ContentType, _Lang) ->
-    UserStr = make_user_string(User, JIDinURL),
-    RandStr = make_rand_string(SecretLength),
-    FileStr = make_file_string(File),
-    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)", [User, File]),
-    {ok, [UserStr, RandStr, FileStr]};
-create_slot(#state{service_url = ServiceURL}, User, File, Size, ContentType,
+		   secret_length = SecretLength,
+		   server_host = ServerHost,
+		   docroot = DocRoot},
+	    JID, File, Size, _ContentType, Lang) ->
+    UserStr = make_user_string(JID, JIDinURL),
+    UserDir = <<DocRoot/binary, $/, UserStr/binary>>,
+    case ejabberd_hooks:run_fold(http_upload_slot_request, ServerHost, allow,
+				 [JID, UserDir, Size, Lang]) of
+      allow ->
+	  RandStr = make_rand_string(SecretLength),
+	  FileStr = make_file_string(File),
+	  ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)",
+		    [jlib:jid_to_string(JID), File]),
+	  {ok, [UserStr, RandStr, FileStr]};
+      deny ->
+	  {error, ?ERR_SERVICE_UNAVAILABLE};
+      #xmlel{} = Error ->
+	  {error, Error}
+    end;
+create_slot(#state{service_url = ServiceURL},
+	    #jid{luser = U, lserver = S} = JID, File, Size, ContentType,
 	    _Lang) ->
     Options = [{body_format, binary}, {full_result, false}],
     HttpOptions = [{timeout, ?SERVICE_REQUEST_TIMEOUT}],
     SizeStr = jlib:integer_to_binary(Size),
     GetRequest = binary_to_list(ServiceURL) ++
-		     "?jid=" ++ ?URL_ENC(User) ++
+		     "?jid=" ++ ?URL_ENC(jlib:jid_to_string({U, S, <<"">>})) ++
 		     "&name=" ++ ?URL_ENC(File) ++
 		     "&size=" ++ ?URL_ENC(SizeStr) ++
 		     "&content_type=" ++ ?URL_ENC(ContentType),
@@ -540,29 +553,32 @@ create_slot(#state{service_url = ServiceURL}, User, File, Size, ContentType,
 	  case binary:split(Body, <<$\n>>, [global, trim]) of
 	    [<<"http", _/binary>> = PutURL, <<"http", _/binary>> = GetURL] ->
 		?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)",
-			  [User, File]),
+			  [jlib:jid_to_string(JID), File]),
 		{ok, PutURL, GetURL};
 	    Lines ->
 		?ERROR_MSG("Cannot parse data received for ~s from <~s>: ~p",
-			   [User, ServiceURL, Lines]),
+			   [jlib:jid_to_string(JID), ServiceURL, Lines]),
 		{error, ?ERR_SERVICE_UNAVAILABLE}
 	  end;
       {ok, {402, _Body}} ->
-	  ?INFO_MSG("Got status code 402 for ~s from <~s>", [User, ServiceURL]),
+	  ?INFO_MSG("Got status code 402 for ~s from <~s>",
+		    [jlib:jid_to_string(JID), ServiceURL]),
 	  {error, ?ERR_RESOURCE_CONSTRAINT};
       {ok, {403, _Body}} ->
-	  ?INFO_MSG("Got status code 403 for ~s from <~s>", [User, ServiceURL]),
+	  ?INFO_MSG("Got status code 403 for ~s from <~s>",
+		    [jlib:jid_to_string(JID), ServiceURL]),
 	  {error, ?ERR_NOT_ALLOWED};
       {ok, {413, _Body}} ->
-	  ?INFO_MSG("Got status code 413 for ~s from <~s>", [User, ServiceURL]),
+	  ?INFO_MSG("Got status code 413 for ~s from <~s>",
+		    [jlib:jid_to_string(JID), ServiceURL]),
 	  {error, ?ERR_NOT_ACCEPTABLE};
       {ok, {Code, _Body}} ->
 	  ?ERROR_MSG("Got unexpected status code for ~s from <~s>: ~B",
-		     [User, ServiceURL, Code]),
+		     [jlib:jid_to_string(JID), ServiceURL, Code]),
 	  {error, ?ERR_SERVICE_UNAVAILABLE};
       {error, Reason} ->
 	  ?ERROR_MSG("Error requesting upload slot for ~s from <~s>: ~p",
-		     [User, ServiceURL, Reason]),
+		     [jlib:jid_to_string(JID), ServiceURL, Reason]),
 	  {error, ?ERR_SERVICE_UNAVAILABLE}
     end.
 
@@ -597,13 +613,12 @@ slot_el(PutURL, GetURL, XMLNS) ->
 		       #xmlel{name = <<"get">>,
 			      children = [{xmlcdata, GetURL}]}]}.
 
--spec make_user_string(binary(), sha1 | node) -> binary().
+-spec make_user_string(jid(), sha1 | node) -> binary().
 
-make_user_string(User, sha1) ->
-    p1_sha:sha(User);
-make_user_string(User, node) ->
-    [Node, _Domain] = binary:split(User, <<$@>>),
-    re:replace(Node, <<"[^a-zA-Z0-9_.-]">>, <<$_>>, [global, {return, binary}]).
+make_user_string(#jid{luser = U, lserver = S}, sha1) ->
+    p1_sha:sha(<<U/binary, $@, S/binary>>);
+make_user_string(#jid{luser = U}, node) ->
+    re:replace(U, <<"[^a-zA-Z0-9_.-]">>, <<$_>>, [global, {return, binary}]).
 
 -spec make_file_string(binary()) -> binary().
 
@@ -769,17 +784,16 @@ get_proc_name(ServerHost) ->
 -spec remove_user(binary(), binary()) -> ok.
 
 remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    DocRoot = gen_mod:get_module_opt(LServer, ?MODULE, docroot,
+    ServerHost = jlib:nameprep(Server),
+    DocRoot = gen_mod:get_module_opt(ServerHost, ?MODULE, docroot,
 				     fun iolist_to_binary/1,
 				     <<"@HOME@/upload">>),
-    JIDinURL = gen_mod:get_module_opt(LServer, ?MODULE, jid_in_url,
+    JIDinURL = gen_mod:get_module_opt(ServerHost, ?MODULE, jid_in_url,
 				      fun(sha1) -> sha1;
 					 (node) -> node
 				      end,
 				      sha1),
-    UserStr = make_user_string(<<LUser/binary, $@, LServer/binary>>, JIDinURL),
+    UserStr = make_user_string(jlib:make_jid(User, Server, <<"">>), JIDinURL),
     UserDir = str:join([expand_home(DocRoot), UserStr], <<$/>>),
     case del_tree(UserDir) of
 	ok ->
