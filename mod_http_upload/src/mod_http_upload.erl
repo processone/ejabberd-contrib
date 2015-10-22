@@ -66,6 +66,10 @@
 %% ejabberd_hooks callback.
 -export([remove_user/2]).
 
+%% Utility functions.
+-export([get_proc_name/2,
+	 expand_home/1]).
+
 -include("ejabberd.hrl").
 -include("ejabberd_http.hrl").
 -include("jlib.hrl").
@@ -113,7 +117,7 @@ start(ServerHost, Opts) ->
 			     remove_user, 50);
       false -> ok
     end,
-    Proc = get_proc_name(ServerHost),
+    Proc = get_proc_name(ServerHost, ?PROCNAME),
     Spec = {Proc,
 	    {?MODULE, start_link, [ServerHost, Proc, Opts]},
 	    permanent,
@@ -135,7 +139,7 @@ stop(ServerHost) ->
 				remove_user, 50);
       false -> ok
     end,
-    Proc = get_proc_name(ServerHost),
+    Proc = get_proc_name(ServerHost, ?PROCNAME),
     ok = supervisor:terminate_child(ejabberd_sup, Proc),
     ok = supervisor:delete_child(ejabberd_sup, Proc).
 
@@ -422,6 +426,31 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP}) ->
     http_response(Host, 405, [{<<"Allow">>, <<"OPTIONS, HEAD, GET, PUT">>}]).
 
 %%--------------------------------------------------------------------
+%% Exported utility functions.
+%%--------------------------------------------------------------------
+
+-spec get_proc_name(binary(), atom()) -> atom().
+
+get_proc_name(ServerHost, ModuleName) ->
+    PutURL = gen_mod:get_module_opt(ServerHost, ?MODULE, put_url,
+				    fun(<<"http://", _/binary>> = URL) -> URL;
+				       (<<"https://", _/binary>> = URL) -> URL;
+				       (_) -> <<"http://@HOST@">>
+				    end,
+				    <<"http://@HOST@">>),
+    [_, ProcHost | _] = binary:split(expand_host(PutURL, ServerHost),
+				     [<<"http://">>, <<"https://">>,
+				      <<":">>, <<"/">>], [global]),
+    gen_mod:get_module_proc(ProcHost, ModuleName).
+
+-spec expand_home(binary()) -> binary().
+
+expand_home(Subject) ->
+    {ok, [[Home]]} = init:get_argument(home),
+    Parts = binary:split(Subject, <<"@HOME@">>, [global]),
+    str:join(Parts, list_to_binary(Home)).
+
+%%--------------------------------------------------------------------
 %% Internal functions.
 %%--------------------------------------------------------------------
 
@@ -646,13 +675,6 @@ map_int_to_char(N) when N =<  9 -> N + 48; % Digit.
 map_int_to_char(N) when N =< 35 -> N + 55; % Upper-case character.
 map_int_to_char(N) when N =< 61 -> N + 61. % Lower-case character.
 
--spec expand_home(binary()) -> binary().
-
-expand_home(Subject) ->
-    {ok, [[Home]]} = init:get_argument(home),
-    Parts = binary:split(Subject, <<"@HOME@">>, [global]),
-    str:join(Parts, list_to_binary(Home)).
-
 -spec expand_host(binary(), binary()) -> binary().
 
 expand_host(Subject, Host) ->
@@ -760,22 +782,6 @@ code_to_message(405) -> <<"Method not allowed.">>;
 code_to_message(413) -> <<"File size doesn't match requested size.">>;
 code_to_message(500) -> <<"Internal server error.">>;
 code_to_message(_Code) -> <<"">>.
-
-%% Miscellaneous helpers.
-
--spec get_proc_name(binary()) -> atom().
-
-get_proc_name(ServerHost) ->
-    PutURL = gen_mod:get_module_opt(ServerHost, ?MODULE, put_url,
-				    fun(<<"http://", _/binary>> = URL) -> URL;
-				       (<<"https://", _/binary>> = URL) -> URL;
-				       (_) -> <<"http://@HOST@">>
-				    end,
-				    <<"http://@HOST@">>),
-    [_, ProcHost | _] = binary:split(expand_host(PutURL, ServerHost),
-				     [<<"http://">>, <<"https://">>,
-				      <<":">>, <<"/">>], [global]),
-    gen_mod:get_module_proc(ProcHost, ?PROCNAME).
 
 %%--------------------------------------------------------------------
 %% Remove user.
