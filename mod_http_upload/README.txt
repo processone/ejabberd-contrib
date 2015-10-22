@@ -15,12 +15,6 @@ the file and another URL from which that file can later be downloaded.
 Automatic quota management can be configured by also enabling
 mod_http_upload_quota.
 
-PLEASE NOTE: This module implements an experimental protocol which may
-change at any time.  There are already suggestions for improvements, e.g.
-from ProcessOne:
-
-https://github.com/processone/ejabberd-saas-docs/blob/master/xmpp-specs/http-filetransfer/http-filetransfer.md
-
 
 	CONFIGURATION
 	-------------
