@@ -190,11 +190,10 @@ handle_cast(Request, State) ->
 
 -spec handle_info(_, state()) -> {noreply, state()}.
 
-handle_info(sweep, #state{max_days = infinity} = State) -> % Shouldn't happen.
-    {noreply, State};
 handle_info(sweep, #state{server_host = ServerHost,
 			  docroot = DocRoot,
-			  max_days = MaxDays} = State) ->
+			  max_days = MaxDays} = State)
+    when is_integer(MaxDays), MaxDays > 0 ->
     ?DEBUG("Got 'sweep' message for ~s", [ServerHost]),
     case file:list_dir(DocRoot) of
       {ok, Entries} ->
