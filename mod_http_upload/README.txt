@@ -186,16 +186,15 @@ The configurable mod_http_upload_quota options are:
   that is supposed to have a quota limit.  This is the number of megabytes a
   corresponding user may upload.  When this threshold is exceeded, ejabberd
   deletes the oldest files uploaded by that user until their disk usage
-  equals or falls below the specified soft quota.
+  equals or falls below the specified soft quota (see below).
 
 - access_soft_quota (default: 'soft_upload_quota')
 
   This option defines which access rule is used to specify the "soft quota"
   for the matching JIDs.  That rule must yield a positive number of
   megabytes for any JID that is supposed to have a quota limit.  It is
-  strongly recommended to make sure the soft quota will be smaller than the
-  hard quota (but it must be non-zero if the hard quota is non-zero).  See
-  the description of the 'access_hard_quota' option for details.
+  recommended to make sure the soft quota will be smaller than the hard quota.
+  See the description of the 'access_hard_quota' option for details.
 
   NOTE: It's not necessary to specify the 'access_hard_quota' and
   'access_soft_quota' options in order to use the quota feature.  You can
