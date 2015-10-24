@@ -179,7 +179,8 @@ handle_cast({handle_slot_request, #jid{user = U, server = S} = JID, Path, Size},
 			     [jlib:jid_to_string(JID)]),
 		      enforce_quota(Path, Size, OldSize, SoftQuota, HardQuota)
 	      end,
-    {noreply, State#state{disk_usage = dict:store({U, S}, NewSize, DiskUsage)}};
+    NewState = State#state{disk_usage = dict:store({U, S}, NewSize, DiskUsage)},
+    {noreply, NewState, remaining_timeout(State)};
 handle_cast(Request, State) ->
     ?ERROR_MSG("Got unexpected request: ~p", [Request]),
     {noreply, State, remaining_timeout(State)}.
