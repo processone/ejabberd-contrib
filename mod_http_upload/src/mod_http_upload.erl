@@ -14,6 +14,7 @@
 -define(SERVICE_REQUEST_TIMEOUT, 5000). % 5 seconds.
 -define(SLOT_TIMEOUT, 18000000). % 5 hours.
 -define(PROCNAME, ?MODULE).
+-define(FORMAT(Error), file:format_error(Error)).
 -define(URL_ENC(URL), binary_to_list(ejabberd_http:url_encode(URL))).
 -define(ADDR_TO_STR(IP), ejabberd_config:may_hide_data(jlib:ip_to_list(IP))).
 -define(STR_TO_INT(Str, B), jlib:binary_to_integer(iolist_to_binary(Str), B)).
@@ -407,8 +408,8 @@ process(LocalPath, #request{method = Method, host = Host, ip = IP})
 			  [Path, ?ADDR_TO_STR(IP)]),
 		http_response(Host, 404);
 	    {error, Error} ->
-		?INFO_MSG("Cannot serve ~s to ~s: ~p",
-			  [Path, ?ADDR_TO_STR(IP), Error]),
+		?INFO_MSG("Cannot serve ~s to ~s: ~s",
+			  [Path, ?ADDR_TO_STR(IP), ?FORMAT(Error)]),
 		http_response(Host, 500)
 	  end;
       Error ->
@@ -725,7 +726,7 @@ store_file(Path, Data, FileMode, DirMode) ->
 	ok = Ok % Raise an exception if file:write/2 failed.
     catch
       _:{badmatch, {error, Error}} ->
-	  {error, Error};
+	  {error, ?FORMAT(Error)};
       _:Error ->
 	  {error, Error}
     end.
@@ -830,7 +831,7 @@ del_tree(Dir) ->
 	ok = file:del_dir(Dir)
     catch
       _:{badmatch, {error, Error}} ->
-	  {error, Error};
+	  {error, ?FORMAT(Error)};
       _:Error ->
 	  {error, Error}
     end.

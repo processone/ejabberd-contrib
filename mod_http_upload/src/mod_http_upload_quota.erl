@@ -12,6 +12,7 @@
 -define(PROCNAME, ?MODULE).
 -define(TIMEOUT, timer:hours(24)).
 -define(INITIAL_TIMEOUT, timer:minutes(10)).
+-define(FORMAT(Error), file:format_error(Error)).
 
 -behaviour(?GEN_SERVER).
 -behaviour(gen_mod).
@@ -205,7 +206,8 @@ handle_info(sweep, #state{server_host = ServerHost,
 	  lists:foreach(fun(UserDir) -> delete_old_files(UserDir, BackThen) end,
 			UserDirs);
       {error, Error} ->
-	  ?ERROR_MSG("Cannot open document root ~s: ~p", [DocRoot, Error])
+	  ?ERROR_MSG("Cannot open document root ~s: ~s",
+		     [DocRoot, ?FORMAT(Error)])
     end,
     {noreply, State};
 handle_info(Info, State) ->
@@ -308,7 +310,7 @@ gather_file_info(Dir) ->
 				    Acc;
 				{error, Error} ->
 				    ?ERROR_MSG("Cannot stat(2) ~s: ~s",
-					       [Path, Error]),
+					       [Path, ?FORMAT(Error)]),
 				    Acc
 			      end
 		      end, [], Entries);
@@ -316,7 +318,7 @@ gather_file_info(Dir) ->
 	  ?DEBUG("Directory ~s doesn't exist", [Dir]),
 	  [];
       {error, Error} ->
-	  ?ERROR_MSG("Cannot open directory ~s: ~p", [Dir, Error]),
+	  ?ERROR_MSG("Cannot open directory ~s: ~s", [Dir, ?FORMAT(Error)]),
 	  []
     end.
 
@@ -331,10 +333,10 @@ del_file_and_dir(File) ->
 	    ok ->
 		?DEBUG("Removed ~s", [Dir]);
 	    {error, Error} ->
-		?INFO_MSG("Cannot remove ~s: ~s", [Dir, Error])
+		?INFO_MSG("Cannot remove ~s: ~s", [Dir, ?FORMAT(Error)])
 	  end;
       {error, Error} ->
-	  ?WARNING_MSG("Cannot remove ~s: ~s", [File, Error])
+	  ?WARNING_MSG("Cannot remove ~s: ~s", [File, ?FORMAT(Error)])
     end.
 
 -spec secs_since_epoch() -> non_neg_integer().
