@@ -10,8 +10,8 @@
 
 -define(GEN_SERVER, gen_server).
 -define(PROCNAME, ?MODULE).
--define(TIMEOUT, 86400).
--define(INITIAL_TIMEOUT, 600).
+-define(TIMEOUT, timer:hours(24)).
+-define(INITIAL_TIMEOUT, timer:minutes(10)).
 
 -behaviour(?GEN_SERVER).
 -behaviour(gen_mod).
@@ -43,8 +43,8 @@
 	 access_hard_quota              :: atom(),
 	 max_days                       :: pos_integer() | infinity,
 	 docroot                        :: binary(),
-	 last_sweep                     :: non_neg_integer(),
-	 disk_usage = dict:new()        :: term()}).
+	 disk_usage = dict:new()        :: term(),
+	 timers                         :: [timer:tref()]}).
 
 -type state() :: #state{}.
 
@@ -94,7 +94,7 @@ mod_opt_type(_) ->
 %% gen_server callbacks.
 %%--------------------------------------------------------------------
 
--spec init({binary(), gen_mod:opts()}) -> {ok, state(), non_neg_integer()}.
+-spec init({binary(), gen_mod:opts()}) -> {ok, state()}.
 
 init({ServerHost, Opts}) ->
     process_flag(trap_exit, true),
@@ -113,7 +113,12 @@ init({ServerHost, Opts}) ->
 				      fun iolist_to_binary/1,
 				      <<"@HOME@/upload">>),
     DocRoot2 = mod_http_upload:expand_home(str:strip(DocRoot1, right, $/)),
-    LastSweep = secs_since_epoch() - ?TIMEOUT + ?INITIAL_TIMEOUT,
+    Timers = if MaxDays == infinity -> [];
+		true ->
+		     {ok, T1} = timer:send_after(?INITIAL_TIMEOUT, sweep),
+		     {ok, T2} = timer:send_interval(?TIMEOUT, sweep),
+		     [T1, T2]
+	     end,
     ejabberd_hooks:add(http_upload_slot_request, ServerHost, ?MODULE,
 		       handle_slot_request, 50),
     {ok, #state{server_host = ServerHost,
@@ -121,17 +126,15 @@ init({ServerHost, Opts}) ->
 		access_hard_quota = AccessHardQuota,
 		max_days = MaxDays,
 		docroot = DocRoot2,
-		last_sweep = LastSweep},
-     ?INITIAL_TIMEOUT * 1000}.
+		timers = Timers}}.
 
--spec handle_call(_, {pid(), _}, state())
-      -> {noreply, state(), non_neg_integer()}.
+-spec handle_call(_, {pid(), _}, state()) -> {noreply, state()}.
 
 handle_call(Request, From, State) ->
     ?ERROR_MSG("Got unexpected request from ~p: ~p", [From, Request]),
-    {noreply, State, remaining_timeout(State)}.
+    {noreply, State}.
 
--spec handle_cast(_, state()) -> {noreply, state(), non_neg_integer()}.
+-spec handle_cast(_, state()) -> {noreply, state()}.
 
 handle_cast({handle_slot_request, #jid{user = U, server = S} = JID, Path, Size},
 	    #state{server_host = ServerHost,
@@ -179,43 +182,43 @@ handle_cast({handle_slot_request, #jid{user = U, server = S} = JID, Path, Size},
 			     [jlib:jid_to_string(JID)]),
 		      enforce_quota(Path, Size, OldSize, SoftQuota, HardQuota)
 	      end,
-    NewState = State#state{disk_usage = dict:store({U, S}, NewSize, DiskUsage)},
-    {noreply, NewState, remaining_timeout(State)};
+    {noreply, State#state{disk_usage = dict:store({U, S}, NewSize, DiskUsage)}};
 handle_cast(Request, State) ->
     ?ERROR_MSG("Got unexpected request: ~p", [Request]),
-    {noreply, State, remaining_timeout(State)}.
+    {noreply, State}.
 
--spec handle_info(timeout | _, state())
-      -> {noreply, state(), non_neg_integer()}.
+-spec handle_info(_, state()) -> {noreply, state()}.
 
-handle_info(timeout, #state{max_days = infinity} = State) ->
-    {noreply, State, remaining_timeout(State)};
-handle_info(timeout, #state{docroot = DocRoot, max_days = MaxDays} = State) ->
-    ?DEBUG("Got timeout message", []),
-    Now = secs_since_epoch(),
+handle_info(sweep, #state{max_days = infinity} = State) -> % Shouldn't happen.
+    {noreply, State};
+handle_info(sweep, #state{server_host = ServerHost,
+			  docroot = DocRoot,
+			  max_days = MaxDays} = State) ->
+    ?DEBUG("Got 'sweep' message for ~s", [ServerHost]),
     case file:list_dir(DocRoot) of
       {ok, Entries} ->
-	  BackThen = Now - (MaxDays * 86400),
+	  BackThen = secs_since_epoch() - (MaxDays * 86400),
 	  DocRootS = binary_to_list(DocRoot),
-	  UserDirs = [DocRootS ++ "/" ++ Entry || Entry <- Entries,
-						  filelib:is_dir(Entry)],
+	  PathNames = lists:map(fun(Entry) -> DocRootS ++ "/" ++ Entry end,
+				Entries),
+	  UserDirs = lists:filter(fun filelib:is_dir/1, PathNames),
 	  lists:foreach(fun(UserDir) -> delete_old_files(UserDir, BackThen) end,
 			UserDirs);
       {error, Error} ->
 	  ?ERROR_MSG("Cannot open document root ~s: ~p", [DocRoot, Error])
     end,
-    NewState = State#state{last_sweep = Now},
-    {noreply, NewState, remaining_timeout(NewState)};
+    {noreply, State};
 handle_info(Info, State) ->
     ?ERROR_MSG("Got unexpected info: ~p", [Info]),
-    {noreply, State, remaining_timeout(State)}.
+    {noreply, State}.
 
 -spec terminate(normal | shutdown | {shutdown, _} | _, _) -> ok.
 
-terminate(Reason, #state{server_host = ServerHost}) ->
+terminate(Reason, #state{server_host = ServerHost, timers = Timers}) ->
     ?DEBUG("Stopping upload quota process for ~s: ~p", [ServerHost, Reason]),
     ejabberd_hooks:delete(http_upload_slot_request, ServerHost, ?MODULE,
-			  handle_slot_request, 50).
+			  handle_slot_request, 50),
+    lists:foreach(fun(Timer) -> timer:cancel(Timer) end, Timers).
 
 -spec code_change({down, _} | _, state(), _) -> {ok, state()}.
 
@@ -332,19 +335,6 @@ del_file_and_dir(File) ->
 	  end;
       {error, Error} ->
 	  ?WARNING_MSG("Cannot remove ~s: ~s", [File, Error])
-    end.
-
--spec remaining_timeout(state()) -> non_neg_integer() | infinity.
-
-remaining_timeout(#state{max_days = infinity}) ->
-    infinity;
-remaining_timeout(#state{last_sweep = LastSweep}) ->
-    Diff = secs_since_epoch() - LastSweep,
-    if Diff > ?TIMEOUT;
-       Diff < 0 ->
-	    0;
-       true ->
-	    (?TIMEOUT - Diff) * 1000
     end.
 
 -spec secs_since_epoch() -> non_neg_integer().
