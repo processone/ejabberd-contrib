@@ -139,13 +139,13 @@ handle_cast({handle_slot_request, #jid{user = U, server = S} = JID, Path, Size},
 		   access_hard_quota = AccessHardQuota,
 		   disk_usage = DiskUsage} = State) ->
     HardQuota = case acl:match_rule(ServerHost, AccessHardQuota, JID) of
-		  Hard when is_integer(Hard), Hard >= 0 ->
+		  Hard when is_integer(Hard), Hard > 0 ->
 		      Hard * 1024 * 1024;
 		  _ ->
 		      0
 		end,
     SoftQuota = case acl:match_rule(ServerHost, AccessSoftQuota, JID) of
-		  Soft when is_integer(Soft), Soft >= 0 ->
+		  Soft when is_integer(Soft), Soft > 0 ->
 		      Soft * 1024 * 1024;
 		  _ ->
 		      0
