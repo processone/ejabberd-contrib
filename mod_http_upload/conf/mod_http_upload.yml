@@ -7,3 +7,4 @@ listen:
 
 modules:
   mod_http_upload: {}
+  mod_http_upload_quota: {}
