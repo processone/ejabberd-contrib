@@ -193,8 +193,8 @@ The configurable mod_http_upload_quota options are:
   This option defines which access rule is used to specify the "soft quota"
   for the matching JIDs.  That rule must yield a positive number of
   megabytes for any JID that is supposed to have a quota limit.  It is
-  recommended to make sure the soft quota will be smaller than the hard quota.
-  See the description of the 'access_hard_quota' option for details.
+  recommended to make sure the soft quota will be smaller than the hard
+  quota.  See the description of the 'access_hard_quota' option for details.
 
   NOTE: It's not necessary to specify the 'access_hard_quota' and
   'access_soft_quota' options in order to use the quota feature.  You can

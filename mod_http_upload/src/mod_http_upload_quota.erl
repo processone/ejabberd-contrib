@@ -228,7 +228,7 @@ code_change(_OldVsn, #state{server_host = ServerHost} = State, _Extra) ->
     {ok, State}.
 
 %%--------------------------------------------------------------------
-%% ejabberd_hooks callbacks.
+%% ejabberd_hooks callback.
 %%--------------------------------------------------------------------
 
 -spec handle_slot_request(term(), jid(), binary(), non_neg_integer(), binary())
