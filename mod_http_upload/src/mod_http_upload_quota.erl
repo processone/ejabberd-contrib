@@ -246,7 +246,7 @@ handle_slot_request(Acc, _JID, _Path, _Size, _Lang) -> Acc.
 		    non_neg_integer())
       -> non_neg_integer().
 
-enforce_quota(UserDir, SlotSize, OldSize, MinSize, MaxSize)
+enforce_quota(_UserDir, SlotSize, OldSize, _MinSize, MaxSize)
     when is_integer(OldSize), OldSize + SlotSize =< MaxSize ->
     OldSize + SlotSize;
 enforce_quota(UserDir, SlotSize, _OldSize, MinSize, MaxSize) ->
@@ -254,7 +254,7 @@ enforce_quota(UserDir, SlotSize, _OldSize, MinSize, MaxSize) ->
 			       TimeA > TimeB
 		       end, gather_file_info(UserDir)),
     {DelFiles, OldSize, NewSize} =
-	lists:foldl(fun({Path, Size, _Time}, {[], AccSize, AccSize})
+	lists:foldl(fun({_Path, Size, _Time}, {[], AccSize, AccSize})
 			    when AccSize + Size + SlotSize =< MinSize ->
 			    {[], AccSize + Size, AccSize + Size};
 		       ({Path, Size, _Time}, {[], AccSize, AccSize}) ->
