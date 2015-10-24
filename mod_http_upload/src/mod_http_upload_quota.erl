@@ -276,8 +276,8 @@ enforce_quota(UserDir, SlotSize, _OldSize, MinSize, MaxSize) ->
 -spec delete_old_files(file:filename_all(), integer()) -> ok.
 
 delete_old_files(UserDir, Timestamp) ->
-    case lists:filter(fun({_Path, _Size, Time}) -> Time < Timestamp end,
-		      gather_file_info(UserDir)) of
+    FileInfo = gather_file_info(UserDir),
+    case [Path || {Path, _Size, Time} <- FileInfo, Time < Timestamp] of
       [] ->
 	  ok;
       OldFiles ->
