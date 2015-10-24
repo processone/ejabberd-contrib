@@ -355,7 +355,7 @@ process(LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 	    ok ->
 		http_response(Host, 201);
 	    {error, Error} ->
-		?ERROR_MSG("Cannot store file ~s from ~s for ~s: ~s",
+		?ERROR_MSG("Cannot store file ~s from ~s for ~s: ~p",
 			   [Path, ?ADDR_TO_STR(IP), Host, Error]),
 		http_response(Host, 500)
 	  end;
