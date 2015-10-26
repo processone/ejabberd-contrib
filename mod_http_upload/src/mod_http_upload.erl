@@ -701,7 +701,9 @@ iq_disco_info(Lang, Name) ->
 
 %% HTTP request handling.
 
--spec store_file(file:filename_all(), binary(), integer(), integer())
+-spec store_file(file:filename_all(), binary(),
+		 integer() | undefined,
+		 integer() | undefined)
       -> ok | {error, term()}.
 
 store_file(Path, Data, FileMode, DirMode) ->
