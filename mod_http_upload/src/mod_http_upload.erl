@@ -90,10 +90,17 @@
 	 put_url                :: binary(),
 	 get_url                :: binary(),
 	 service_url            :: binary() | undefined,
+	 thumbnail              :: boolean(),
 	 slots = dict:new()     :: term()}). % dict:dict() requires Erlang 17.
+
+-record(media_info,
+	{type   :: string(),
+	 height :: integer(),
+	 width  :: integer()}).
 
 -type state() :: #state{}.
 -type slot() :: [binary()].
+-type media_info() :: #media_info{}.
 
 %%--------------------------------------------------------------------
 %% gen_mod/supervisor callbacks.
@@ -188,10 +195,12 @@ mod_opt_type(custom_headers) ->
     end;
 mod_opt_type(rm_on_unregister) ->
     fun(B) when is_boolean(B) -> B end;
+mod_opt_type(thumbnail) ->
+    fun(B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
     [host, name, access, max_size, secret_length, jid_in_url, file_mode,
      dir_mode, docroot, put_url, get_url, service_url, custom_headers,
-     rm_on_unregister].
+     rm_on_unregister, thumbnail].
 
 %%--------------------------------------------------------------------
 %% gen_server callbacks.
@@ -242,6 +251,9 @@ init({ServerHost, Opts}) ->
 				 fun(<<"http://", _/binary>> = URL) -> URL;
 				    (<<"https://", _/binary>> = URL) -> URL
 				 end),
+    Thumbnail = gen_mod:get_opt(thumbnail, Opts,
+				fun(B) when is_boolean(B) -> B end,
+				true),
     case ServiceURL of
       undefined ->
 	  ok;
@@ -265,6 +277,7 @@ init({ServerHost, Opts}) ->
 		access = Access, max_size = MaxSize,
 		secret_length = SecretLength, jid_in_url = JIDinURL,
 		file_mode = FileMode, dir_mode = DirMode,
+		thumbnail = Thumbnail,
 		docroot = expand_home(str:strip(DocRoot, right, $/)),
 		put_url = expand_host(str:strip(PutURL, right, $/), ServerHost),
 		get_url = expand_host(str:strip(GetURL, right, $/), ServerHost),
@@ -278,13 +291,16 @@ init({ServerHost, Opts}) ->
 
 handle_call({use_slot, Slot}, _From, #state{file_mode = FileMode,
 					    dir_mode = DirMode,
+					    get_url = GetPrefix,
+					    thumbnail = Thumbnail,
 					    docroot = DocRoot} = State) ->
     case get_slot(Slot, State) of
       {ok, {Size, Timer}} ->
 	  timer:cancel(Timer),
 	  NewState = del_slot(Slot, State),
 	  Path = str:join([DocRoot | Slot], <<$/>>),
-	  {reply, {ok, Size, Path, FileMode, DirMode}, NewState};
+	  {reply, {ok, Size, Path, FileMode, DirMode, GetPrefix, Thumbnail},
+	   NewState};
       error ->
 	  {reply, {error, <<"Invalid slot">>}, State}
     end;
@@ -349,16 +365,20 @@ process(LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 			    data = Data}) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     case catch gen_server:call(Proc, {use_slot, LocalPath}) of
-      {ok, Size, Path, FileMode, DirMode} when byte_size(Data) == Size ->
+      {ok, Size, Path, FileMode, DirMode, GetPrefix, Thumbnail}
+	  when byte_size(Data) == Size ->
 	  ?DEBUG("Storing file from ~s for ~s: ~s",
 		 [?ADDR_TO_STR(IP), Host, Path]),
-	  case store_file(Path, Data, FileMode, DirMode) of
-	    ok ->
-		http_response(Host, 201);
-	    {error, Error} ->
-		?ERROR_MSG("Cannot store file ~s from ~s for ~s: ~p",
-			   [Path, ?ADDR_TO_STR(IP), Host, Error]),
-		http_response(Host, 500)
+	  case store_file(Path, Data, FileMode, DirMode,
+			  GetPrefix, LocalPath, Thumbnail) of
+	      ok ->
+		  http_response(Host, 201);
+	      {ok, Headers, OutData} ->
+		  http_response(Host, 201, Headers, OutData);
+	      {error, Error} ->
+		  ?ERROR_MSG("Cannot store file ~s from ~s for ~s: ~p",
+			     [Path, ?ADDR_TO_STR(IP), Host, Error]),
+		  http_response(Host, 500)
 	  end;
       {ok, Size, Path} ->
 	  ?INFO_MSG("Rejecting file ~s from ~s for ~s: Size is ~B, not ~B",
@@ -701,12 +721,38 @@ iq_disco_info(Lang, Name) ->
 
 %% HTTP request handling.
 
--spec store_file(file:filename_all(), binary(),
-		 integer() | undefined,
-		 integer() | undefined)
+store_file(Path, Data, FileMode, DirMode, GetPrefix, LocalPath, Thumbnail) ->
+    case do_store_file(Path, Data, FileMode, DirMode) of
+	ok when Thumbnail ->
+	    case identify(Path) of
+		{ok, MediaInfo} ->
+		    case convert(Path, MediaInfo) of
+			pass ->
+			    ok;
+			{ok, OutPath} ->
+			    [UserDir, RandDir|_] = LocalPath,
+			    FileName = filename:basename(OutPath),
+			    URL = str:join([GetPrefix, UserDir,
+					    RandDir, FileName], <<$/>>),
+			    ThumbEl = thumb_el(OutPath, URL),
+			    {ok,
+			     [{<<"Content-Type">>,
+			       <<"text/xml; charset=utf-8">>}],
+			     xml:element_to_binary(ThumbEl)}
+		    end;
+		{error, _} ->
+		    ok
+	    end;
+	ok ->
+	    ok;
+	Err ->
+	    Err
+    end.
+
+-spec do_store_file(file:filename_all(), binary(), integer(), integer())
       -> ok | {error, term()}.
 
-store_file(Path, Data, FileMode, DirMode) ->
+do_store_file(Path, Data, FileMode, DirMode) ->
     try
 	ok = filelib:ensure_dir(Path),
 	{ok, Io} = file:open(Path, [write, exclusive, raw]),
@@ -785,6 +831,72 @@ code_to_message(405) -> <<"Method not allowed.">>;
 code_to_message(413) -> <<"File size doesn't match requested size.">>;
 code_to_message(500) -> <<"Internal server error.">>;
 code_to_message(_Code) -> <<"">>.
+
+%%--------------------------------------------------------------------
+%% Image manipulation stuff
+%%--------------------------------------------------------------------
+-spec identify(string()) -> {ok, media_info()} | {error, string()}.
+
+identify(Path) ->
+    Cmd = lists:flatten(io_lib:fwrite("identify -format \"ok %m %h %w\" ~s",
+				      [Path])),
+    Res = os:cmd(Cmd),
+    case string:tokens(Res, " ") of
+	["ok", T, H, W] ->
+	    {ok, #media_info{
+		    type = string:to_lower(T),
+		    height = list_to_integer(H),
+		    width = list_to_integer(W)}};
+	_ ->
+	    ?ERROR_MSG("failed to identify type of ~s: ~s", [Path, Res]),
+	    {error, Res}
+    end.
+
+-spec convert(string(), media_info()) -> {ok, string()} | pass.
+
+convert(Path, #media_info{type = T, width = W, height = H}) ->
+    if W*H >= 25000000 ->
+	    ?DEBUG("the image ~s is more than 25 Mbpx", [Path]),
+	    pass;
+       (W =< 300) and (H =< 300) ->
+	    {ok, Path};
+       T == "gif"; T == "jpeg"; T == "png"; T == "webp" ->
+	    Dir = filename:dirname(Path),
+	    FileName = binary_to_list(randoms:get_string()) ++ "." ++ T,
+	    OutPath = filename:join(Dir, FileName),
+	    Cmd = lists:flatten(io_lib:fwrite("convert -resize 300 ~s ~s",
+					      [Path, OutPath])),
+	    case os:cmd(Cmd) of
+		"" ->
+		    {ok, OutPath};
+		Err ->
+		    ?ERROR_MSG("failed to convert ~s to ~s: ~s",
+			       [Path, OutPath, Err]),
+		    pass
+	    end;
+       true ->
+	    ?DEBUG("do not call 'convert' for unknown type ~s", [T]),
+	    pass
+    end.
+
+-spec thumb_el(string(), binary()) -> xmlel().
+
+thumb_el(Path, URI) ->
+    ContentType = guess_content_type(Path),
+    case identify(Path) of
+	{ok, #media_info{height = H, width = W}} ->
+	    #xmlel{name = <<"thumbnail">>,
+		   attrs = [{<<"xmlns">>, ?NS_THUMBS_1},
+			    {<<"media-type">>, ContentType},
+			    {<<"uri">>, URI},
+			    {<<"height">>, jlib:integer_to_binary(H)},
+			    {<<"width">>, jlib:integer_to_binary(W)}]};
+	{error, _} ->
+	    #xmlel{name = <<"thumbnail">>,
+		   attrs = [{<<"xmlns">>, ?NS_THUMBS_1},
+			    {<<"uri">>, URI},
+			    {<<"media-type">>, ContentType}]}
+    end.
 
 %%--------------------------------------------------------------------
 %% Remove user.

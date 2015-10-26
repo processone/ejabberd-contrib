@@ -84,6 +84,13 @@ The configurable mod_http_upload options are:
   mod_http_upload.  Otherwise, a SHA-1 hash of the user's bare JID is
   included instead.
 
+- thumbnail: (default: 'true')
+
+  This option specifies whether ejabberd should create thumbnails of
+  uploaded images.  If a thumbnail is created, a <thumbnail/> element that
+  contains the download <uri/> and some metadata is returned with the PUT
+  response.
+
 - file_mode (default: 'undefined')
 
   This option defines the permission bits of uploaded files.  The bits are
