@@ -99,8 +99,7 @@ The configurable mod_http_upload options are:
 - docroot (default: "@HOME@/upload")
 
   Uploaded files are stored below the directory specified (as an absolute
-  path) with this option.  It is mandatory to specify either this option or
-  the 'service_url' option.  The keyword @HOME@ is replaced with the home
+  path) with this option.  The keyword @HOME@ is replaced with the home
   directory of the user running ejabberd.
 
 - put_url (default: "http://@HOST@:5444")
