@@ -391,7 +391,7 @@ process([_UserDir, _RandDir, _FileName] = Slot,
 		    http_response(Host, 201, Headers, OutData);
 		{error, Error} ->
 		    ?ERROR_MSG("Cannot store file ~s from ~s for ~s: ~p",
-			       [Path, ?ADDR_TO_STR(IP), Host, Error]),
+			       [Path, ?ADDR_TO_STR(IP), Host, ?FORMAT(Error)]),
 		    http_response(Host, 500)
 	    end;
 	{ok, Size, Path} ->
@@ -812,7 +812,7 @@ do_store_file(Path, Data, FileMode, DirMode) ->
 	ok = Ok % Raise an exception if file:write/2 failed.
     catch
 	_:{badmatch, {error, Error}} ->
-	    {error, ?FORMAT(Error)};
+	    {error, Error};
 	_:Error ->
 	    {error, Error}
     end.
@@ -959,7 +959,7 @@ remove_user(User, Server) ->
 	    ?DEBUG("Found no HTTP upload directory of ~s@~s", [User, Server]);
 	{error, Error} ->
 	    ?ERROR_MSG("Cannot remove HTTP upload directory of ~s@~s: ~p",
-		       [User, Server, Error])
+		       [User, Server, ?FORMAT(Error)])
     end,
     ok.
 
@@ -981,7 +981,7 @@ del_tree(Dir) ->
 	ok = file:del_dir(Dir)
     catch
 	_:{badmatch, {error, Error}} ->
-	    {error, ?FORMAT(Error)};
+	    {error, Error};
 	_:Error ->
 	    {error, Error}
     end.
