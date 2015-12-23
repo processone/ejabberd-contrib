@@ -11,6 +11,9 @@ For users
 To use an ejabberd module coming from this repository:
 
 - You need to have ejabberd installed.
+ 
+- If you have not already done it, run `ejabberdctl modules_update_specs`
+  to retrieve the list of available modules.
 
 - Run `ejabberdctl module_install <module>` to get the source code and to
   compile and install the `beam` file into ejabberd's module search path.
