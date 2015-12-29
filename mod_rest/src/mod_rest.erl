@@ -49,7 +49,7 @@ process([], #request{method = 'POST', data = Data, host = Host, ip = ClientIp}) 
     try
 	{ClientAddress, _PortNumber} = ClientIp,
 	check_member_option(Host, ClientAddress, allowed_ips),
-	maybe_post_request(binary_to_list(Data), Host, ClientIp)
+	maybe_post_request(Data, Host, ClientIp)
     catch
 	error:{badmatch, _} = Error ->
 	    ?DEBUG("Error when processing REST request: ~nData: ~p~nError: ~p", [Data, Error]),
@@ -62,7 +62,7 @@ process(Path, Request) ->
 
 %% If the first character of Data is <, it is considered a stanza to deliver.
 %% Otherwise, it is considered an ejabberd command to execute.
-maybe_post_request([$< | _ ] = Data, Host, ClientIp) ->
+maybe_post_request(<<$<,_/binary>> = Data, Host, ClientIp) ->
     try
 	Stanza = {xmlel, _, _, _} = xml_stream:parse_element(Data),
         From = jlib:string_to_jid(xml:get_tag_attr_s(<<"from">>, Stanza)),
@@ -87,7 +87,7 @@ maybe_post_request([$< | _ ] = Data, Host, ClientIp) ->
     end;    
 maybe_post_request(Data, Host, _ClientIp) ->
     ?INFO_MSG("Data: ~p", [Data]),
-    Args = split_line(Data),
+    Args = split_line(binary_to_list(Data)),
     AccessCommands = get_option_access(Host),
     case ejabberd_ctl:process2(Args, AccessCommands) of
 	{"", ?STATUS_SUCCESS} ->
