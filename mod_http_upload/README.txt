@@ -115,7 +115,7 @@ The configurable mod_http_upload options are:
   This option specifies the initial part of the PUT URLs used for file
   uploads.  The keyword @HOST@ is replaced with the virtual host name.
 
-  NOTE: Different virtual hosts cannot use the same PUT URL domain.
+  NOTE: Different virtual hosts cannot use the same PUT URL.
 
 - get_url (default: $put_url)
 
