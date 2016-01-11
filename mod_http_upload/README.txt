@@ -84,6 +84,13 @@ The configurable mod_http_upload options are:
   mod_http_upload.  Otherwise, a SHA-1 hash of the user's bare JID is
   included instead.
 
+- thumbnail: (default: 'true')
+
+  This option specifies whether ejabberd should create thumbnails of
+  uploaded images.  If a thumbnail is created, a <thumbnail/> element that
+  contains the download <uri/> and some metadata is returned with the PUT
+  response.
+
 - file_mode (default: 'undefined')
 
   This option defines the permission bits of uploaded files.  The bits are
@@ -108,7 +115,7 @@ The configurable mod_http_upload options are:
   This option specifies the initial part of the PUT URLs used for file
   uploads.  The keyword @HOST@ is replaced with the virtual host name.
 
-  NOTE: Different virtual hosts cannot use the same PUT URL domain.
+  NOTE: Different virtual hosts cannot use the same PUT URL.
 
 - get_url (default: $put_url)
 
@@ -117,6 +124,9 @@ The configurable mod_http_upload options are:
   'put_url', but you can set it to a different value in order to have the
   files served by a proper HTTP server such as Nginx or Apache.  The keyword
   @HOST@ is replaced with the virtual host name.
+
+  NOTE: If GET requests are handled by mod_http_upload, the 'get_url' must
+  match the 'put_url'.
 
 - service_url (default: 'undefined')
 
