@@ -125,6 +125,9 @@ The configurable mod_http_upload options are:
   files served by a proper HTTP server such as Nginx or Apache.  The keyword
   @HOST@ is replaced with the virtual host name.
 
+  NOTE: If GET requests are handled by mod_http_upload, the 'get_url' must
+  match the 'put_url'.
+
 - service_url (default: 'undefined')
 
   If a 'service_url' is specified, HTTP upload slot requests are forwarded
