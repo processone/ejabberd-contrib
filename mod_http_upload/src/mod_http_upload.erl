@@ -11,6 +11,7 @@
 -define(GEN_SERVER, gen_server).
 -define(NS_HTTP_UPLOAD, <<"urn:xmpp:http:upload">>).
 -define(NS_HTTP_UPLOAD_OLD, <<"eu:siacs:conversations:http:upload">>).
+-define(NS_THUMBS_1, <<"urn:xmpp:thumbs:1">>).
 -define(SERVICE_REQUEST_TIMEOUT, 5000). % 5 seconds.
 -define(SLOT_TIMEOUT, 18000000). % 5 hours.
 -define(PROCNAME, ?MODULE).
