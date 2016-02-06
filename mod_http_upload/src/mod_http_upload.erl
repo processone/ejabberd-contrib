@@ -28,7 +28,7 @@
 	 {<<".gz">>, <<"application/x-gzip">>},
 	 {<<".jpeg">>, <<"image/jpeg">>},
 	 {<<".jpg">>, <<"image/jpeg">>},
-	 {<<".mp3">>, <<"audio/mpeg">>},
+	 {<<".mp3">>, <<"audio/mp3">>},
 	 {<<".mp4">>, <<"video/mp4">>},
 	 {<<".mpeg">>, <<"video/mpeg">>},
 	 {<<".mpg">>, <<"video/mpeg">>},
