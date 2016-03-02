@@ -60,7 +60,7 @@ Based in mod_archive, author: Olivier Goffart <ogoffart at kde.org>
 Based in mod_archive_sql, author: Alexey Shchepin
 
 For a detailed documentation about this module, please refer to
-http://www.ndl.kiev.ua/typo/articles/2007/11/14/mod_archive_odbc-release
+http://endl.ch/content/mod_archive_odbc-release
 
 
 	MOD_ARCHIVE_WEBVIEW
