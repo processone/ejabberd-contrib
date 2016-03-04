@@ -1,0 +1,11 @@
+modules:
+  mod_rest:
+    allowed_ips:
+      - "> {127,0,0,1} ."
+listen:
+  - 
+    port: 5285
+    module: ejabberd_http
+    request_handlers:
+       "/rest": mod_rest
+
