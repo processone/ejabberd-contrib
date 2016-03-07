@@ -161,7 +161,7 @@ process_sm_iq_set(LUser, LServer, SubEl, IQ) ->
 	  #xmlel{children = SubSubEls} = SubEl,
 	  ElsList = [El
 		     || #xmlel{name = Name} = El
-			    <- xml:remove_cdata(SubSubEls),
+			    <- fxml:remove_cdata(SubSubEls),
 			Name == <<"x">>],
 	  case ElsList of
 	    [XData] ->
@@ -279,7 +279,7 @@ filter_profile_fields(_StoredFields, [], ResFields) ->
 %% Copied from exmpp_xml.erl, then customized
 
 get_requested_fields(SubEl) ->
-    case xml:get_subtag(SubEl, <<"x">>) of
+    case fxml:get_subtag(SubEl, <<"x">>) of
       false -> [];
       XEl -> get_elements(XEl, <<"field">>)
     end.
