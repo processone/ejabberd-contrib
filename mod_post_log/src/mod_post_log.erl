@@ -66,7 +66,7 @@ log_chat(From, To, #xmlel{children = Els} = Packet) ->
     end.
 
 log_chat_with_body(From, To, Packet) ->
-    post_xml(From, To, xml:element_to_binary(Packet)).
+    post_xml(From, To, fxml:element_to_binary(Packet)).
 
 post_xml(From, To, Xml) ->
     Ts = to_iso_8601_date(os:timestamp()),
