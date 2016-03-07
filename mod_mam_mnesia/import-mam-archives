@@ -1,0 +1,105 @@
+#!/usr/bin/env escript
+%%! -sname import@localhost
+
+% NOTE: If the node name of your server is *not* 'ejabberd@localhost' (see the
+% "ejabberdctl status" output), you must change the @localhost part of the node
+% names above and below.
+
+-define(NODE, 'ejabberd@localhost').
+
+% Copyright (c) 2016 Holger Weiss <holger@zedat.fu-berlin.de>.
+%
+% This program is free software; you can redistribute it and/or modify it under
+% the terms of the GNU General Public License as published by the Free Software
+% Foundation; either version 2 of the License, or (at your option) any later
+% version.
+%
+% This program is distributed in the hope that it will be useful, but WITHOUT
+% ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+% FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+% details.
+%
+% You should have received a copy of the GNU General Public License along with
+% this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+% Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+-record(archive_msg, {us, id, timestamp, peer, bare_peer, packet, nick, type}).
+-record(mam_msg, {key, time, route, from, to, stanza}).
+
+usage(IoDevice, ExitStatus) ->
+    ok = io:put_chars(IoDevice, "Usage: import-mam-archives [days]"),
+    ok = io:nl(IoDevice),
+    halt(ExitStatus).
+
+get_timestamp() ->
+    calendar:datetime_to_gregorian_seconds(calendar:universal_time()).
+
+import(MinTS) ->
+    TabDef = [{disc_only_copies, [?NODE]},
+	      {type, bag},
+	      {attributes, record_info(fields, archive_msg)}],
+    rpc:call(?NODE, mnesia, create_table, [archive_msg, TabDef]),
+
+    ImportMsg = fun(#mam_msg{key = {{U, S}, ID},
+			     time = TS,
+			     route = Direction,
+			     from = {FromU, FromS, FromR},
+			     to = {ToU, ToS, ToR},
+			     stanza = Msg},
+		    {ok, N}) when MinTS =:= undefined;
+				  TS > MinTS ->
+			{PeerU, PeerS, PeerR} =
+			    case Direction of
+				incoming -> {FromU, FromS, FromR};
+				outgoing -> {ToU, ToS, ToR}
+			    end,
+			Record = #archive_msg{us = {U, S},
+					      id = integer_to_binary(ID),
+					      timestamp = TS,
+					      peer = {PeerU, PeerS, PeerR},
+					      bare_peer = {PeerU, PeerS, <<>>},
+					      type = chat,
+					      nick = <<>>,
+					      packet = Msg},
+			case N rem 100 of
+			    0 -> io:put_chars(".");
+			    _ -> ok
+			end,
+			{mnesia:write(Record), N + 1};
+		   (#mam_msg{}, {ok, N}) ->
+			{ok, N}
+		end,
+    ImportTab = fun() ->
+			mnesia:foldl(ImportMsg, {ok, 0}, mam_msg)
+		end,
+
+    Start = get_timestamp(),
+    io:put_chars("Please wait "),
+    {ok, N} = rpc:call(?NODE, mnesia, activity,
+		       [sync_dirty, ImportTab, [], mnesia_frag]),
+    {atomic, ok} = rpc:call(?NODE, mnesia, delete_table, [mam_msg]),
+    {atomic, ok} = rpc:call(?NODE, mnesia, delete_table, [mam_meta]),
+    End = get_timestamp(),
+
+    io:fwrite("~nImported ~B messages in ~.1f minutes.~n",
+	      [N, (End - Start) / 60]).
+
+main(["-h"]) ->
+    usage(standard_io, 0);
+main([]) ->
+    import(undefined);
+main([Days]) ->
+    Secs = try
+	       D = list_to_integer(Days),
+	       true = D > 0,
+	       true = D < 10000,
+	       D * 86400
+	   catch
+	       _:_ -> usage(standard_error, 2)
+	   end,
+    {MS, S, US} = os:timestamp(),
+    CurS = MS * 1000000 + S,
+    MinS = CurS - Secs,
+    import({MinS div 1000000, MinS rem 1000000, US});
+main(_Junk) ->
+    usage(standard_error, 2).

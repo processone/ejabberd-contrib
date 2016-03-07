@@ -1,5 +1,0 @@
-author: "Holger Weiss <holger at zedat.fu-berlin.de>"
-category: "archive"
-summary: "Message Archive Management (XEP-0313)"
-home: "https://github.com/processone/ejabberd-contrib/tree/master/"
-url: "git@github.com:processone/ejabberd-contrib.git"
