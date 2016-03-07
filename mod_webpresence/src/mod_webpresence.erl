@@ -184,7 +184,7 @@ do_route(Host, ServerHost, Access, From, To, Packet, BaseURL) ->
 	    do_route1(Host, From, To, Packet, BaseURL);
 	_ ->
 	    #xmlel{attrs = Attrs} = Packet,
-            Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+            Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
 	    ErrText = <<"Access denied by service policy">>,
 	    Err = jlib:make_error_reply(Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
 	    ejabberd_router:route(To, From, Err)
@@ -194,7 +194,7 @@ do_route1(Host, From, To, Packet, BaseURL) ->
     #xmlel{name = Name, attrs = Attrs} = Packet,
     case Name of
         <<"iq">> -> do_route1_iq(Host, From, To, Packet, BaseURL, jlib:iq_query_info(Packet));
-        _ -> case xml:get_attr_s(<<"type">>, Attrs) of
+        _ -> case fxml:get_attr_s(<<"type">>, Attrs) of
 		 <<"error">> -> ok;
 		 <<"result">> -> ok;
 		 _ -> Err = jlib:make_error_reply(Packet, ?ERR_ITEM_NOT_FOUND),
@@ -544,7 +544,7 @@ get_attr(Attr, XData, Default) ->
 
 process_iq_register_set(From, SubEl, Host, BaseURL, Lang) ->
     #xmlel{name = _, attrs = _, children = Els} = SubEl,
-    case xml:get_subtag(SubEl, <<"remove">>) of
+    case fxml:get_subtag(SubEl, <<"remove">>) of
 	false -> case catch process_iq_register_set2(From, Els, Host, BaseURL, Lang) of
 		     {'EXIT', _} -> {error, ?ERR_BAD_REQUEST};
 		     R -> R
@@ -559,8 +559,8 @@ process_iq_register_set2(From, Els, Host, BaseURL, Lang) ->
         attrs = _Attrs1,
         children = _Els1
        } = XEl
-    ] = xml:remove_cdata(Els),
-    case {xml:get_tag_attr_s(<<"xmlns">>, XEl), xml:get_tag_attr_s(<<"type">>, XEl)} of
+    ] = fxml:remove_cdata(Els),
+    case {fxml:get_tag_attr_s(<<"xmlns">>, XEl), fxml:get_tag_attr_s(<<"type">>, XEl)} of
 	{?NS_XDATA, <<"cancel">>} ->
 	    {result, []};
 	{?NS_XDATA, <<"submit">>} ->
@@ -855,7 +855,7 @@ show_presence({image_res, WP, LUser, LServer, Theme, LResource}) ->
 
 show_presence({xml, WP, LUser, LServer, Show_us}) ->
     true = WP#webpresence.xml,
-    Presence_xml = xml:element_to_binary(get_presences({xml, LUser, LServer, Show_us})),
+    Presence_xml = fxml:element_to_binary(get_presences({xml, LUser, LServer, Show_us})),
     {200, [{"Content-Type", "text/xml; charset=utf-8"}], ?BC([?XML_HEADER, Presence_xml])};
 
 show_presence({js, WP, LUser, LServer, Show_us, Lang, Q}) ->
@@ -881,8 +881,8 @@ show_presence({avatar, WP, LUser, LServer}) ->
     IQ = #iq{type = get, xmlns = ?NS_VCARD},
     IQr = Module:Function(JID, JID, IQ),
     [VCard] = IQr#iq.sub_el,
-    Mime = xml:get_path_s(VCard, [{elem, <<"PHOTO">>}, {elem, <<"TYPE">>}, cdata]),
-    BinVal = xml:get_path_s(VCard, [{elem, <<"PHOTO">>}, {elem, <<"BINVAL">>}, cdata]),
+    Mime = fxml:get_path_s(VCard, [{elem, <<"PHOTO">>}, {elem, <<"TYPE">>}, cdata]),
+    BinVal = fxml:get_path_s(VCard, [{elem, <<"PHOTO">>}, {elem, <<"BINVAL">>}, cdata]),
     Photo = jlib:decode_base64(BinVal),
     {200, [{"Content-Type", Mime}], Photo};
 
