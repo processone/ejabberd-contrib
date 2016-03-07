@@ -801,8 +801,8 @@ received_response(From, {xmlel, <<"iq">>, Attrs, Elc}) ->
     Host = From#jid.lserver,
     Resource = From#jid.lresource,
 
-    <<"result">> = xml:get_attr_s(<<"type">>, Attrs),
-    Lang = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
+    <<"result">> = fxml:get_attr_s(<<"type">>, Attrs),
+    Lang = case fxml:get_attr_s(<<"xml:lang">>, Attrs) of
 	       <<"">> -> "unknown";
 	       L -> binary_to_list(L)
 	   end,
@@ -811,9 +811,9 @@ received_response(From, {xmlel, <<"iq">>, Attrs, Elc}) ->
     update_counter_create(TableHost, {lang, Host, Lang}, 1),
     update_counter_create(TableServer, {lang, server, Lang}, 1),
 
-    [El] = xml:remove_cdata(Elc),
+    [El] = fxml:remove_cdata(Elc),
     {xmlel, _, Attrs2, _Els2} = El,
-    ?NS_VERSION = xml:get_attr_s(<<"xmlns">>, Attrs2),
+    ?NS_VERSION = fxml:get_attr_s(<<"xmlns">>, Attrs2),
 
     Client = get_tag_cdata_subtag(El, <<"name">>),
     Version = get_tag_cdata_subtag(El, <<"version">>),
@@ -849,10 +849,10 @@ update_counter_create(Table, Element, C) ->
     end.
 
 get_tag_cdata_subtag(E, T) ->
-    E2 = xml:get_subtag(E, T),
+    E2 = fxml:get_subtag(E, T),
     case E2 of
 	false -> "unknown";
-	_ -> binary_to_list(xml:get_tag_cdata(E2))
+	_ -> binary_to_list(fxml:get_tag_cdata(E2))
     end.
 
 list_elem(Type, id) ->
@@ -1712,7 +1712,7 @@ get_users_vcard_fun(#vcard{us = {_, Host1}}, {HostReq, NumRemaining, MinSize, Si
     when (Host1 /= HostReq) and (HostReq /= server) ->
     {HostReq, NumRemaining, MinSize, Sizes, Selects};
 get_users_vcard_fun(Vcard, {HostReq, NumRemaining, MinSize, Sizes, Selects}) ->
-    Binary = xml:element_to_binary(Vcard#vcard.vcard),
+    Binary = fxml:element_to_binary(Vcard#vcard.vcard),
     Size = byte_size(Binary),
     case {Size > MinSize, NumRemaining > 0} of
 	{true, true} ->
