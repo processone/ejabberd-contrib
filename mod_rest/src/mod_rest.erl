@@ -64,9 +64,9 @@ process(Path, Request) ->
 %% Otherwise, it is considered an ejabberd command to execute.
 maybe_post_request(<<$<,_/binary>> = Data, Host, ClientIp) ->
     try
-	Stanza = {xmlel, _, _, _} = xml_stream:parse_element(Data),
-        From = jlib:string_to_jid(xml:get_tag_attr_s(<<"from">>, Stanza)),
-        To = jlib:string_to_jid(xml:get_tag_attr_s(<<"to">>, Stanza)),
+	Stanza = {xmlel, _, _, _} = fxml_stream:parse_element(Data),
+        From = jlib:string_to_jid(fxml:get_tag_attr_s(<<"from">>, Stanza)),
+        To = jlib:string_to_jid(fxml:get_tag_attr_s(<<"to">>, Stanza)),
 	allowed = check_stanza(Stanza, From, To, Host),
 	?INFO_MSG("Got valid request from ~s~nwith IP ~p~nto ~s:~n~p",
 		  [jlib:jid_to_string(From),
