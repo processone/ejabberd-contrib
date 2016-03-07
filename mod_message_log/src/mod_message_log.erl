@@ -169,7 +169,7 @@ reopen_log() ->
 -spec log_packet(direction(), jid(), jid(), xmlel()) -> any().
 
 log_packet(Direction, From, To, #xmlel{name = <<"message">>} = Packet) ->
-    case xml:get_subtag(Packet, <<"body">>) of
+    case fxml:get_subtag(Packet, <<"body">>) of
       #xmlel{children = Body} when length(Body) > 0 ->
 	  Type = get_message_type(Packet),
 	  gen_server:cast(?PROCNAME, {message, Direction, From, To, Type});
@@ -188,7 +188,7 @@ log_packet(_Direction, _From, _To, _Packet) ->
 -spec get_message_type(xmlel()) -> binary().
 
 get_message_type(#xmlel{attrs = Attrs}) ->
-    case xml:get_attr_s(<<"type">>, Attrs) of
+    case fxml:get_attr_s(<<"type">>, Attrs) of
       <<"">> ->
 	  <<"normal">>;
       Type ->
@@ -198,8 +198,8 @@ get_message_type(#xmlel{attrs = Attrs}) ->
 -spec is_carbon(xmlel()) -> {true, direction()} | false.
 
 is_carbon(Packet) ->
-    {Direction, SubTag} = case {xml:get_subtag(Packet, <<"sent">>),
-				xml:get_subtag(Packet, <<"received">>)} of
+    {Direction, SubTag} = case {fxml:get_subtag(Packet, <<"sent">>),
+				fxml:get_subtag(Packet, <<"received">>)} of
 			    {false, false} ->
 				{false, false};
 			    {false, Tag} ->
@@ -210,7 +210,7 @@ is_carbon(Packet) ->
     F = fun(_, false) ->
 	       false;
 	   (Name, Tag) ->
-	       xml:get_subtag(Tag, Name)
+	       fxml:get_subtag(Tag, Name)
 	end,
     case lists:foldl(F, SubTag, [<<"forwarded">>, <<"message">>, <<"body">>]) of
       #xmlel{children = Body} when length(Body) > 0 ->
