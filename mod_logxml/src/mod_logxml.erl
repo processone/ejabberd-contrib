@@ -199,7 +199,7 @@ add_log(Io, Timezone, ShowIP, {Orientation, From, To, Packet}, _OSD) ->
     TimestampISO = get_now_iso(Timezone),
     io:fwrite(Io, "<packet or=\"~p\" ljid=\"~s\" ~sts=\"~s\">~s</packet>~n",
 	      [Orientation, jlib:jid_to_string(LocalJID), LocalIPS,
-	       TimestampISO, binary_to_list(xml:element_to_binary(Packet))]).
+	       TimestampISO, binary_to_list(fxml:element_to_binary(Packet))]).
 
 %% -------------------
 %% File
@@ -263,7 +263,7 @@ get_now_iso(Timezone) ->
 		    local -> calendar:now_to_local_time(now());
 		    universal -> calendar:now_to_universal_time(now())
 		end,
-    binary_to_list(jlib:timestamp_to_iso(TimeStamp)).
+    binary_to_list(jlib:timestamp_to_legacy(TimeStamp)).
 
 calc_div(A, B) when is_integer(A) and is_integer(B) and (B /= 0) ->
     A/B;
