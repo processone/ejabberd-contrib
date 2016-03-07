@@ -89,12 +89,12 @@ log_packet_receive(Packet, _C2SState, _JID, From, To) ->
     Packet.
 
 log_packet(From, To, Packet = #xmlel{name = <<"message">>, attrs = Attrs}, Host) ->
-    case xml:get_attr_s(<<"type">>, Attrs) of
+    case fxml:get_attr_s(<<"type">>, Attrs) of
 	<<"groupchat">> -> %% mod_muc_log already does it
-	    ?DEBUG("dropping groupchat: ~s", [xml:element_to_binary(Packet)]),
+	    ?DEBUG("dropping groupchat: ~s", [fxml:element_to_binary(Packet)]),
 	    ok;
 	<<"error">> -> %% we don't log errors
-	    ?DEBUG("dropping error: ~s", [xml:element_to_binary(Packet)]),
+	    ?DEBUG("dropping error: ~s", [fxml:element_to_binary(Packet)]),
 	    ok;
 	_ ->
 	    write_packet(From, To, Packet, Host)
@@ -109,13 +109,13 @@ write_packet(From, To, Packet, Host) ->
 		   Result
 	   end,
     Format = Config#config.format,
-    {Subject, Body} = {case xml:get_subtag(Packet, <<"subject">>) of
+    {Subject, Body} = {case fxml:get_subtag(Packet, <<"subject">>) of
 			   false ->
 			       "";
 			   SubjEl ->
-			       escape(Format, xml:get_tag_cdata(SubjEl))
+			       escape(Format, fxml:get_tag_cdata(SubjEl))
 		       end,
-		       escape(Format, xml:get_path_s(Packet, [{elem, <<"body">>}, cdata]))},
+		       escape(Format, fxml:get_path_s(Packet, [{elem, <<"body">>}, cdata]))},
     case Subject == [] andalso Body == [] of
         true -> %% don't log empty messages
             ?DEBUG("not logging empty message from ~s",[jlib:jid_to_string(From)]),
