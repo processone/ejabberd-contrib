@@ -87,7 +87,7 @@ maybe_post_request(<<$<,_/binary>> = Data, Host, ClientIp) ->
     end;    
 maybe_post_request(Data, Host, _ClientIp) ->
     ?INFO_MSG("Data: ~p", [Data]),
-    Args = split_line(binary_to_list(Data)),
+    Args = split_line(unicode:characters_to_list(Data, utf8)),
     AccessCommands = get_option_access(Host),
     case ejabberd_ctl:process2(Args, AccessCommands) of
 	{"", ?STATUS_SUCCESS} ->
