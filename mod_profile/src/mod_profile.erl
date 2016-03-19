@@ -105,7 +105,7 @@ start(Host, Opts) ->
 		       remove_user, 50),
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
 		       get_sm_features, 50),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_PROFILE, ?MODULE, process_sm_iq, IQDisc).
 
