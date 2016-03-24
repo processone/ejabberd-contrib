@@ -25,11 +25,7 @@
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 -include("logger.hrl").
--ifdef(NO_EXT_LIB).
--include("xml.hrl").
--else.
--include_lib("p1_xml/include/xml.hrl").
--endif.
+-include("jlib.hrl").
 
 -record(task, {taskid, timerref, host, task}).
 
