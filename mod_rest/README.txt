@@ -24,7 +24,7 @@ Enable the module:
 modules:
   mod_rest:
     allowed_ips:
-      - "> {127,0,0,1} ."
+      - "127.0.0.1"
 
 And enable the HTTP request handler in the listen section:
 listen:
@@ -62,19 +62,35 @@ Configurable options:
   There is more information about AccessCommands in the ejabberd Guide.
   Default value: []
 
-Complex example configuration (works only when set in an old-format ejabberd.cfg file:
-{modules,
- [
-  {mod_rest, [
-              {allowed_ips, [ {127,0,0,1}, {192,168,1,12} ]},
-              {allowed_destinations, [ "nolan@localhost", "admin@example.com" ]},
-              {allowed_stanza_types, [ "message", "presence", "iq" ]},
-              {access_commands, [ {configure, [registered_users], []} ]}
-             ]
-  },
-  ...
- ]
-}.
+Complex example configuration:
+
+acl:
+  restuser:
+    user:
+      - "userest": "localhost"
+
+access:
+  restaccess:
+    restuser: allow
+
+commands_admin_access: restaccess
+
+modules:
+  mod_rest:
+    allowed_ips:
+      - "127.0.0.1"
+      - "192.168.1.12"
+    allowed_destinations:
+      - "nolan@localhost"
+      - "admin@example.com"
+    allowed_stanza_types:
+      - "message"
+      - "presence"
+      - "iq"
+    access_commands:
+      restaccess:
+        - registered_users
+        - connected_users
 
 This module gives many power to perform tasks in ejabberd,
 such power in bad hands can harm your server, so you should  
@@ -195,7 +211,7 @@ import urllib2
 
 server_url = 'http://localhost:5280/rest/'
 
-call = '<message to="user1@localhost" from="localhost/rest"><body>World</body></message>'
+call = '<message to="nolan@localhost" from="localhost/rest"><body>World</body></message>'
 resp = urllib2.urlopen(server_url, call)
 result = resp.read()
 print result
