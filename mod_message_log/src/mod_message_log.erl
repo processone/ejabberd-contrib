@@ -14,7 +14,8 @@
 %% gen_mod/supervisor callbacks.
 -export([start_link/1,
 	 start/2,
-	 stop/1]).
+	 stop/1,
+	 mod_opt_type/1]).
 
 %% gen_server callbacks.
 -export([init/1,
@@ -87,6 +88,13 @@ stop(Host) ->
 	  ok % We just run one process per node.
     end.
 
+-spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
+
+mod_opt_type(filename) ->
+    fun iolist_to_binary/1;
+mod_opt_type(_) ->
+    [filename].
+
 %% -------------------------------------------------------------------
 %% gen_server callbacks.
 %% -------------------------------------------------------------------
@@ -96,7 +104,7 @@ stop(Host) ->
 init(Opts) ->
     process_flag(trap_exit, true),
     ejabberd_hooks:add(reopen_log_hook, ?MODULE, reopen_log, 42),
-    Filename = gen_mod:get_opt(filename, Opts, fun(V) -> V end,
+    Filename = gen_mod:get_opt(filename, Opts, fun iolist_to_binary/1,
 			       ?DEFAULT_FILENAME),
     {ok, IoDevice} = file:open(Filename, ?FILE_MODES),
     {ok, #state{filename = Filename, iodevice = IoDevice}}.
