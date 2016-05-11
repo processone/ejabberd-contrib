@@ -15,8 +15,8 @@
 %% External exports
 -export([start/1,
          set_password/3,
-         check_password/3,
-         check_password/5,
+         check_password/4,
+         check_password/6,
          try_register/3,
          dirty_get_registered_users/0,
          get_vh_registered_users/1,
@@ -69,8 +69,8 @@ plain_password_required() ->
 store_type() ->
     ejabberd_auth_odbc:store_type().
 
--spec check_password(ejabberd:luser(), ejabberd:lserver(), binary()) -> boolean().
-check_password(LUser, LServer, Password) ->
+-spec check_password(ejabberd:luser(), binary(), ejabberd:lserver(), binary()) -> boolean().
+check_password(LUser, _AuthzId, LServer, Password) ->
     case scram2:enabled(LServer) of
         false ->
             case make_req(get, <<"check_password">>, LUser, LServer, Password) of
@@ -81,8 +81,8 @@ check_password(LUser, LServer, Password) ->
             {ok, true} =:= verify_scram_password(LUser, LServer, Password)
     end.
 
--spec check_password(ejabberd:luser(), ejabberd:lserver(), binary(), binary(), fun()) -> boolean().
-check_password(LUser, LServer, Password, Digest, DigestGen) ->
+-spec check_password(ejabberd:luser(), binary(), ejabberd:lserver(), binary(), binary(), fun()) -> boolean().
+check_password(LUser, _AuthzId, LServer, Password, Digest, DigestGen) ->
     case make_req(get, <<"get_password">>, LUser, LServer, <<"">>) of
         {error, _} ->
             false;
