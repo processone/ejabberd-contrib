@@ -179,8 +179,15 @@ scram_to_tuple(Scram) ->
 
 -spec check_digest(scram(), binary(), fun(), binary()) -> boolean().
 check_digest(#scram{storedkey = StoredKey}, Digest, DigestGen, Password) ->
-    Passwd = base64:decode(StoredKey),
-    ejabberd_auth:check_digest(Digest, DigestGen, Password, Passwd).
+    Passwd = jlib:decode_base64(StoredKey),
+    DigRes = if Digest /= <<"">> ->
+	      Digest == DigestGen(Passwd);
+	      true -> false
+	   end,
+    if DigRes -> true;
+       true -> (Passwd == Password) and (Password /= <<"">>)
+    end.
+
 
 -ifdef(no_crypto_hmac).
 crypto_hmac(sha, Key, Data) ->
