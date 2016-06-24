@@ -1,0 +1,7 @@
+modules:
+    mod_pottymouth:
+        blacklists:
+            default: /home/vagrant/blacklist_en.txt
+            en: /home/vagrant/blacklist_en.txt
+            cn: /home/vagrant/blacklist_cn.txt
+            fr: /home/vagrant/blacklist_fr.txt
