@@ -1,0 +1,5 @@
+author: "Tom Quackenbush <tom at madglory.com>"
+category: "data"
+summary: "Filter bad words in messages"
+home: "https://github.com/madglory/mod_pottymouth/tree/master"
+url: "git@github.com:madglory/mod_pottymouth.git"
