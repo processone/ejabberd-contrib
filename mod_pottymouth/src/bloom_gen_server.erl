@@ -21,8 +21,8 @@ member({Lang, Word} = _MessageToken) ->
 start({Lang, BlacklistFile} = _Opts) ->
   gen_server:start_link({local, serverName(Lang)}, ?MODULE, [BlacklistFile], []).
 
-stop() ->
-  ok.
+stop(_Host) ->
+    ok.
 
 init([BlacklistFile]) ->
   ?INFO_MSG("Building bloom", []),
