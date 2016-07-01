@@ -3,8 +3,10 @@
 The 'mod_pottymouth' ejabberd module aims to fill the void left by 'mod_shit'
 which has disappeared from the net. It allows individual whole words of a
 message to be filtered against a blacklist. It allows multiple blacklists
-sharded by language. To make use of this module the client must add the xml:lang
-attribute to the message xml.
+sharded by language. The internal bloomfilter can support arbitrary blacklist
+sizes. Using a large list (say, 87M terms) will slow down the initial server
+boot time (to about 15 minutes respectively), but once loaded lookups are very
+speedy.
 
 #### Installation
 
@@ -47,13 +49,12 @@ the 'default' entry in config will be used.
 For xml:lang attribute docs, see:
     [http://wiki.xmpp.org/web/Programming_XMPP_Clients#Sending_a_message](http://wiki.xmpp.org/web/Programming_XMPP_Clients#Sending_a_message)
 
-The internal bloomfilter used to ingest the blacklists currently requires about
-4,000 entries in the blacklist to ensure acceptable error probability. (We've
-gotten around this by duplicating entries in a short list)
+#### Blacklist helper
 
-#### Todo
-
-Look into acceptable error probabilities for shorter blacklists.
+Thinking of a bunch of swear words and all the permutations can be tough. We made
+a helper script to take a bare wordlist and generate permutations given a
+dictionary of substitution characters:
+  [https://github.com/madglory/permute_wordlist](https://github.com/madglory/permute_wordlist)
 
 #### Tip of the hat
 
