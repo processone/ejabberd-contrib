@@ -29,8 +29,8 @@
 -export([start/2,
 	 stop/1,
 	 split_line/1,
-	 process/2
-	]).
+	 process/2,
+	 mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -179,3 +179,14 @@ splitend([92, 34], Res) -> {"", Res};
 splitend([34, 32 | Line], Res) -> {Line, Res};
 splitend([92, 34, 32 | Line], Res) -> {Line, Res};
 splitend([Char | Line], Res) -> splitend(Line, [Char | Res]).
+
+mod_opt_type(allowed_ips) ->
+    fun (all) -> all; (A) when is_list(A) -> A end;
+mod_opt_type(allowed_destinations) ->
+    fun (all) -> all; (A) when is_list(A) -> A end;
+mod_opt_type(allowed_stanza_types) ->
+    fun (all) -> all; (A) when is_list(A) -> A end;
+mod_opt_type(access_commands) ->
+    fun (A) when is_list(A) -> A end;
+mod_opt_type(_) ->
+    [allowed_ips, allowed_destinations, allowed_stanza_types, access_commands].
