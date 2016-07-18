@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_grafite.erl
 %%% Author  : Thiago Rocha Camargo
-%%% Purpose : Calculates and gathers statistics actively
+%%% Purpose : Gathers statistics and publishes via statsd/grafite
 %%% Created :
 %%% Id      : $Id: mod_grafite.erl 0000 2016-07-11 16:42:30Z xmppjingle $
 %%%----------------------------------------------------------------------
@@ -20,20 +20,27 @@
                 sm_register_connection_hook, sm_remove_connection_hook,
                 user_send_packet, user_receive_packet,
                 s2s_send_packet, s2s_receive_packet,
-                remove_user, register_user, component_register]).
+                remove_user, register_user]).
+
+-define(GLOBAL_HOOKS, [component_connected, component_disconnected]).
 
 -export([start/2, stop/1, mod_opt_type/1,
-   depends/2, udp_loop_start/1]).
+   depends/2, udp_loop_start/1, push/2]).
 
 -export([offline_message_hook/3,
          sm_register_connection_hook/3, sm_remove_connection_hook/3,
          user_send_packet/4, user_receive_packet/5,
          s2s_send_packet/3, s2s_receive_packet/3,
-         remove_user/2, register_user/2, component_register/1]).
+         remove_user/2, register_user/2, component_connected/1,
+         component_disconnected/1]).
 
 -record(state, {socket, host, port}).
 
 -define(PROCNAME, ejabberd_mod_grafite).
+-define(GRAFITE_KEY(Node, Host, Probe), "mod_grafite.ejabberd." ++ 
+  erlang:binary_to_list(Node) ++ "_" ++ 
+  erlang:binary_to_list(Host) ++ "." ++ 
+  erlang:atom_to_list(Probe)).
 
 %%====================================================================
 %% API
@@ -42,9 +49,12 @@
 start(Host, Opts) ->
     [ejabberd_hooks:add(Hook, Host, ?MODULE, Hook, 20)
      || Hook <- ?HOOKS],
-     StatsDHost = gen_mod:get_opt(statsdhost, Opts, fun(X) -> X end, "localhost"),
-     StatsDPort = gen_mod:get_opt(statsdport, Opts, fun(X) -> X end, 5002),
-     register(?PROCNAME, spawn(?MODULE, udp_loop_start, [#state{host = getaddrs(StatsDHost), port = StatsDPort}])).
+    [ejabberd_hooks:add(Hook, ?MODULE, Hook, 18)
+     || Hook <- ?GLOBAL_HOOKS],
+     StatsDH = gen_mod:get_opt(statsdhost, Opts, fun(X) -> X end, "localhost"),
+     {ok, StatsDHost} = getaddrs(StatsDH),
+     StatsDPort = gen_mod:get_opt(statsdport, Opts, fun(X) -> X end, 8125),
+     register(?PROCNAME, spawn(?MODULE, udp_loop_start, [#state{host = StatsDHost, port = StatsDPort}])).
 
 stop(Host) ->
     [ejabberd_hooks:delete(Hook, Host, ?MODULE, Hook, 20)
@@ -82,8 +92,12 @@ remove_user(_User, Server) ->
 register_user(_User, Server) ->
     push(jid:nameprep(Server), register_user).
 
-component_register(Host) ->
-    push(Host, component_register).
+component_connected(Host) ->
+    push(Host, component_connected).
+
+component_disconnected(Host) ->
+    push(Host, component_disconnected).
+
 
 %%====================================================================
 %% metrics push handler
@@ -96,18 +110,11 @@ push(Host, Probe) ->
 encode_metrics(Host, Probe) ->
     [_, NodeId] = str:tokens(jlib:atom_to_binary(node()), <<"@">>),
     [Node | _] = str:tokens(NodeId, <<".">>),
-    BaseId = <<Host/binary, "/", Node/binary, ".">>,
-    DateTime = erlang:universaltime(),
-    UnixTime = calendar:datetime_to_gregorian_seconds(DateTime) - 62167219200,
-    TS = integer_to_binary(UnixTime),
     Data = case Probe of
     {Key, Val} ->
-        BVal = integer_to_binary(Val),
-        <<BaseId/binary, (jlib:atom_to_binary(Key))/binary,
-          ":g/", TS/binary, ":", BVal/binary>>;          
+        encode(gauge, ?GRAFITE_KEY(Node, Host, Probe), Val, 1.0);
     Key ->
-        <<BaseId/binary, (jlib:atom_to_binary(Key))/binary,
-          ":c/", TS/binary, ":1">>
+        encode(gauge, ?GRAFITE_KEY(Node, Host, Probe), 1, 1.0)
     end,
     ?INFO_MSG("Stats: ~p ~p ~n", [Data, encode(gauge, Key, 1, undefined)]),
     Data.
@@ -123,6 +130,7 @@ format_value(Value) when is_integer(Value) ->
     integer_to_list(Value);
 format_value(Value) when is_float(Value) ->
     float_to_list(Value, [{decimals, 2}]).
+
 
 %%====================================================================
 %% UDP Utils
@@ -140,16 +148,20 @@ udp_loop_start(#state{}=S) ->
 
 udp_loop(#state{} = S) ->
   receive 
-    {send, Packet} ->
-        send_udp(Packet, S),
-        udp_loop(S);
+    {send, Packet} ->        
+      send_udp(Packet, S),
+      udp_loop(S);
     _ ->
-      ok
+      udp_loop(S)
   end.
 
 send_udp(Payload, #state{socket = Socket, host = Host, port = Port} = State) ->
-    gen_udp:send(Socket, Host, Port, Payload),
-    {ok, State}.
+    case gen_udp:send(Socket, Host, Port, Payload) of
+      ok ->
+        ok;
+      _Error -> 
+        ?INFO_MSG("UDP Send Failed: [~p] (~p)~n", [State, Payload])
+    end.
 
 getaddrs({_, _, _, _} = Address) ->
     {ok, Address};
@@ -176,6 +188,10 @@ random(N) ->
 
 timestamp() ->
     os:timestamp().
+
+%%====================================================================
+%% mod Options
+%%====================================================================
 
 mod_opt_type(statsdhost) -> fun(X) -> X end;
 mod_opt_type(statsdport) -> fun(X) when is_integer(X) -> X end;
