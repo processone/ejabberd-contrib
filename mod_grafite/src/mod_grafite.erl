@@ -58,7 +58,9 @@ start(Host, Opts) ->
 
 stop(Host) ->
     [ejabberd_hooks:delete(Hook, Host, ?MODULE, Hook, 20)
-     || Hook <- ?HOOKS].
+     || Hook <- ?HOOKS],
+         [ejabberd_hooks:delete(Hook, Host, ?MODULE, Hook, 20)
+     || Hook <- ?GLOBAL_HOOKS].
 
 depends(_Host, _Opts) ->
     [].
