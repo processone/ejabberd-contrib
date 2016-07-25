@@ -127,17 +127,7 @@ check_stanza(Stanza, _From, To, Host) ->
 check_member_option(Host, ClientIp, allowed_ips) ->
     true = case try_get_option(Host, allowed_ips, all) of
                all -> true;
-               AllowedValues ->
-                   case lists:all(fun(El) -> is_binary(El) end, AllowedValues) of
-                       true ->
-                           AllowedIps = lists:map(fun(El) ->
-                                                      binary_to_ip_tuple(El)
-                                                  end,
-                                                  AllowedValues),
-                           lists:member(ClientIp, AllowedIps);
-                       false ->
-                           lists:member(ClientIp, AllowedValues)
-                   end
+               AllowedValues -> ip_matches(ClientIp, AllowedValues)
            end;
 check_member_option(Host, Element, Option) ->
     true = case try_get_option(Host, Option, all) of
@@ -145,9 +135,12 @@ check_member_option(Host, Element, Option) ->
 	       AllowedValues -> lists:member(Element, AllowedValues)
 	   end.
 
-binary_to_ip_tuple(IpAddress) when is_binary(IpAddress) ->
-    {ok, IpTuple} = inet_parse:address(binary_to_list(IpAddress)),
-    IpTuple.
+ip_matches(ClientIp, AllowedValues) ->
+   lists:any(fun(El) ->
+	      {ok, Net, Mask} = acl:parse_ip_netmask(El),
+	      acl:acl_rule_matches({ip,{Net,Mask}}, #{ip => {ClientIp,port}}, host)
+	  end,
+	  AllowedValues).
 
 post_request(Stanza, From, To) ->
     case ejabberd_router:route(From, To, Stanza) of
