@@ -17,16 +17,16 @@ This module can also be used as a frontend to execute ejabberd commands.
 	CONFIGURATION
 	=============
 
-To use this module, follow the general build instructions, and configure
-in ejabberd.yml as described.
+To use this module, follow the general build instructions.
+You can modify the default module configuration file like this:
 
-Enable the module:
+To enable the module:
 modules:
   mod_rest:
     allowed_ips:
       - "127.0.0.1"
 
-And enable the HTTP request handler in the listen section:
+To enable the HTTP request handler in the listen section:
 listen:
   - 
     port: 5285
@@ -40,7 +40,7 @@ With that configuration, you can send HTTP POST requests to the URL:
 Configurable options:
 
   allowed_ips: IP addresses that can use the rest service.
-  Allowed values: 'all' or a list of Erlang tuples.
+  Allowed values: 'all' or a list of Erlang strings.
   Default value: all
   Notice that the IP address is checked after the connection is established.
   If you want to restrict the IP address that listens connections, and
