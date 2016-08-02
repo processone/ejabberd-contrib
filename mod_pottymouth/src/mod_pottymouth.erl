@@ -2,6 +2,8 @@
 
 -behaviour(gen_mod).
 
+-include("logger.hrl").
+
 -export([
   start/2,
   stop/1,
@@ -37,6 +39,12 @@ censorWord({Lang, Word} = MessageTerm) ->
 filterWords(L) ->
   lists:map(fun censorWord/1, L).
 
+filterMessageText(MessageAttrs, MessageText) ->
+  Lang = getMessageLang(MessageAttrs),
+  MessageWords = string:tokens(unicode:characters_to_list(MessageText, utf8), " "),
+  MessageTerms = [{Lang, Word} || Word <- MessageWords],
+  unicode:characters_to_binary(string:join(filterWords(MessageTerms), " ")).
+
 start(_Host, Opts) ->
   Blacklists = gen_mod:get_opt(blacklists, Opts, fun(A) -> A end, []),
   lists:map(fun bloom_gen_server:start/1, Blacklists),
@@ -55,11 +63,12 @@ on_filter_packet(drop) ->
   drop;
 
 on_filter_packet({_From, _To, {xmlel, <<"message">>, Attrs, [_chatState, {xmlel, <<"body">>, _BodyAttr, [{xmlcdata, MessageText}] = _BodyCData} = _MessageBody] = _Els} = _Packet} = _Msg) ->
-  Lang = getMessageLang(Attrs),
-  MessageWords = string:tokens(unicode:characters_to_list(MessageText, utf8), " "),
-  MessageTerms = [{Lang, Word} || Word <- MessageWords],
-  FilteredMessageWords = unicode:characters_to_binary(string:join(filterWords(MessageTerms), " ")),
+  FilteredMessageWords = filterMessageText(Attrs, MessageText),
   {_From, _To, {xmlel, <<"message">>, Attrs, [_chatState, {xmlel, <<"body">>, _BodyAttr, [{xmlcdata, FilteredMessageWords}]}]}};
+
+on_filter_packet({_From, _To, {xmlel, <<"message">>, Attrs, [{xmlel, <<"body">>, _BodyAttr, [{xmlcdata, MessageText}] = _BodyCData} = _MessageBody] = _Els} = _Packet} = _Msg) ->
+  FilteredMessageWords = filterMessageText(Attrs, MessageText),
+  {_From, _To, {xmlel, <<"message">>, Attrs, [{xmlel, <<"body">>, _BodyAttr, [{xmlcdata, FilteredMessageWords}]}]}};
 
 on_filter_packet(Msg) ->
   % Handle the generic case (any packet that isn't a message with a body).
