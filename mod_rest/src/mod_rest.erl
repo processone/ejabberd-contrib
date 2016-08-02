@@ -29,8 +29,8 @@
 -export([start/2,
 	 stop/1,
 	 split_line/1,
-	 process/2
-	]).
+	 process/2,
+	 mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -127,17 +127,7 @@ check_stanza(Stanza, _From, To, Host) ->
 check_member_option(Host, ClientIp, allowed_ips) ->
     true = case try_get_option(Host, allowed_ips, all) of
                all -> true;
-               AllowedValues ->
-                   case lists:all(fun(El) -> is_binary(El) end, AllowedValues) of
-                       true ->
-                           AllowedIps = lists:map(fun(El) ->
-                                                      binary_to_ip_tuple(El)
-                                                  end,
-                                                  AllowedValues),
-                           lists:member(ClientIp, AllowedIps);
-                       false ->
-                           lists:member(ClientIp, AllowedValues)
-                   end
+               AllowedValues -> ip_matches(ClientIp, AllowedValues)
            end;
 check_member_option(Host, Element, Option) ->
     true = case try_get_option(Host, Option, all) of
@@ -145,9 +135,12 @@ check_member_option(Host, Element, Option) ->
 	       AllowedValues -> lists:member(Element, AllowedValues)
 	   end.
 
-binary_to_ip_tuple(IpAddress) when is_binary(IpAddress) ->
-    {ok, IpTuple} = inet_parse:address(binary_to_list(IpAddress)),
-    IpTuple.
+ip_matches(ClientIp, AllowedValues) ->
+   lists:any(fun(El) ->
+	      {ok, Net, Mask} = acl:parse_ip_netmask(El),
+	      acl:acl_rule_matches({ip,{Net,Mask}}, #{ip => {ClientIp,port}}, host)
+	  end,
+	  AllowedValues).
 
 post_request(Stanza, From, To) ->
     case ejabberd_router:route(From, To, Stanza) of
@@ -179,3 +172,14 @@ splitend([92, 34], Res) -> {"", Res};
 splitend([34, 32 | Line], Res) -> {Line, Res};
 splitend([92, 34, 32 | Line], Res) -> {Line, Res};
 splitend([Char | Line], Res) -> splitend(Line, [Char | Res]).
+
+mod_opt_type(allowed_ips) ->
+    fun (all) -> all; (A) when is_list(A) -> A end;
+mod_opt_type(allowed_destinations) ->
+    fun (all) -> all; (A) when is_list(A) -> A end;
+mod_opt_type(allowed_stanza_types) ->
+    fun (all) -> all; (A) when is_list(A) -> A end;
+mod_opt_type(access_commands) ->
+    fun (A) when is_list(A) -> A end;
+mod_opt_type(_) ->
+    [allowed_ips, allowed_destinations, allowed_stanza_types, access_commands].
