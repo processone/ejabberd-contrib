@@ -62,13 +62,13 @@ stop(_Host) ->
 on_filter_packet(drop) ->
   drop;
 
-on_filter_packet({_From, _To, {xmlel, <<"message">>, Attrs, [_chatState, {xmlel, <<"body">>, _BodyAttr, [{xmlcdata, MessageText}] = _BodyCData} = _MessageBody] = _Els} = _Packet} = _Msg) ->
-  FilteredMessageWords = filterMessageText(Attrs, MessageText),
-  {_From, _To, {xmlel, <<"message">>, Attrs, [_chatState, {xmlel, <<"body">>, _BodyAttr, [{xmlcdata, FilteredMessageWords}]}]}};
+on_filter_packet({_From, _To, {xmlel, <<"message">>, _Attrs, [_chatState, {xmlel, <<"body">>, BodyAttr, [{xmlcdata, MessageText}] = _BodyCData} = _MessageBody] = _Els} = _Packet} = _Msg) ->
+  FilteredMessageWords = filterMessageText(BodyAttr, MessageText),
+  {_From, _To, {xmlel, <<"message">>, _Attrs, [_chatState, {xmlel, <<"body">>, BodyAttr, [{xmlcdata, FilteredMessageWords}]}]}};
 
-on_filter_packet({_From, _To, {xmlel, <<"message">>, Attrs, [{xmlel, <<"body">>, _BodyAttr, [{xmlcdata, MessageText}] = _BodyCData} = _MessageBody] = _Els} = _Packet} = _Msg) ->
-  FilteredMessageWords = filterMessageText(Attrs, MessageText),
-  {_From, _To, {xmlel, <<"message">>, Attrs, [{xmlel, <<"body">>, _BodyAttr, [{xmlcdata, FilteredMessageWords}]}]}};
+on_filter_packet({_From, _To, {xmlel, <<"message">>, _Attrs, [{xmlel, <<"body">>, BodyAttr, [{xmlcdata, MessageText}] = _BodyCData} = _MessageBody] = _Els} = _Packet} = _Msg) ->
+  FilteredMessageWords = filterMessageText(BodyAttr, MessageText),
+  {_From, _To, {xmlel, <<"message">>, _Attrs, [{xmlel, <<"body">>, BodyAttr, [{xmlcdata, FilteredMessageWords}]}]}};
 
 on_filter_packet(Msg) ->
   % Handle the generic case (any packet that isn't a message with a body).
