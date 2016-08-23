@@ -260,8 +260,8 @@ get_gregorian_day() -> calendar:date_to_gregorian_days(date()).
 
 get_now_iso(Timezone) ->
     TimeStamp = case Timezone of
-		    local -> calendar:now_to_local_time(now());
-		    universal -> calendar:now_to_universal_time(now())
+		    local -> calendar:local_time();
+		    universal -> calendar:universal_time()
 		end,
     binary_to_list(jlib:timestamp_to_legacy(TimeStamp)).
 

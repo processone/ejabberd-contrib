@@ -62,8 +62,7 @@ time_to_ms(IntervalUnit, IntervalNum) ->
     end.
 
 time_until_event(IntervalMS) ->
-    {MegaSecs, Secs, MicroSecs} = erlang:now(),
-    NowMS = (MegaSecs*1000000 + Secs)*1000 + round(MicroSecs/1000),
+    NowMS = p1_time_compat:system_time(micro_seconds),
     MSSinceLastEvent = (NowMS rem IntervalMS),
     (IntervalMS - MSSinceLastEvent).
 
