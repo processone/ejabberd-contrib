@@ -28,6 +28,7 @@
 
 -export([start/2,
 	 stop/1,
+	 depends/2,
 	 split_line/1,
 	 process/2,
 	 mod_opt_type/1]).
@@ -44,6 +45,9 @@ start(_Host, _Opts) ->
 
 stop(_Host) ->
     ok.
+    
+depends(_Host, _Opts) ->
+    [].
 
 process([], #request{method = 'POST', data = Data, host = Host, ip = ClientIp}) ->
     try
