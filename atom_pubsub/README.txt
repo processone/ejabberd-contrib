@@ -1,10 +1,20 @@
 
+
+		***************
+		  PLEASE NOTE
+		***************
+
+	This module does NOT work
+	with ejabberd 13 or newer.
+
+		***************
+
+
 	atom_pubsub - the Atom PubSub tunnel
 
 	Author: Eric Cestari <eric@ohmforce.com> http://www.cestari.info/
     Licensed under the same terms as ejabberd (GPL 2)
 	Requires: ejabberd 2.0.3 or newer.
-	Does NOT work with ejabberd 13 or newer.
 
 
 	DESCRIPTION

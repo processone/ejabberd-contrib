@@ -1,4 +1,15 @@
 
+
+		***************
+		  PLEASE NOTE
+		***************
+
+	This module does NOT work
+	with ejabberd 13 or newer.
+
+		***************
+
+
 	mod_profile - User Profile (XEP-0154) in Mnesia table 
 
 	http://www.ejabberd.im/mod_profile

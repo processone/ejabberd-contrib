@@ -1,6 +1,13 @@
 
 
-    Please note: this module does NOT work with ejabberd 13 or newer.
+		***************
+		  PLEASE NOTE
+		***************
+
+	This module does NOT work
+	with ejabberd 13 or newer.
+
+		***************
 
 
 mod_openid 
