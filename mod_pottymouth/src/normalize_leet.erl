@@ -1,3 +1,5 @@
+%% -*- coding: utf-8 -*-
+
 -module(normalize_leet).
 
 -export([
@@ -17,9 +19,9 @@ checkMetaChar(Char) ->
   lists:member(Char, MetaChars).
 
 replaceChar(true, Char, X, Word) ->
-  re:replace(Word, ["\\", Char], X, [global,{return,list}]);
+  re:replace(Word, ["\\", Char], X, [unicode,global,{return,list}]);
 replaceChar(false, Char, X, Word) ->
-  re:replace(Word, Char, X, [global,{return,list}]).
+  re:replace(Word, Char, X, [unicode,global,{return,list}]).
 
 replaceLetters([H|T], CharMap, Word) ->
   CurChar = [H],

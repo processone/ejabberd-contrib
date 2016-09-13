@@ -27,8 +27,11 @@ getMessageLang(Attrs) ->
   end,
   Lang.
 
-censorWord({Lang, Word} = MessageTerm) ->
-  IsBadWord = bloom_gen_server:member({Lang, normalize_leet_gen_server:normalize(MessageTerm)}),
+censorWord({Lang, Word} = _MessageTerm) ->
+  % we need unicode characters to normlize the word
+  NormalizedWord = normalize_leet_gen_server:normalize({Lang, unicode:characters_to_list(list_to_binary(Word))}),
+  % we need bytewise format for bloom lookup
+  IsBadWord = bloom_gen_server:member({Lang, binary_to_list(unicode:characters_to_binary(NormalizedWord))}),
   if
     IsBadWord ->
       "****";
@@ -41,9 +44,11 @@ filterWords(L) ->
 
 filterMessageText(MessageAttrs, MessageText) ->
   Lang = getMessageLang(MessageAttrs),
+  % we want to token-ize utf8 'words'
   MessageWords = string:tokens(unicode:characters_to_list(MessageText, utf8), " "),
   MessageTerms = [{Lang, Word} || Word <- MessageWords],
-  unicode:characters_to_binary(string:join(filterWords(MessageTerms), " ")).
+  % we get back bytewise format terms (rather than utf8)
+  list_to_binary(string:join(filterWords(MessageTerms), " ")).
 
 start(_Host, Opts) ->
   Blacklists = gen_mod:get_opt(blacklists, Opts, fun(A) -> A end, []),
@@ -63,11 +68,11 @@ on_filter_packet(drop) ->
   drop;
 
 on_filter_packet({_From, _To, {xmlel, <<"message">>, _Attrs, [_chatState, {xmlel, <<"body">>, BodyAttr, [{xmlcdata, MessageText}] = _BodyCData} = _MessageBody] = _Els} = _Packet} = _Msg) ->
-  FilteredMessageWords = filterMessageText(BodyAttr, MessageText),
+  FilteredMessageWords = filterMessageText(BodyAttr, binary:bin_to_list(MessageText)),
   {_From, _To, {xmlel, <<"message">>, _Attrs, [_chatState, {xmlel, <<"body">>, BodyAttr, [{xmlcdata, FilteredMessageWords}]}]}};
 
 on_filter_packet({_From, _To, {xmlel, <<"message">>, _Attrs, [{xmlel, <<"body">>, BodyAttr, [{xmlcdata, MessageText}] = _BodyCData} = _MessageBody] = _Els} = _Packet} = _Msg) ->
-  FilteredMessageWords = filterMessageText(BodyAttr, MessageText),
+  FilteredMessageWords = filterMessageText(BodyAttr, binary:bin_to_list(MessageText)),
   {_From, _To, {xmlel, <<"message">>, _Attrs, [{xmlel, <<"body">>, BodyAttr, [{xmlcdata, FilteredMessageWords}]}]}};
 
 on_filter_packet(Msg) ->
