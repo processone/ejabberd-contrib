@@ -21,11 +21,9 @@ getMessageLang(Attrs) ->
   if
     LangAttr ->
       {<<"lang">>, LangBin} = LangAttr,
-      Lang = list_to_atom(binary_to_list(LangBin)),
-      ?ERROR_MSG("LANG: ~p~n", [Lang]);
+      Lang = list_to_atom(binary_to_list(LangBin));
     true ->
-      Lang = default,
-      ?ERROR_MSG("LANG DEFAULT~n", [])
+      Lang = default
   end,
   Lang.
 
@@ -52,10 +50,19 @@ filterMessageText(MessageAttrs, MessageText) ->
   % we get back bytewise format terms (rather than utf8)
   list_to_binary(string:join(filterWords(MessageTerms), " ")).
 
-filterMessageBodyElements([H|T]) ->
-  lists:map
-filterMessageBodyElements([], Element) ->
-  Element.
+
+filterMessageBodyElements([{xmlel, <<"body">>, BodyAttr, [{xmlcdata, MessageText}]} = _H|T], MessageElements) ->
+  FilteredMessageWords = filterMessageText(BodyAttr, binary:bin_to_list(MessageText)),
+  FilteredBody = {xmlel, <<"body">>, BodyAttr, [{xmlcdata, FilteredMessageWords}]},
+  filterMessageBodyElements(T, lists:append(MessageElements, [FilteredBody]));
+
+filterMessageBodyElements([H|T], MessageElements) ->
+  % skip this tag, but pass it on as processed
+  filterMessageBodyElements(T, lists:append(MessageElements, [H]));
+
+filterMessageBodyElements([], MessageElements) ->
+  MessageElements.
+
 
 start(_Host, Opts) ->
   Blacklists = gen_mod:get_opt(blacklists, Opts, fun(A) -> A end, []),
@@ -74,75 +81,12 @@ stop(_Host) ->
 on_filter_packet(drop) ->
   drop;
 
-
-% on_filter_packet({_From, _To, {xmlel, <<"message">>, _Attrs, [_chatState, {xmlel, <<"body">>, BodyAttr, [{xmlcdata, MessageText}] = _BodyCData} = _MessageBody] = _Els} = _Packet} = _Msg) ->
-%  FilteredMessageWords = filterMessageText(BodyAttr, binary:bin_to_list(MessageText)),
-%  {_From, _To, {xmlel, <<"message">>, _Attrs, [_chatState, {xmlel, <<"body">>, BodyAttr, [{xmlcdata, FilteredMessageWords}]}]}};
-%
-% on_filter_packet({_From, _To, {xmlel, <<"message">>, _Attrs, [{xmlel, <<"body">>, BodyAttr, [{xmlcdata, MessageText}] = _BodyCData} = _MessageBody] = _Els} = _Packet} = _Msg) ->
-%  FilteredMessageWords = filterMessageText(BodyAttr, binary:bin_to_list(MessageText)),
-%  {_From, _To, {xmlel, <<"message">>, _Attrs, [{xmlel, <<"body">>, BodyAttr, [{xmlcdata, FilteredMessageWords}]}]}};
-
-% chat message with chat state
-% on_filter_packet({_From, _To, {xmlel, <<"message">>, _Attrs, [_chatState, {xmlel, <<"body">>, BodyAttr, [{xmlcdata, MessageText}] = _BodyCData} = _MessageBody] = _Els} = _Packet} = _Msg) ->
-%  ?ERROR_MSG("CHAT CHAT MSG W CHAT STATE: ~p~n", _Msg),
-%  FilteredMessageWords = filterMessageText(BodyAttr, MessageText),
-%  {_From, _To, {xmlel, <<"message">>, _Attrs, [_chatState, {xmlel, <<"body">>, BodyAttr, [{xmlcdata, FilteredMessageWords}]}]}};
-
-% chat message without chat state
-on_filter_packet({_From, _To, {xmlel, <<"message">>, _Attrs, [MessageBody] = _Els} = _Packet} = _Msg) ->
-  ?ERROR_MSG("CHAT MSG WITHOUT CHAT STATE: ~p~n", [_Msg]),
-
-  # {xmlel, <<"body">>, BodyAttr, [{xmlcdata, MessageText}] = _BodyCData} = _MessageBody
-
-  if message type chat/group && !archived
-    foreach body
-      FilteredMessageWords = filterMessageText(BodyAttr, MessageText),
-      {_From, _To, {xmlel, <<"message">>, _Attrs, [MessageBody]}]}};
-
+on_filter_packet({_From, _To, {xmlel, <<"message">>, _Attrs, Els} = _Packet} = _Msg) ->
+  FilteredEls = filterMessageBodyElements(Els, []),
+  {_From, _To, {xmlel, <<"message">>, _Attrs, FilteredEls}};
 on_filter_packet(Msg) ->
   % Handle the generic case (any packet that isn't a message with a body).
-  ?ERROR_MSG("FILTER PACKET MSG: ~p~n", [Msg]),
   Msg.
-
-% PSI one-to-one
-% {
-% {jid,<<"foo">>,<<"kalamari">>,<<"Psi">>,<<"foo">>,<<"kalamari">>,<<"Psi">>},
-% {jid,<<"foo">>,<<"kalamari">>,<<>>,<<"foo">>,<<"kalamari">>,<<>>},
-% {xmlel,<<"message">>,
-%  [{<<"xml:lang">>,<<"en">>},{<<"type">>,<<"chat">>},{<<"to">>,<<"foo@kalamari">>},{<<"id">>,<<"aacba">>}],
-%  [{xmlcdata,<<"\n">>},{xmlel,<<"body">>,[],[{xmlcdata,<<"hi">>}]},{xmlcdata,<<"\n">>},
-% {xmlel,<<"active">>,[{<<"xmlns">>,<<"http://jabber.org/protocol/chatstates">>}],[]},{xmlcdata,<<"\n">>}]}}
-
-% gloox muc
-% {
-%   {jid,<<"#12345">>,<<"conference.kalamari">>,<<"bar">>,<<"#12345">>,<<"conference.kalamari">>,<<"bar">>},
-%   {jid,<<"bar">>,<<"kalamari">>,<<"12145048529523376186799">>,<<"bar">>,<<"kalamari">>,<<"12145048529523376186799">>},
-%   {xmlel,<<"message">>,
-%     [{<<"xml:lang">>,<<"en">>},{<<"to">>,<<"#12345@conference.kalamari">>},{<<"type">>,<<"groupchat">>},{<<"from">>,<<"bar@kalamari/12145048529523376186799">>}],
-%     [{xmlel,<<"archived">>,
-%       [{<<"by">>,<<"conference.kalamari">>},{<<"xmlns">>,<<"urn:xmpp:mam:tmp">>},{<<"id">>,<<"1471940767114309">>}],
-%       []
-%   },
-%   {xmlel,<<"stanza-id">>,
-%     [{<<"by">>,<<"conference.kalamari">>},{<<"xmlns">>,<<"urn:xmpp:sid:0">>},{<<"id">>,<<"1471940767114309">>}],
-%     []
-%   },
-%   {xmlel,<<"body">>,
-%     [],
-%     [{xmlcdata,<<"HELLO THERE">>}]
-%   }]
-%   }
-% }
-%
-% {
-%   {jid,<<"bar">>,<<"kalamari">>,<<"12145048529523376186799">>,<<"bar">>,<<"kalamari">>,<<"12145048529523376186799">>},
-%   {jid,<<"#12345">>,<<"conference.kalamari">>,<<>>,<<"#12345">>,<<"conference.kalamari">>,<<>>},
-%   {xmlel,<<"message">>,
-%     [{<<"xml:lang">>,<<"en">>},{<<"to">>,<<"#12345@conference.kalamari">>},{<<"type">>,<<"groupchat">>},{<<"from">>,<<"bar@kalamari/12145048529523376186799">>}],
-%     [{xmlel,<<"body">>,[],[{xmlcdata,<<"HELLO THERE">>}]}]
-%   }
-}%
 
 mod_opt_type(blacklists) -> fun (A) when is_list(A) -> A end;
 mod_opt_type(charmaps) -> fun (A) when is_list(A) -> A end;
