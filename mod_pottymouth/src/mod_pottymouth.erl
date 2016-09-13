@@ -8,7 +8,8 @@
   start/2,
   stop/1,
   on_filter_packet/1,
-  mod_opt_type/1
+  mod_opt_type/1,
+  depends/2
 ]).
 
 -include("ejabberd.hrl").
@@ -91,3 +92,4 @@ on_filter_packet(Msg) ->
 mod_opt_type(blacklists) -> fun (A) when is_list(A) -> A end;
 mod_opt_type(charmaps) -> fun (A) when is_list(A) -> A end;
 mod_opt_type(_) -> [blacklists, charmaps].
+depends(_Host, _Opts) -> [].
