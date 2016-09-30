@@ -49,11 +49,11 @@ filterMessageText(MessageAttrs, MessageText) ->
   MessageWords = string:tokens(unicode:characters_to_list(MessageText, utf8), " "),
   MessageTerms = [{Lang, Word} || Word <- MessageWords],
   % we get back bytewise format terms (rather than utf8)
-  list_to_binary(string:join(filterWords(MessageTerms), " ")).
+  string:join(filterWords(MessageTerms), " ").
 
 
 filterMessageBodyElements([{xmlel, <<"body">>, BodyAttr, [{xmlcdata, MessageText}]} = _H|T], MessageElements) ->
-  FilteredMessageWords = filterMessageText(BodyAttr, binary:bin_to_list(MessageText)),
+  FilteredMessageWords = binary:list_to_bin(filterMessageText(BodyAttr, binary:bin_to_list(MessageText))),
   FilteredBody = {xmlel, <<"body">>, BodyAttr, [{xmlcdata, FilteredMessageWords}]},
   filterMessageBodyElements(T, lists:append(MessageElements, [FilteredBody]));
 
