@@ -1,7 +1,7 @@
 modules:
   mod_rest:
     allowed_ips:
-      - "> {127,0,0,1} ."
+      - "127.0.0.1"
 listen:
   - 
     port: 5285
