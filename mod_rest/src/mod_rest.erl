@@ -145,8 +145,8 @@ ip_matches(ClientIp, AllowedValues) ->
 	  AllowedValues).
 
 post_request(Pkt) ->
-    mod_mam:user_send_packet(Pkt, #{jid => Pkt#message.from}, Pkt#message.from, Pkt#message.to),
-    case ejabberd_router:route(Pkt#message.from, Pkt#message.to, Pkt) of
+    mod_mam:user_send_packet({Pkt, #{jid => Pkt#message.from}}),
+    case ejabberd_router:route(Pkt) of
 	ok -> {200, [], <<"Ok">>};
         _ -> {500, [], <<"Error">>}
     end.
