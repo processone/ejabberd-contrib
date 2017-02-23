@@ -35,9 +35,9 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_ctl.hrl").
+-include("xmpp.hrl").
 
 start(_Host, _Opts) ->
     ?DEBUG("Starting: ~p ~p", [_Host, _Opts]),
@@ -69,15 +69,12 @@ process(Path, Request) ->
 maybe_post_request(<<$<,_/binary>> = Data, Host, ClientIp) ->
     try
 	Stanza = {xmlel, _, _, _} = fxml_stream:parse_element(Data),
-        From = jlib:string_to_jid(fxml:get_tag_attr_s(<<"from">>, Stanza)),
-        To = jlib:string_to_jid(fxml:get_tag_attr_s(<<"to">>, Stanza)),
-	allowed = check_stanza(Stanza, From, To, Host),
-	?INFO_MSG("Got valid request from ~s~nwith IP ~p~nto ~s:~n~p",
-		  [jlib:jid_to_string(From),
-		   ClientIp,
-		   jlib:jid_to_string(To),
-		   Stanza]),
-	post_request(Stanza, From, To)
+	Pkt = xmpp:decode(Stanza),
+	allowed = check_stanza(Pkt, Host),
+	?INFO_MSG("Got valid request with IP ~p:~n~p",
+		  [ClientIp,
+		   Pkt]),
+	post_request(Pkt)
     catch
 	error:{badmatch, _} = Error ->
 	    ?DEBUG("Error when processing REST request: ~nData: ~p~nError: ~p", [Data, Error]),
@@ -122,10 +119,11 @@ get_option_access(Host) ->
     try_get_option(Host, access_commands, []).
 
 %% This function crashes if the stanza does not satisfy configured restrictions
-check_stanza(Stanza, _From, To, Host) ->
+check_stanza(Pkt, Host) ->
+    To = Pkt#message.to,
     check_member_option(Host, jlib:jid_to_string(To), allowed_destinations),
-    {xmlel, StanzaType, _Attrs, _Kids} = Stanza,
-    check_member_option(Host, StanzaType, allowed_stanza_types),
+    %%+++ {xmlel, StanzaType, _Attrs, _Kids} = Stanza,
+    %%+++ check_member_option(Host, StanzaType, allowed_stanza_types),
     allowed.
 
 check_member_option(Host, ClientIp, allowed_ips) ->
@@ -146,8 +144,9 @@ ip_matches(ClientIp, AllowedValues) ->
 	  end,
 	  AllowedValues).
 
-post_request(Stanza, From, To) ->
-    case ejabberd_router:route(From, To, Stanza) of
+post_request(Pkt) ->
+    mod_mam:user_send_packet(Pkt, #{jid => Pkt#message.from}, Pkt#message.from, Pkt#message.to),
+    case ejabberd_router:route(Pkt#message.from, Pkt#message.to, Pkt) of
 	ok -> {200, [], <<"Ok">>};
         _ -> {500, [], <<"Error">>}
     end.
