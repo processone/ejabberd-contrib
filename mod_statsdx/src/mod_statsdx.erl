@@ -68,7 +68,8 @@ start(Host, Opts) ->
 	_ ->
 	    ok
     end,
-    ?PROCNAME ! {initialize_stats, Host, Hooks, CD}.
+    ?PROCNAME ! {initialize_stats, Host, Hooks, CD},
+    ok.
 
 stop(Host) ->
     finish_stats(Host),
