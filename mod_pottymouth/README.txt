@@ -18,6 +18,14 @@ run: ejabberdctl module_install mod_pottymouth
 run: ejabberdctl restart
 module will be installed in: ~/.ejabberd-modules/mod_pottymouth
 
+
+If you don't have Erlang HiPE available, it may throw errors that mention:
+  {undef,[{hipe_bifs,bitarray,
+In such case, you can install this library:
+  https://github.com/ferd/bitarray
+and edit etbloom.erl to call that library instead of hipe_bifs.
+
+
 Config file format:
 
 modules:
