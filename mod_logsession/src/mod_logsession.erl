@@ -34,12 +34,12 @@
 	 stop/1,
 	 loop/3,
 	 reopen_log/1,
-	 failed_auth/4,
+	 failed_auth/3,
 	 forbidden/1
 	]).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("ejabberd_commands.hrl").
 
 -define(PROCNAME, ejabberd_logsession).
@@ -51,7 +51,7 @@
 start(Host, Opts) ->
     ejabberd_hooks:add(reopen_log_hook, Host, ?MODULE, reopen_log, 50),
     ejabberd_hooks:add(forbidden_session_hook, Host, ?MODULE, forbidden, 50),
-    ejabberd_hooks:add(failed_auth_hook, Host, ?MODULE, failed_auth, 50),
+    ejabberd_hooks:add(c2s_auth_result, Host, ?MODULE, failed_auth, 50),
     ejabberd_commands:register_commands(commands()),
     Filename1 = gen_mod:get_opt(
 		  sessionlog, 
@@ -60,7 +60,8 @@ start(Host, Opts) ->
 		  "/tmp/ejabberd_logsession_@HOST@.log"),
     Filename = replace_host(Host, Filename1),
     File = open_file(Filename),
-    register(get_process_name(Host), spawn(?MODULE, loop, [Filename, File, Host])).
+    register(get_process_name(Host), spawn(?MODULE, loop, [Filename, File, Host])),
+    ok.
 
 stop(Host) ->
     ejabberd_hooks:delete(reopen_log_hook, Host, ?MODULE, reopen_log, 50),
@@ -79,10 +80,13 @@ reopen_log(Host) ->
 
 forbidden(JID) ->
     Host = JID#jid.lserver,
-    get_process_name(Host) ! {log, forbidden, JID}.
+    get_process_name(Host) ! {log, {forbidden, JID}}.
 
-failed_auth(AuthType, U, Host, IPPT) ->
-    get_process_name(Host) ! {log, failed_auth, {AuthType, U, IPPT}}.
+failed_auth(State, true, _) ->
+    State;
+failed_auth(#{lserver := Host, ip := IPPT} = State, false, U) ->
+    get_process_name(Host) ! {log, {failed_auth, U, IPPT}},
+    State.
 
 commands() ->
     [#ejabberd_commands{name = reopen_seslog, tags = [logs, server],
@@ -97,8 +101,8 @@ commands() ->
 
 loop(Filename, File, Host) ->
     receive
-	{log, Type, Data} ->
-	    log(File, Host, Type, Data),
+	{log, Data} ->
+	    log(File, Host, Data),
 	    loop(Filename, File, Host);
 	reopenlog ->
 	    File2 = reopen_file(File, Filename),
@@ -128,9 +132,9 @@ reopen_file(File, Filename) ->
     close_file(File),
     open_file(Filename).
 
-log(File, Host, Type, Data) ->
+log(File, Host, Data) ->
     DateString = make_date(calendar:local_time()),
-    MessageString = make_message(Host, Type, Data),
+    MessageString = make_message(Host, Data),
     io:format(File, "~s ~s~n", [DateString, MessageString]).
 
 make_date(Date) ->
@@ -141,13 +145,11 @@ make_date(Date) ->
     io_lib:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w", 
 		  [Y, Mo, D, H, Mi, S]).
 
-make_message(Host, Type, {AuthType, Username, {IPTuple, IPPort}}) ->
-    String = get_string(Type),
+make_message(Host, {failed_auth, Username, {IPTuple, IPPort}}) ->
     IPString = inet_parse:ntoa(IPTuple),
-    io_lib:format(String, [AuthType, Username, Host, IPString, IPPort]);
-make_message(_Host, Type, JID) ->
-    String = get_string(Type),
-    io_lib:format(String, [jlib:jid_to_string(JID)]).
+    io_lib:format("Failed authentication for ~s@~s from ~s port ~p",
+	[Username, Host, IPString, IPPort]);
+make_message(_Host, {forbidden, JID}) ->
+    io_lib:format("Forbidden session for ~s",
+	[jlib:jid_to_string(JID)]).
 
-get_string(failed_auth) -> "Failed ~p authentication for ~s@~s from ~s port ~p";
-get_string(forbidden) -> "Forbidden session for ~s".

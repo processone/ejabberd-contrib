@@ -3,7 +3,7 @@
 
 	Homepage: http://www.ejabberd.im/mod_logsession
 	Author: Badlop
-	Requirements: ejabberd 14.05 or newer
+	Requirements: ejabberd 17.01 or newer
 
 
 	DESCRIPTION
@@ -63,8 +63,8 @@ and the JID of the denied user.
 For example:
 2008-01-08 12:20:50 Forbidden session for tron@localhost/teeest
 2008-01-08 12:36:01 Forbidden session for baduser@localhost/aaa22
-2010-04-02 17:21:37 Failed legacy authentication for someuser@localhost from 127.0.0.1 port 58973
-2010-04-02 17:25:20 Failed sasl_resp authentication for badlop@localhost from 127.0.0.1 port 45842
+2010-04-02 17:21:37 Failed authentication for someuser@localhost from 127.0.0.1 port 58973
+2010-04-02 17:25:20 Failed authentication for badlop@localhost from 127.0.0.1 port 45842
 
 
 	REOPEN LOG FILES
