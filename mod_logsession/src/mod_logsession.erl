@@ -39,7 +39,7 @@
 	]).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("ejabberd_commands.hrl").
 
 -define(PROCNAME, ejabberd_logsession).
@@ -145,9 +145,8 @@ make_message(Host, Type, {AuthType, Username, {IPTuple, IPPort}}) ->
     String = get_string(Type),
     IPString = inet_parse:ntoa(IPTuple),
     io_lib:format(String, [AuthType, Username, Host, IPString, IPPort]);
-make_message(_Host, Type, JID) ->
-    String = get_string(Type),
-    io_lib:format(String, [jlib:jid_to_string(JID)]).
+make_message(_Host, _Type, JID) ->
+  binary_to_list(jid:to_string(JID)).
 
 get_string(failed_auth) -> "Failed ~p authentication for ~s@~s from ~s port ~p";
 get_string(forbidden) -> "Forbidden session for ~s".
