@@ -1,0 +1,3 @@
+2017-04-03  pipo02mix  <info@tiatere.es>
+
+	* src/mod_cobrowser.erl: Create basic functinality to post availability changes.
