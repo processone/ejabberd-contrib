@@ -12,10 +12,10 @@
 -behaviour(gen_mod).
 
 -export([start/2, init/7, stop/1,
-	 send_packet/4, receive_packet/5]).
+	 send_packet/1, receive_packet/1]).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -define(PROCNAME, ejabberd_mod_logxml).
 
@@ -53,7 +53,8 @@ start(Host, Opts) ->
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, receive_packet, 90),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
 	     spawn(?MODULE, init, [binary_to_list(Host), Logdir, RotateO, CheckRKP,
-				   Timezone, ShowIP, FilterO])).
+				   Timezone, ShowIP, FilterO])),
+    ok.
 
 stop(Host) ->
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, send_packet, 90),
@@ -109,10 +110,7 @@ filter(FilterO, E) ->
     {{orientation, OrientationO},{stanza, StanzaO},{direction, DirectionO}} =
 	FilterO,
     {Orientation, From, To, Packet} = E,
-
-    {xmlel, Stanza_str, _Attrs, _Els} = Packet,
-    Stanza = list_to_atom(binary_to_list(Stanza_str)),
-
+    Stanza = element(1, Packet),
     Hosts_all = ejabberd_config:get_global_option(hosts, fun(A) -> A end),
     {Host_local, Host_remote} = case Orientation of
 				    send -> {From#jid.lserver, To#jid.lserver};
@@ -166,17 +164,26 @@ loop(Host, IoDevice, Filename, Logdir, CheckRKP, RotateO, PacketC,
 		 Gregorian_day, Timezone, ShowIP, FilterO)
     end.
 
-send_packet(P, _C2SState, FromJID, ToJID) ->
+send_packet({P, State}) ->
+    {FromJID, ToJID} = get_from_to(P),
     Host = FromJID#jid.lserver,
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     Proc ! {addlog, {send, FromJID, ToJID, P}},
-    P.
+    {P, State}.
 
-receive_packet(P, _C2SState, _JID, From, To) ->
+receive_packet(P, State}) ->
+    {FromJID, ToJID} = get_from_to(P),
     Host = To#jid.lserver,
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     Proc ! {addlog, {recv, From, To, P}},
-    P.
+    {P, State}.
+
+get_from_to(Packet) ->
+    case Packet of
+	#iq{from = F, to = T} -> {F, T};
+	#message{from = F, to = T} -> {F, T};
+	#presence{from = F, to = T} -> {F, T}
+    end.
 
 add_log(Io, Timezone, ShowIP, {Orientation, From, To, Packet}, _OSD) ->
     %%{Orientation, Stanza, Direction} = OSD, 
@@ -199,7 +206,7 @@ add_log(Io, Timezone, ShowIP, {Orientation, From, To, Packet}, _OSD) ->
     TimestampISO = get_now_iso(Timezone),
     io:fwrite(Io, "<packet or=\"~p\" ljid=\"~s\" ~sts=\"~s\">~s</packet>~n",
 	      [Orientation, jlib:jid_to_string(LocalJID), LocalIPS,
-	       TimestampISO, binary_to_list(fxml:element_to_binary(Packet))]).
+	       TimestampISO, binary_to_list(fxml:element_to_binary(xmpp:encode(Packet)))]).
 
 %% -------------------
 %% File
