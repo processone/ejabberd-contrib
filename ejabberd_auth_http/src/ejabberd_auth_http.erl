@@ -16,6 +16,7 @@
 -export([start/1,
          set_password/3,
          check_password/4,
+         check_password/3,
          check_password/6,
          try_register/3,
          dirty_get_registered_users/0,
@@ -71,6 +72,18 @@ store_type() ->
 
 -spec check_password(ejabberd:luser(), binary(), ejabberd:lserver(), binary()) -> boolean().
 check_password(LUser, _AuthzId, LServer, Password) ->
+    case scram2:enabled(LServer) of
+        false ->
+            case make_req(get, <<"check_password">>, LUser, LServer, Password) of
+                {ok, <<"true">>} -> true;
+                _ -> false
+            end;
+        true ->
+            {ok, true} =:= verify_scram_password(LUser, LServer, Password)
+    end.
+
+-spec check_password(ejabberd:luser(), ejabberd:lserver(), binary()) -> boolean().
+check_password(LUser, LServer, Password) ->
     case scram2:enabled(LServer) of
         false ->
             case make_req(get, <<"check_password">>, LUser, LServer, Password) of
