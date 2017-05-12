@@ -18,18 +18,13 @@
          check_password/4,
          check_password/6,
          try_register/3,
-         dirty_get_registered_users/0,
-         get_vh_registered_users/1,
-         get_vh_registered_users/2,
-         get_vh_registered_users_number/1,
-         get_vh_registered_users_number/2,
          get_password/2,
          get_password_s/2,
-         is_user_exists/2,
+         user_exists/2,
          remove_user/2,
          remove_user/3,
-         plain_password_required/0,
-         store_type/0,
+         plain_password_required/1,
+         store_type/1,
          login/2,
          get_password/3,
          opt_type/1,
@@ -61,13 +56,13 @@ start(Host) ->
                                       transient, 2000, supervisor, [cuesport | ChildMods]}),
     ok.
 
--spec plain_password_required() -> false.
-plain_password_required() ->
-    false.
+-spec plain_password_required(binary()) -> false.
+plain_password_required(Server) ->
+    store_type(Server) == scram.
 
--spec store_type() -> plain | scram.
-store_type() ->
-    ejabberd_auth_odbc:store_type().
+-spec store_type(binary()) -> plain | scram.
+store_type(Server) ->
+    ejabberd_auth:password_format(Server).
 
 -spec check_password(ejabberd:luser(), binary(), ejabberd:lserver(), binary()) -> boolean().
 check_password(LUser, _AuthzId, LServer, Password) ->
@@ -127,7 +122,7 @@ set_password(LUser, LServer, Password) ->
         _ -> ok
     end.
 
--spec try_register(ejabberd:luser(), ejabberd:lserver(), binary()) -> {atomic, ok | exists} | {error, term()}.
+-spec try_register(ejabberd:luser(), ejabberd:lserver(), binary()) -> ok | {error, atom()}.
 try_register(LUser, LServer, Password) ->
     PasswordFinal = case scram2:enabled(LServer) of
                         true -> scram2:serialize(scram2:password_to_scram(
@@ -139,26 +134,6 @@ try_register(LUser, LServer, Password) ->
         {error, conflict} -> {error, exists};
         Error -> Error
     end.
-
--spec dirty_get_registered_users() -> [].
-dirty_get_registered_users() ->
-    [].
-
--spec get_vh_registered_users(ejabberd:lserver()) -> [].
-get_vh_registered_users(_Server) ->
-    [].
-
--spec get_vh_registered_users(ejabberd:lserver(), list()) -> [].
-get_vh_registered_users(_Server, _Opts) ->
-    [].
-
--spec get_vh_registered_users_number(binary()) -> 0.
-get_vh_registered_users_number(_Server) ->
-    0.
-
--spec get_vh_registered_users_number(ejabberd:lserver(), list()) -> 0.
-get_vh_registered_users_number(_Server, _Opts) ->
-    0.
 
 -spec get_password(ejabberd:luser(), ejabberd:lserver()) -> false | binary() |
                                           {binary(), binary(), binary(), integer()}.
@@ -187,8 +162,8 @@ get_password_s(User, Server) ->
         _ -> <<>>
     end.
 
--spec is_user_exists(ejabberd:luser(), ejabberd:lserver()) -> boolean().
-is_user_exists(LUser, LServer) ->
+-spec user_exists(ejabberd:luser(), ejabberd:lserver()) -> boolean().
+user_exists(LUser, LServer) ->
     case make_req(get, <<"user_exists">>, LUser, LServer, <<"">>) of
         {ok, <<"true">>} -> true;
         _ -> false
