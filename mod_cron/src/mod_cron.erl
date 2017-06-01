@@ -37,16 +37,18 @@ start(Host, Opts) ->
     ejabberd_commands:register_commands(commands()),
     ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, web_page_host, 50),
-    Tasks = gen_mod:get_opt(tasks, Opts, fun(A) -> A end, []),
+    Tasks = gen_mod:get_opt(tasks, Opts, []),
     catch ets:new(cron_tasks, [ordered_set, named_table, public, {keypos, 2}]),
-    [add_task(Host, Task) || Task <- Tasks].
+    [add_task(Host, Task) || Task <- Tasks],
+    ok.
 
 stop(Host) ->
     ejabberd_commands:unregister_commands(commands()),
     ejabberd_hooks:delete(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:delete(webadmin_page_host, Host, ?MODULE, web_page_host, 50),
     %% Delete tasks of this host
-    [delete_task(Task) || Task <- get_tasks(Host)].
+    [delete_task(Task) || Task <- get_tasks(Host)],
+    ok.
 
 
 %% ---------------------
