@@ -13,17 +13,17 @@
 -export([start/2,
          init/1,
 	 stop/1,
-	 log_packet_send/4,
-	 log_packet_receive/5,
+	 depends/2,
+	 log_packet_send/1,
+	 log_packet_receive/1,
 	 mod_opt_type/1]).
 
 -ifndef(LAGER).
 -define(LAGER, 1).
 -endif.
 
--include("ejabberd.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -define(PROCNAME, ?MODULE).
 -define(DEFAULT_PATH, ".").
@@ -33,12 +33,13 @@
 
 start(Host, Opts) ->
     ?DEBUG(" ~p  ~p~n", [Host, Opts]),
-    case gen_mod:get_opt(host_config, Opts, fun(L) when is_list(L) -> L end, []) of
+    case gen_mod:get_opt(host_config, Opts, []) of
 	[] ->
 	    start_vh(Host, Opts);
 	HostConfig ->
 	    start_vhs(Host, HostConfig)
-    end.
+    end,
+    ok.
 
 start_vhs(_, []) ->
     ok;
@@ -50,8 +51,8 @@ start_vhs(Host, [{_VHost, _Opts}| Tail]) ->
     ?DEBUG("start_vhs ~p  ~p~n", [Host, [{_VHost, _Opts}| Tail]]),
     start_vhs(Host, Tail).
 start_vh(Host, Opts) ->
-    Path = gen_mod:get_opt(path, Opts, fun iolist_to_binary/1, ?DEFAULT_PATH),
-    Format = gen_mod:get_opt(format, Opts, fun(A) when is_atom(A) -> A end, ?DEFAULT_FORMAT),
+    Path = gen_mod:get_opt(path, Opts, ?DEFAULT_PATH),
+    Format = gen_mod:get_opt(format, Opts, ?DEFAULT_FORMAT),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE, log_packet_send, 55),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, log_packet_receive, 55),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
@@ -78,18 +79,30 @@ stop(Host) ->
     gen_mod:get_module_proc(Host, ?PROCNAME) ! stop,
     ok.
 
-log_packet_send(Packet, _C2SState, From, To) ->
+-spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
+depends(_Host, _Opts) ->
+    [].
+
+log_packet_send({Packet, C2SState}) ->
+    From = xmpp:get_from(Packet),
+    To = xmpp:get_to(Packet),
     log_packet(From, To, Packet, From#jid.lserver),
-    Packet.
+    {Packet, C2SState}.
 
-log_packet_receive(Packet, _C2SState, _JID, From, To) when From#jid.lserver == To#jid.lserver->
-    Packet; % only log at send time if the message is local to the server
-log_packet_receive(Packet, _C2SState, _JID, From, To) ->
-    log_packet(From, To, Packet, To#jid.lserver),
-    Packet.
+log_packet_receive({Packet, C2SState}) ->
+    From = xmpp:get_from(Packet),
+    To = xmpp:get_to(Packet),
+    %% only log at send time if the message is local to the server
+    case From#jid.lserver == To#jid.lserver of
+	true ->
+	    ok;
+	false ->
+	    log_packet(From, To, Packet, To#jid.lserver)
+    end,
+    {Packet, C2SState}.
 
-log_packet(From, To, Packet = #xmlel{name = <<"message">>, attrs = Attrs}, Host) ->
-    case fxml:get_attr_s(<<"type">>, Attrs) of
+log_packet(From, To, #message{type = Type} = Packet, Host) ->
+    case Type of
 	<<"groupchat">> -> %% mod_muc_log already does it
 	    ?DEBUG("dropping groupchat: ~s", [fxml:element_to_binary(Packet)]),
 	    ok;
@@ -109,21 +122,21 @@ write_packet(From, To, Packet, Host) ->
 		   Result
 	   end,
     Format = Config#config.format,
-    {Subject, Body} = {case fxml:get_subtag(Packet, <<"subject">>) of
+    {Subject, Body} = {case Packet#message.subject of
 			   false ->
 			       "";
 			   SubjEl ->
-			       escape(Format, fxml:get_tag_cdata(SubjEl))
+			       escape(Format, xmpp:get_text(SubjEl))
 		       end,
-		       escape(Format, fxml:get_path_s(Packet, [{elem, <<"body">>}, cdata]))},
-    case Subject == [] andalso Body == [] of
+		       escape(Format, xmpp:get_text(Packet#message.body))},
+    case Subject == <<>> andalso Body == <<>> of
         true -> %% don't log empty messages
             ?DEBUG("not logging empty message from ~s",[jlib:jid_to_string(From)]),
             ok;
         false ->
 	    Path = Config#config.path,
-            FromJid = [From#jid.luser, "@", From#jid.lserver],
-            ToJid = [To#jid.luser, "@", To#jid.lserver],
+            FromJid = jid:encode(jid:make(From#jid.luser, From#jid.lserver)),
+            ToJid = jid:encode(jid:make(To#jid.luser, To#jid.lserver)),
 	    {FilenameTemplate, DateString, Header, MessageType} =
 		case calendar:local_time() of
 		    {{Y, M, D}, {H, Min, S}} ->
