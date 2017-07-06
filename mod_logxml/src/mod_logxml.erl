@@ -171,11 +171,11 @@ send_packet({P, State}) ->
     Proc ! {addlog, {send, FromJID, ToJID, P}},
     {P, State}.
 
-receive_packet(P, State}) ->
+receive_packet({P, State}) ->
     {FromJID, ToJID} = get_from_to(P),
-    Host = To#jid.lserver,
+    Host = ToJID#jid.lserver,
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    Proc ! {addlog, {recv, From, To, P}},
+    Proc ! {addlog, {recv, FromJID, ToJID, P}},
     {P, State}.
 
 get_from_to(Packet) ->
