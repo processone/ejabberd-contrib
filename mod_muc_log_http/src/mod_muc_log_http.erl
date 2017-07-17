@@ -13,18 +13,15 @@
 -export([
 	 start/2,
 	 stop/1,
-	 loop/1,
 	 process/2
 	]).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("ejabberd_http.hrl").
 -include("mod_muc_room.hrl").
 -include("logger.hrl").
 -include_lib("kernel/include/file.hrl").
-
--define(PROCNAME, mod_muc_log_http).
 
 % TODO:
 %  - If chatroom is password protected, ask password
@@ -42,9 +39,7 @@ process(LocalPath, Request) ->
 	serve(LocalPath, Request).
 
 serve(LocalPathBin, #request{host = Host} = Request) ->
-	Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-	Proc ! {get_docroot, self()},
-	receive DocRoot -> ok end,
+	DocRoot = binary_to_list(gen_mod:get_module_opt(Host, mod_muc_log, outdir, <<"www/muc">>)),
 	LocalPath = [binary_to_list(LPB) || LPB <- LocalPathBin],
 	FileName = filename:join(filename:split(DocRoot) ++ LocalPath),
 	case file:read_file(FileName) of
@@ -227,27 +222,12 @@ last_modified(FileName) ->
     Then = FileInfo#file_info.mtime,
     httpd_util:rfc1123_date(Then).
 
-loop(DocRoot) ->
-	receive
-		{get_docroot, Pid} ->
-			Pid ! DocRoot,
-			loop(DocRoot);
-		stop ->
-			ok
-	end.
-
 %%%----------------------------------------------------------------------
 %%% BEHAVIOUR CALLBACKS
 %%%----------------------------------------------------------------------
 
-start(Host, _Opts) -> 
-	DocRootBin = gen_mod:get_module_opt(Host, mod_muc_log, outdir, fun(A) -> A end, <<"www/muc">>),
-	Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-	DocRoot = binary_to_list(DocRootBin),
-	catch register(Proc, spawn(?MODULE, loop, [DocRoot])),
-	ok.
+start(_Host, _Opts) ->
+    ok.
 
-stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    exit(whereis(Proc), stop),
-    {wait, Proc}.
+stop(_Host) ->
+    ok.
