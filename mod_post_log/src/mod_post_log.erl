@@ -42,7 +42,10 @@ stop(Host) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(url) -> fun iolist_to_binary/1;
+mod_opt_type(url) ->
+    fun(Val) when is_binary(Val) -> binary_to_list(Val);
+       (Val) -> Val
+    end;
 mod_opt_type(ts_header) -> fun iolist_to_binary/1;
 mod_opt_type(from_header) -> fun iolist_to_binary/1;
 mod_opt_type(to_header) -> fun iolist_to_binary/1;
@@ -119,10 +122,7 @@ get_opt(LServer, Opt) ->
     get_opt(LServer, Opt, undefined).
 
 get_opt(LServer, Opt, Default) ->
-    F = fun(Val) when is_binary(Val) -> binary_to_list(Val);
-           (Val)                     -> Val
-        end,
-    gen_mod:get_module_opt(LServer, ?MODULE, Opt, F, Default).
+    gen_mod:get_module_opt(LServer, ?MODULE, Opt, Default).
 
 report_error(ReportArgs) ->
     ok = error_logger:error_report([ mod_post_log_cannot_post | ReportArgs ]).
