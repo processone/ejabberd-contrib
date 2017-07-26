@@ -74,7 +74,7 @@ bloom(Mode, Dim, E) ->
     M = 1 bsl Mb,
     N = trunc(log(1 - P) / log(1 - 1 / M)),
     #bloom{e = E, n = N, mb = Mb, size = 0,
-        a = [hipe_bifs:bitarray(1 bsl Mb, false) || _ <- lists:seq(1, K)]}.
+        a = [bitarray:new(1 bsl Mb, false) || _ <- lists:seq(1, K)]}.
 
 log2(X) -> log(X) / log(2).
 
@@ -136,7 +136,7 @@ masked_pair(Mask, X, Y) -> {X band Mask, Y band Mask}.
 
 all_set(_Mask, _I1, _I, []) -> true;
 all_set(Mask, I1, I, [H | T]) ->
-    case hipe_bifs:bitarray_sub(H, I) of
+    case bitarray:sub(H, I) of
         true -> all_set(Mask, I1, (I + I1) band Mask, T);
         false -> false
     end.
@@ -170,5 +170,5 @@ hash_add(Hashes, #bloom{mb = Mb, a = A, size = Size} = B) ->
 
 set_bits(_Mask, _I1, _I, [], Acc) -> lists:reverse(Acc);
 set_bits(Mask, I1, I, [H | T], Acc) ->
-    set_bits(Mask, I1, (I + I1) band Mask, T, [hipe_bifs:bitarray_update(H, I, true) | Acc]).
+    set_bits(Mask, I1, (I + I1) band Mask, T, [bitarray:update(H, I, true) | Acc]).
 

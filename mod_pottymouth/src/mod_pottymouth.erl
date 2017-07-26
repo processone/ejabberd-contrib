@@ -2,27 +2,27 @@
 
 -behaviour(gen_mod).
 
+-include("ejabberd.hrl").
 -include("logger.hrl").
+-include("xmpp.hrl").
 
 -export([
   start/2,
   stop/1,
   on_filter_packet/1,
   mod_opt_type/1,
-  depends/2
+  depends/2,
+  reload/3
 ]).
-
--include("ejabberd.hrl").
 
 -import(bloom_gen_server, [start/0, stop/0, member/1]).
 -import(nomalize_leet_gen_server, [normalize/1]).
 
-getMessageLang(Attrs) ->
-  LangAttr = lists:keyfind(<<"lang">>, 1, Attrs),
+getMessageLang(Msg) ->
+  LangAttr = xmpp:get_lang(Msg),
   if
-    LangAttr ->
-      {<<"lang">>, LangBin} = LangAttr,
-      Lang = list_to_atom(binary_to_list(LangBin));
+    (LangAttr /= <<>>) ->
+      Lang = list_to_atom(binary_to_list(LangAttr));
     true ->
       Lang = default
   end,
@@ -43,27 +43,12 @@ censorWord({Lang, Word} = _MessageTerm) ->
 filterWords(L) ->
   lists:map(fun censorWord/1, L).
 
-filterMessageText(MessageAttrs, MessageText) ->
-  Lang = getMessageLang(MessageAttrs),
+filterMessageText(Lang, MessageText) ->
   % we want to token-ize utf8 'words'
   MessageWords = string:tokens(unicode:characters_to_list(MessageText, utf8), " "),
   MessageTerms = [{Lang, Word} || Word <- MessageWords],
   % we get back bytewise format terms (rather than utf8)
   string:join(filterWords(MessageTerms), " ").
-
-
-filterMessageBodyElements([{xmlel, <<"body">>, BodyAttr, [{xmlcdata, MessageText}]} = _H|T], MessageElements) ->
-  FilteredMessageWords = binary:list_to_bin(filterMessageText(BodyAttr, binary:bin_to_list(MessageText))),
-  FilteredBody = {xmlel, <<"body">>, BodyAttr, [{xmlcdata, FilteredMessageWords}]},
-  filterMessageBodyElements(T, lists:append(MessageElements, [FilteredBody]));
-
-filterMessageBodyElements([H|T], MessageElements) ->
-  % skip this tag, but pass it on as processed
-  filterMessageBodyElements(T, lists:append(MessageElements, [H]));
-
-filterMessageBodyElements([], MessageElements) ->
-  MessageElements.
-
 
 start(_Host, Opts) ->
   Blacklists = gen_mod:get_opt(blacklists, Opts, fun(A) -> A end, []),
@@ -82,14 +67,28 @@ stop(_Host) ->
 on_filter_packet(drop) ->
   drop;
 
-on_filter_packet({_From, _To, {xmlel, <<"message">>, _Attrs, Els} = _Packet} = _Msg) ->
-  FilteredEls = filterMessageBodyElements(Els, []),
-  {_From, _To, {xmlel, <<"message">>, _Attrs, FilteredEls}};
 on_filter_packet(Msg) ->
-  % Handle the generic case (any packet that isn't a message with a body).
-  Msg.
+  Type = xmpp:get_type(Msg),
+  if 
+    (Type == chat) orelse (Type == groupchat)  ->
+      BodyText = xmpp:get_text(Msg#message.body),
+      if
+        (BodyText /= <<>>) ->
+          Lang = getMessageLang(Msg),
+          FilteredMessageWords = binary:list_to_bin(filterMessageText(Lang, binary:bin_to_list(BodyText))),
+          [BodyObject|_] = Msg#message.body,
+          NewBodyObject = setelement(3, BodyObject, FilteredMessageWords),
+          NewMsg = Msg#message{body = [NewBodyObject]},
+          NewMsg;
+        true ->
+          Msg
+      end;
+    true -> 
+      Msg
+  end.
 
 mod_opt_type(blacklists) -> fun (A) when is_list(A) -> A end;
 mod_opt_type(charmaps) -> fun (A) when is_list(A) -> A end;
 mod_opt_type(_) -> [blacklists, charmaps].
 depends(_Host, _Opts) -> [].
+reload(_Host, _NewOpts, _OldOpts) -> ok.
