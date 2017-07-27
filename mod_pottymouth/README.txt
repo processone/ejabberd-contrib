@@ -6,10 +6,32 @@ sizes. Using a large list (say, 87M terms) will slow down the initial server
 boot time (to about 15 minutes respectively), but once loaded lookups are very
 speedy.
 
-To install in ejabberd:
+Prerequisite bitarray lib:
+
+mod_pottymouth uses a modified version of the 'etbloom' library that uses 
+'bitarray' to replace 'hipe_bifs'. Ejabberd doesn't handle installing 
+dependences of dependecies quite so well (etbloom being a dep of mod_pottymouth 
+and bitarray being a dep of etbloom), so bitarray needs to be installed manually 
+before installation of mod_pottymouth.
+
+This is how I got it to work... YMMV.
+Given $EJABBERD_HOME is the base directory of your ejabberd install:
+
+mkdir -p $EJABBERD_HOME/erlang-lib/bitarray
+cd $EJABBERD_HOME/erlang-lib/bitarray
+clone https://github.com/ferd/bitarray git repo
+run: /usr/lib/erlang/bin/escript rebar get-deps
+run: /usr/lib/erlang/bin/escript rebar compile
+run: /usr/bin/install -c -d /usr/local/lib/bitarray-1.0.0/ebin
+run: /usr/bin/install -c -d /usr/local/lib/bitarray-1.0.0/priv
+run: /usr/bin/install -c -m 644 ./ebin/bitarray.app /usr/local/lib/bitarray-1.0.0/ebin/bitarray.app
+run: /usr/bin/install -c -m 644 ./ebin/bitarray.beam /usr/local/lib/bitarray-1.0.0/ebin/bitarray.beam
+run: /usr/bin/install -c -m 644 ./priv/bitarray.so /usr/local/lib/bitarray-1.0.0/priv/bitarray.so
+
+To install mod_pottymouth in ejabberd:
 
 cd ~/.ejabberd-modules/sources
-clone the git repo
+clone the ejabberd-contrib git repo
 cd mod_pottymouth
 edit: ./conf/mod_pottymouth.yml
 
@@ -17,14 +39,6 @@ make sure ejabberd is running
 run: ejabberdctl module_install mod_pottymouth
 run: ejabberdctl restart
 module will be installed in: ~/.ejabberd-modules/mod_pottymouth
-
-
-If you don't have Erlang HiPE available, it may throw errors that mention:
-  {undef,[{hipe_bifs,bitarray,
-In such case, you can install this library:
-  https://github.com/ferd/bitarray
-and edit etbloom.erl to call that library instead of hipe_bifs.
-
 
 Config file format:
 
