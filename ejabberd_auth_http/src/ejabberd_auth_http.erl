@@ -48,13 +48,11 @@ start(Host) ->
     Opts = proplists:get_value(connection_opts, AuthOpts, []),
     ChildMods = [fusco],
     ChildMFA = {fusco, start_link, [binary_to_list(AuthHost), Opts]},
-
-    {ok, _} = supervisor:start_child(ejabberd_sup,
-                                     {{ejabberd_auth_http_sup, Host},
-                                      {cuesport, start_link,
-                                       [pool_name(Host), PoolSize, ChildMods, ChildMFA]},
-                                      transient, 2000, supervisor, [cuesport | ChildMods]}),
-    ok.
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    ChildSpec = {Proc, {cuesport, start_link,
+			[pool_name(Host), PoolSize, ChildMods, ChildMFA]},
+		 transient, 2000, supervisor, [cuesport | ChildMods]},
+    supervisor:start_child(ejabberd_backend_sup, ChildSpec).
 
 -spec plain_password_required(binary()) -> false.
 plain_password_required(Server) ->
@@ -277,5 +275,7 @@ login(_User, _Server) ->
 get_password(_User, _Server, _DefaultValue) ->
     erlang:error(not_implemented).
 
-stop(_Host) ->
-    ok.
+stop(Host) ->
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    supervisor:terminate_child(ejabberd_backend_sup, Proc),
+    supervisor:delete_child(ejabberd_backend_sup, Proc).
