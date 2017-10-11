@@ -27,7 +27,6 @@
 -module(mod_s2s_log).
 -author('mremond@process-one.net').
 
-%% TODO: Implement multi vhosts support
 %% TODO: Support reopen log event
 
 -behaviour(gen_mod).
@@ -35,12 +34,16 @@
 %% API:
 -export([start/2,
          init/1,
-	 stop/1]).
+	 stop/1,
+	 depends/2,
+	 mod_opt_type/1]).
 %% Hooks:
 -export([reopen_log/0,
-	 s2s_connect/2]).
+	 s2s_out_auth/2,
+	 s2s_in_auth/3]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -define(PROCNAME, ?MODULE).
 -define(DEFAULT_FILENAME, <<"s2s.log">>).
@@ -49,19 +52,23 @@
 -record(config, {filename=?DEFAULT_FILENAME, iodevice}).
 
 %% For now we only support one log file for all vhosts.
-start(_Host, Opts) ->
-    %% ejabberd starts modules sequentially so we assume no race
-    %% condition is possible here
+start(Host, Opts) ->
     case whereis(?PROCNAME) of
 	undefined ->
-	    Filename = gen_mod:get_opt(filename, Opts, fun(V) -> V end, ?DEFAULT_FILENAME),
-	    %% TODO: Both hooks will need Host parameter for vhost support
-	    ejabberd_hooks:add(reopen_log_hook, ?MODULE, reopen_log, 55),
-	    ejabberd_hooks:add(s2s_connect_hook, ?MODULE, s2s_connect, 55),
-	    register(?PROCNAME,
-		     spawn(?MODULE, init, [#config{filename=Filename}]));
+	    Filename = gen_mod:get_opt(filename, Opts, ?DEFAULT_FILENAME),
+	    case filelib:ensure_dir(Filename) of
+		ok ->
+		    register(?PROCNAME,
+			     spawn(?MODULE, init, [#config{filename=Filename}])),
+		    ejabberd_hooks:add(reopen_log_hook, ?MODULE, reopen_log, 55),
+		    s2s_hooks(Host, add);
+		{error, Why} = Err ->
+		    ?ERROR_MSG("failed to create directories along the path ~s: ~s",
+			       [Filename, file:format_error(Why)]),
+		    Err
+	    end;
 	_ ->
-	    ok
+	    s2s_hooks(Host, add)
     end.
 
 init(Config)->
@@ -83,17 +90,37 @@ loop(Config) ->
     end.
 
 stop(Host) ->
-    ejabberd_hooks:delete(s2s_connection, Host,
-			  ?MODULE, s2s_connection, 55),
-    ?PROCNAME ! stop,
-    ok.
+    s2s_hooks(Host, delete),
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+	true ->
+	    ok;
+	false ->
+	    ejabberd_hooks:delete(reopen_log_hook, ?MODULE, reopen_log, 55),
+	    ?PROCNAME ! stop
+    end.
 
-s2s_connect(MyServer, Server) ->
-    ?PROCNAME ! {s2s_connect, MyServer, Server}.
+s2s_out_auth(#{remote_server := RServer, server := LServer} = Acc, true) ->
+    ?PROCNAME ! {s2s_connect, LServer, RServer},
+    Acc;
+s2s_out_auth(Acc, _) ->
+    Acc.
+
+s2s_in_auth(#{lserver := LServer} = Acc, true, RServer) ->
+    ?PROCNAME ! {s2s_connect, RServer, LServer},
+    Acc;
+s2s_in_auth(Acc, _, _) ->
+    Acc.
 
 reopen_log() ->
     ?PROCNAME ! {reopen_log}.
 
+depends(_, _) ->
+    [].
+
+mod_opt_type(filename) ->
+    fun iolist_to_binary/1;
+mod_opt_type(_) ->
+    [filename].
 
 %% ---
 %% Internal functions
@@ -106,3 +133,11 @@ log_s2s_connection(IODevice, MyServer, Server) ->
 
 template(date) ->
     "~p-~2.2.0w-~2.2.0w ~2.2.0w:~2.2.0w:~2.2.0w".
+
+-spec s2s_hooks(binary(), add | delete) -> ok.
+s2s_hooks(Host, add) ->
+    ejabberd_hooks:add(s2s_out_auth_result, Host, ?MODULE, s2s_out_auth, 55),
+    ejabberd_hooks:add(s2s_in_auth_result, Host, ?MODULE, s2s_in_auth, 55);
+s2s_hooks(Host, delete) ->
+    ejabberd_hooks:delete(s2s_out_auth_result, Host, ?MODULE, s2s_out_auth, 55),
+    ejabberd_hooks:delete(s2s_in_auth_result, Host, ?MODULE, s2s_in_auth, 55).
