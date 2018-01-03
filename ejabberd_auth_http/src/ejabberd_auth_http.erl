@@ -58,9 +58,9 @@ start(Host) ->
 plain_password_required(Server) ->
     store_type(Server) == scram.
 
--spec store_type(binary()) -> plain | scram.
-store_type(Server) ->
-    ejabberd_auth:password_format(Server).
+-spec store_type(binary()) -> external.
+store_type(_) ->
+    external.
 
 -spec check_password(ejabberd:luser(), binary(), ejabberd:lserver(), binary()) -> boolean().
 check_password(LUser, _AuthzId, LServer, Password) ->
@@ -133,25 +133,9 @@ try_register(LUser, LServer, Password) ->
         Error -> Error
     end.
 
--spec get_password(ejabberd:luser(), ejabberd:lserver()) -> false | binary() |
-                                          {binary(), binary(), binary(), integer()}.
-get_password(LUser, LServer) ->
-    case make_req(get, <<"get_password">>, LUser, LServer, <<"">>) of
-        {error, _} ->
-            false;
-        {ok, Password} ->
-            case scram2:enabled(LServer) of
-                true ->
-                    case scram2:deserialize(Password) of
-                        {ok, #scram{} = Scram} ->
-                            scram2:scram_to_tuple(Scram);
-                        _ ->
-                            false
-                    end;
-                false ->
-                    Password
-            end
-    end.
+-spec get_password(ejabberd:luser(), ejabberd:lserver()) -> error.
+get_password(_, _) ->
+    error.
 
 -spec get_password_s(ejabberd:luser(), ejabberd:lserver()) -> binary().
 get_password_s(User, Server) ->
