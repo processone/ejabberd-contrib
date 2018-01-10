@@ -22,7 +22,7 @@
 	 web_menu_node/3, web_page_node/5,
 	 web_menu_host/3, web_page_host/3,
 	 %% Hooks
-	 register_user/2, remove_user/2, user_send_packet/4,
+	 register_user/2, remove_user/2, user_send_packet/1,
          user_send_packet_traffic/4, user_receive_packet_traffic/5,
 	 %%user_logout_sm/3,
 	 user_login/1, user_logout/4]).
@@ -172,7 +172,7 @@ prepare_stats_host(Host, Hooks, CD) ->
 	true ->
 	    ejabberd_hooks:add(register_user, Host, ?MODULE, register_user, 90),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 90),
-	    ejabberd_hooks:add(user_available_hook, Host, ?MODULE, user_login, 90),
+	    ejabberd_hooks:add(c2s_session_opened, Host, ?MODULE, user_login, 90),
 	    ejabberd_hooks:add(unset_presence_hook, Host, ?MODULE, user_logout, 90),
 	    %%ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
 	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 90);
@@ -181,7 +181,7 @@ prepare_stats_host(Host, Hooks, CD) ->
 	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet_traffic, 92),
 	    ejabberd_hooks:add(register_user, Host, ?MODULE, register_user, 90),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 90),
-	    ejabberd_hooks:add(user_available_hook, Host, ?MODULE, user_login, 90),
+	    ejabberd_hooks:add(c2s_session_opened, Host, ?MODULE, user_login, 90),
 	    ejabberd_hooks:add(unset_presence_hook, Host, ?MODULE, user_logout, 90),
 	    %%ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
 	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 90);
@@ -200,7 +200,7 @@ finish_stats() ->
     catch ets:delete(Table).
 
 finish_stats(Host) ->
-    ejabberd_hooks:delete(user_available_hook, Host, ?MODULE, user_login, 90),
+    ejabberd_hooks:delete(c2s_session_opened, Host, ?MODULE, user_login, 90),
     ejabberd_hooks:delete(unset_presence_hook, Host, ?MODULE, user_logout, 90),
     %%ejabberd_hooks:delete(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, user_send_packet, 90),
@@ -229,13 +229,15 @@ remove_user(_User, Host) ->
     ets:update_counter(TableHost, {remove_user, Host}, 1),
     ets:update_counter(TableServer, {remove_user, server}, 1).
 
-user_send_packet(NewEl, _C2SState, FromJID, ToJID) ->
+user_send_packet({NewEl, C2SState}) ->
+    FromJID = xmpp:get_from(NewEl),
+    ToJID = xmpp:get_from(NewEl),
     %% Registrarse para tramitar Host/mod_stats2file
     case catch binary_to_existing_atom(ToJID#jid.lresource, utf8) of
 	?MODULE -> received_response(FromJID, ToJID, NewEl);
 	_ -> ok
     end,
-    NewEl.
+    {NewEl, C2SState}.
 
 user_send_packet_traffic(NewEl, _C2SState, FromJID, ToJID) ->
     %% Only required for traffic stats
@@ -448,7 +450,7 @@ get(_, ["sslusers", title]) -> "SSL users";
 get(_, ["sslusers"]) -> {_, _, R} = get_connectiontype(), R;
 get(_, ["registeredusers", title]) -> "Registered users";
 get(N, ["registeredusers"]) -> rpc:call(N, mnesia, table_info, [passwd, size]);
-get(_, ["registeredusers", Host]) -> length(ejabberd_auth:get_vh_registered_users(Host));
+get(_, ["registeredusers", Host]) -> ejabberd_auth:count_users(Host);
 get(_, ["onlineusers", title]) -> "Online users";
 get(N, ["onlineusers"]) -> rpc:call(N, mnesia, table_info, [session, size]);
 get(_, ["onlineusers", Host]) -> length(ejabberd_sm:get_vh_session_list(Host));
@@ -739,13 +741,12 @@ ms_to_time(T) ->
 
 
 %% Cuando un usuario conecta, pedirle iq:version a nombre de Host/mod_stats2file
-user_login(U) ->
-    User = U#jid.luser,
-    Host = U#jid.lserver,
-    Resource = U#jid.lresource,
+user_login(#{user := User, lserver := Host, resource := Resource} = State) ->
     ets:update_counter(table_name(server), {user_login, server}, 1),
     ets:update_counter(table_name(Host), {user_login, Host}, 1),
-    request_iqversion(User, Host, Resource).
+    %% TODO: rewrite using ejabberd_router:route_iq
+    %% request_iqversion(User, Host, Resource).
+    State.
 
 
 %%user_logout_sm(_, JID, _Data) ->
