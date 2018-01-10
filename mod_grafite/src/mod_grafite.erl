@@ -54,13 +54,15 @@ start(Host, Opts) ->
      StatsDH = gen_mod:get_opt(statsdhost, Opts, fun(X) -> X end, "localhost"),
      {ok, StatsDHost} = getaddrs(StatsDH),
      StatsDPort = gen_mod:get_opt(statsdport, Opts, fun(X) -> X end, 8125),
-     register(?PROCNAME, spawn(?MODULE, udp_loop_start, [#state{host = StatsDHost, port = StatsDPort}])).
+     register(?PROCNAME, spawn(?MODULE, udp_loop_start, [#state{host = StatsDHost, port = StatsDPort}])),
+    ok.
 
 stop(Host) ->
     [ejabberd_hooks:delete(Hook, Host, ?MODULE, Hook, 20)
      || Hook <- ?HOOKS],
          [ejabberd_hooks:delete(Hook, Host, ?MODULE, Hook, 20)
-     || Hook <- ?GLOBAL_HOOKS].
+     || Hook <- ?GLOBAL_HOOKS],
+    ok.
 
 depends(_Host, _Opts) ->
     [].
