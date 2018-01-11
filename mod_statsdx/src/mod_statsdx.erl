@@ -14,6 +14,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, loop/1, stop/1, mod_opt_type/1, get_statistic/2,
+	 received_response/3,
 	 %% Commands
 	 getstatsdx/1, getstatsdx/2,
 	 get_top_users/2,
@@ -29,7 +30,7 @@
 
 -include("ejabberd.hrl").
 -include("ejabberd_commands.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("logger.hrl").
 -include("mod_roster.hrl").
 -include("ejabberd_http.hrl").
@@ -744,8 +745,7 @@ ms_to_time(T) ->
 user_login(#{user := User, lserver := Host, resource := Resource} = State) ->
     ets:update_counter(table_name(server), {user_login, server}, 1),
     ets:update_counter(table_name(Host), {user_login, Host}, 1),
-    %% TODO: rewrite using ejabberd_router:route_iq
-    %% request_iqversion(User, Host, Resource).
+    request_iqversion(User, Host, Resource),
     State.
 
 
@@ -780,16 +780,22 @@ user_logout(User, Host, Resource, _Status) ->
     end.
 
 request_iqversion(User, Host, Resource) ->
-    From = jlib:make_jid(<<"">>, Host, list_to_binary(atom_to_list(?MODULE))),
-    FromStr = jlib:jid_to_string(From),
-    To = jlib:make_jid(User, Host, Resource),
-    ToStr = jlib:jid_to_string(To),
-    Packet = {xmlel,<<"iq">>,
-	      [{<<"from">>,FromStr}, {<<"to">>,ToStr}, {<<"type">>,<<"get">>},
-		{<<"id">>, list_to_binary("statsdx"++randoms:get_string())}],
-	      [{xmlel, <<"query">>,
-		[{<<"xmlns">>,<<"jabber:iq:version">>}], []}]},
-    ejabberd_local:route(From, To, Packet).
+    From = jid:make(<<"">>, Host, list_to_binary(atom_to_list(?MODULE))),
+    To = jid:make(User, Host, Resource),
+    Query = #xmlel{name = <<"query">>, attrs = [{<<"xmlns">>, ?NS_VERSION}]},
+    IQ = #iq{type = get,
+             from = From,
+             to = To,
+             id = randoms:get_string(),
+             sub_els = [Query]},
+    HandleResponse = fun(#iq{type = result} = IQr) ->
+			       spawn(?MODULE, received_response,
+				     [To, From, IQr]);
+			  (R) ->
+			       ?INFO_MSG("Unexpected response: ~n~p", [R]),
+			       ok % Hmm.
+		       end,
+    ejabberd_router:route_iq(IQ, HandleResponse).
 
 %% cuando el virtualJID recibe una respuesta iqversion,
 %% almacenar su JID/USR + client + OS en una tabla
@@ -798,13 +804,13 @@ received_response(From, _To, El) ->
     catch
     	_:_ -> ok
     end.
-received_response(From, {xmlel, <<"iq">>, Attrs, Elc}) ->
+received_response(From, #iq{type = Type, lang = Lang1, sub_els = Elc}) ->
     User = From#jid.luser,
     Host = From#jid.lserver,
     Resource = From#jid.lresource,
 
-    <<"result">> = fxml:get_attr_s(<<"type">>, Attrs),
-    Lang = case fxml:get_attr_s(<<"xml:lang">>, Attrs) of
+    result = Type,
+    Lang = case Lang1 of
 	       <<"">> -> "unknown";
 	       L -> binary_to_list(L)
 	   end,
@@ -841,7 +847,8 @@ received_response(From, {xmlel, <<"iq">>, Attrs, Elc}) ->
     ets:insert(TableHost, {{session, JID}, Client_id, OS_id, Lang, ConnType, Client, Version, OS}).
 
 get_connection_type(User, Host, Resource) ->
-    [_Node, {conn, Conn}, _IP] = ejabberd_sm:get_user_info(User, Host, Resource),
+    UserInfo = ejabberd_sm:get_user_info(User, Host, Resource),
+    {conn, Conn} = lists:keyfind(conn, 1, UserInfo),
     Conn.
 
 update_counter_create(Table, Element, C) ->
