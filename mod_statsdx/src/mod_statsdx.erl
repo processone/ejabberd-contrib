@@ -24,7 +24,7 @@
 	 web_menu_host/3, web_page_host/3,
 	 %% Hooks
 	 register_user/2, remove_user/2, user_send_packet/1,
-         user_send_packet_traffic/4, user_receive_packet_traffic/5,
+         user_send_packet_traffic/1, user_receive_packet_traffic/1,
 	 %%user_logout_sm/3,
 	 user_login/1, user_logout/4]).
 
@@ -240,33 +240,35 @@ user_send_packet({NewEl, C2SState}) ->
     end,
     {NewEl, C2SState}.
 
-user_send_packet_traffic(NewEl, _C2SState, FromJID, ToJID) ->
-    %% Only required for traffic stats
-    Host = FromJID#jid.lserver,
-    HostTo = ToJID#jid.lserver,
-    {xmlel, Type, _, _} = NewEl,
-    Type2 = case Type of
-    		<<"iq">> -> iq;
-    		<<"message">> -> message;
-    		<<"presence">> -> presence
-    	    end,
+%% Only required for traffic stats
+user_send_packet_traffic({NewEl, _C2SState} = Acc) ->
+    From = xmpp:get_from(NewEl),
+    To = xmpp:get_from(NewEl),
+    Host = From#jid.lserver,
+    HostTo = To#jid.lserver,
+    Type2 = case NewEl of
+		#iq{} -> iq;
+		#message{} -> message;
+		#presence{} -> presence
+	    end,
     Dest = case is_host(HostTo, Host) of
     	       true -> in;
     	       false -> out
     	   end,
     Table = table_name(Host),
     ets:update_counter(Table, {send, Host, Type2, Dest}, 1),
-    NewEl.
+    Acc.
 
 %% Only required for traffic stats
-user_receive_packet_traffic(FixedPacket, _C2SState, _JID, From, To) ->
+user_receive_packet_traffic({NewEl, _C2SState} = Acc) ->
+    From = xmpp:get_from(NewEl),
+    To = xmpp:get_from(NewEl),
     HostFrom = From#jid.lserver,
     Host = To#jid.lserver,
-    {xmlel, Type, _, _} = FixedPacket,
-    Type2 = case Type of
-		<<"iq">> -> iq;
-		<<"message">> -> message;
-		<<"presence">> -> presence
+    Type2 = case NewEl of
+		#iq{} -> iq;
+		#message{} -> message;
+		#presence{} -> presence
 	    end,
     Dest = case is_host(HostFrom, Host) of
 	       true -> in;
@@ -274,7 +276,7 @@ user_receive_packet_traffic(FixedPacket, _C2SState, _JID, From, To) ->
 	   end,
     Table = table_name(Host),
     ets:update_counter(Table, {recv, Host, Type2, Dest}, 1),
-    FixedPacket.
+    Acc.
 
 
 %%%==================================
