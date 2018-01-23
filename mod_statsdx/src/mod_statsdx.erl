@@ -243,7 +243,7 @@ user_send_packet({NewEl, C2SState}) ->
 %% Only required for traffic stats
 user_send_packet_traffic({NewEl, _C2SState} = Acc) ->
     From = xmpp:get_from(NewEl),
-    To = xmpp:get_from(NewEl),
+    To = xmpp:get_to(NewEl),
     Host = From#jid.lserver,
     HostTo = To#jid.lserver,
     Type2 = case NewEl of
@@ -262,7 +262,7 @@ user_send_packet_traffic({NewEl, _C2SState} = Acc) ->
 %% Only required for traffic stats
 user_receive_packet_traffic({NewEl, _C2SState} = Acc) ->
     From = xmpp:get_from(NewEl),
-    To = xmpp:get_from(NewEl),
+    To = xmpp:get_to(NewEl),
     HostFrom = From#jid.lserver,
     Host = To#jid.lserver,
     Type2 = case NewEl of
