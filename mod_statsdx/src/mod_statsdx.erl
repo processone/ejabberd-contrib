@@ -89,7 +89,11 @@ mod_opt_type(_) -> [hooks].
 %%% +++ TODO: why server and "server"
 table_name(server) -> gen_mod:get_module_proc(<<"server">>, mod_statsdx);
 table_name("server") -> gen_mod:get_module_proc(<<"server">>, mod_statsdx);
-table_name(Host) -> gen_mod:get_module_proc(Host, mod_statsdx).
+table_name(Host) -> gen_mod:get_module_proc(tob(Host), mod_statsdx).
+
+tob(A) when is_atom(A) -> A;
+tob(B) when is_binary(B) -> B;
+tob(L) when is_list(L) -> list_to_binary(L).
 
 initialize_stats_server() ->
     register(?PROCNAME, spawn(?MODULE, loop, [[]])).
@@ -256,7 +260,7 @@ user_send_packet_traffic({NewEl, _C2SState} = Acc) ->
     	       false -> out
     	   end,
     Table = table_name(Host),
-    ets:update_counter(Table, {send, Host, Type2, Dest}, 1),
+    ets:update_counter(Table, {send, tob(Host), Type2, Dest}, 1),
     Acc.
 
 %% Only required for traffic stats
@@ -275,7 +279,7 @@ user_receive_packet_traffic({NewEl, _C2SState} = Acc) ->
 	       false -> out
 	   end,
     Table = table_name(Host),
-    ets:update_counter(Table, {recv, Host, Type2, Dest}, 1),
+    ets:update_counter(Table, {recv, tob(Host), Type2, Dest}, 1),
     Acc.
 
 
@@ -326,7 +330,7 @@ get(_, [{"cpu_util_idle", U}]) -> U;
 get(_, [{"client", Id}, title]) -> atom_to_list(Id);
 get(_, [{"client", Id}, Host]) ->
     Table = table_name(Host),
-    case ets:lookup(Table, {client, Host, Id}) of
+    case ets:lookup(Table, {client, tob(Host), Id}) of
 	[{_, C}] -> C;
 	[] -> 0
     end;
@@ -342,7 +346,7 @@ get(N, ["client", Host]) ->
 
 get(_, [{"os", Id}, title]) -> atom_to_list(Id);
 get(_, [{"os", _Id}, list]) -> lists:usort(list_elem(oss, id));
-get(_, [{"os", Id}, Host]) -> [{_, C}] = ets:lookup(table_name(Host), {os, Host, Id}), C;
+get(_, [{"os", Id}, Host]) -> [{_, C}] = ets:lookup(table_name(Host), {os, tob(Host), Id}), C;
 get(_, ["os", title]) -> "Operating System";
 get(N, ["os", Host]) ->
     lists:map(
@@ -372,15 +376,15 @@ get(_, [{"memsup_free", _}, title]) -> "Memory free (bytes)";
 get(_, [{"memsup_free", M}]) -> proplists:get_value(free_memory, M, -1);
 
 get(_, [{"user_login", _}, title]) -> "Logins (per minute)";
-get(_, [{"user_login", I}, Host]) -> get_stat({user_login, Host}, I);
+get(_, [{"user_login", I}, Host]) -> get_stat({user_login, tob(Host)}, I);
 get(_, [{"user_logout", _}, title]) -> "Logouts (per minute)";
-get(_, [{"user_logout", I}, Host]) -> get_stat({user_logout, Host}, I);
+get(_, [{"user_logout", I}, Host]) -> get_stat({user_logout, tob(Host)}, I);
 get(_, [{"register_user", _}, title]) -> "Accounts registered (per minute)";
-get(_, [{"register_user", I}, Host]) -> get_stat({register_user, Host}, I);
+get(_, [{"register_user", I}, Host]) -> get_stat({register_user, tob(Host)}, I);
 get(_, [{"remove_user", _}, title]) -> "Accounts deleted (per minute)";
-get(_, [{"remove_user", I}, Host]) -> get_stat({remove_user, Host}, I);
+get(_, [{"remove_user", I}, Host]) -> get_stat({remove_user, tob(Host)}, I);
 get(_, [{Table, Type, Dest, _}, title]) -> filename:flatten([Table, Type, Dest]);
-get(_, [{Table, Type, Dest, I}, Host]) -> get_stat({Table, Host, Type, Dest}, I);
+get(_, [{Table, Type, Dest, I}, Host]) -> get_stat({Table, tob(Host), Type, Dest}, I);
 
 get(_, ["user_login", title]) -> "Logins";
 get(_, ["user_login", Host]) -> get_stat({user_login, Host});
@@ -391,7 +395,7 @@ get(_, ["register_user", Host]) -> get_stat({register_user, Host});
 get(_, ["remove_user", title]) -> "Accounts deleted";
 get(_, ["remove_user", Host]) -> get_stat({remove_user, Host});
 get(_, [{Table, Type, Dest}, title]) -> filename:flatten([Table, Type, Dest]);
-get(_, [{Table, Type, Dest}, Host]) -> get_stat({Table, Host, Type, Dest});
+get(_, [{Table, Type, Dest}, Host]) -> get_stat({Table, tob(Host), Type, Dest});
 
 get(_, ["localtime", title]) -> "Local time";
 get(N, ["localtime"]) ->

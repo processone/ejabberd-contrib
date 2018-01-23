@@ -38,7 +38,8 @@ start(_Host, Opts) ->
 			BaseFilename = binary_to_list(gen_mod:get_opt(basefilename, Opts, fun(O) -> O end, "/tmp/ejasta")),
 
 			Hosts_all = ejabberd_config:get_global_option(hosts, fun(O) -> O end),
-			Hosts = gen_mod:get_opt(hosts, Opts, fun(O) -> O end, Hosts_all),
+			Hosts1 = gen_mod:get_opt(hosts, Opts, fun(O) -> O end, Hosts_all),
+			Hosts = [binary_to_list(H) ||  H <- Hosts1],
 
 			register(?PROCNAME, spawn(?MODULE, loop, [I, Hosts, BaseFilename, Type, Split]));
 		_ ->
