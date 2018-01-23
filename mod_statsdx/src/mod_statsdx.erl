@@ -317,11 +317,11 @@ get(_, [{"cpu_util_nice_user", _}, title]) -> "CPU utilization - nice_user";
 get(_, [{"cpu_util_kernel", _}, title]) -> "CPU utilization - kernel";
 get(_, [{"cpu_util_wait", _}, title]) -> "CPU utilization - wait";
 get(_, [{"cpu_util_idle", _}, title]) -> "CPU utilization - idle";
-get(_, [{"cpu_util_user", U}]) -> proplists:get_value(user, element(2, U), -1);
-get(_, [{"cpu_util_nice_user", U}]) -> proplists:get_value(nice_user, element(2, U), -1);
-get(_, [{"cpu_util_kernel", U}]) -> proplists:get_value(kernel, element(2, U), -1);
-get(_, [{"cpu_util_wait", U}]) -> proplists:get_value(wait, element(3, U), -1);
-get(_, [{"cpu_util_idle", U}]) -> proplists:get_value(idle, element(3, U), -1);
+get(_, [{"cpu_util_user", U}]) -> U;
+get(_, [{"cpu_util_nice_user", U}]) -> U;
+get(_, [{"cpu_util_kernel", U}]) -> U;
+get(_, [{"cpu_util_wait", U}]) -> U;
+get(_, [{"cpu_util_idle", U}]) -> U;
 
 get(_, [{"client", Id}, title]) -> atom_to_list(Id);
 get(_, [{"client", Id}, Host]) ->
