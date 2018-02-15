@@ -120,7 +120,7 @@ get_option_access(Host) ->
 
 %% This function crashes if the stanza does not satisfy configured restrictions
 check_stanza(Pkt, Host) ->
-    To = Pkt#message.to,
+    To = xmpp:get_to(Pkt),
     check_member_option(Host, jlib:jid_to_string(To), allowed_destinations),
     %%+++ {xmlel, StanzaType, _Attrs, _Kids} = Stanza,
     %%+++ check_member_option(Host, StanzaType, allowed_stanza_types),
@@ -145,7 +145,7 @@ ip_matches(ClientIp, AllowedValues) ->
 	  AllowedValues).
 
 post_request(Pkt) ->
-    mod_mam:user_send_packet({Pkt, #{jid => Pkt#message.from}}),
+    mod_mam:user_send_packet({Pkt, #{jid => xmpp:get_from(Pkt)}}),
     case ejabberd_router:route(Pkt) of
 	ok -> {200, [], <<"Ok">>};
         _ -> {500, [], <<"Error">>}
