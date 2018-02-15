@@ -40,7 +40,7 @@ listen:
     module: ejabberd_http
     [...]
     request_handlers:
-      "presence": mod_webpresence
+      "/presence": mod_webpresence
 
 modules:
   mod_webpresence:
@@ -122,7 +122,7 @@ listen:
     port: 5280
     module: ejabberd_http
     request_handlers:
-      "presence": mod_webpresence
+      "/presence": mod_webpresence
 
 modules:
   mod_webpresence:
@@ -137,7 +137,7 @@ listen:
     port: 80
     module: ejabberd_http
     request_handlers:
-      "status": mod_webpresence
+      "/status": mod_webpresence
 
 modules:
   mod_webpresence:

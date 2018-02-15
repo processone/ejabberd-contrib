@@ -3,7 +3,7 @@ listen:
     port: 5284
     module: ejabberd_http
     request_handlers:
-      "presence": mod_webpresence
+      "/presence": mod_webpresence
 
 modules:
   mod_webpresence:
