@@ -164,16 +164,18 @@ maybe_reject(El, {#iq{type = Type, lang = Lang} = IQ,
     end.
 
 -spec find_omemo_nodes(ps_publish() | ps_items()) -> [binary()].
-find_omemo_nodes(#ps_items{node = Node, items = [Item]}) ->
-    find_omemo_nodes(Node, Item);
-find_omemo_nodes(#ps_publish{node = Node, items = [Item]}) ->
-    find_omemo_nodes(Node, Item);
+find_omemo_nodes(#ps_items{node = Node, items = Items}) ->
+    find_omemo_nodes(Node, Items);
+find_omemo_nodes(#ps_publish{node = Node, items = Items}) ->
+    find_omemo_nodes(Node, Items);
 find_omemo_nodes(_) ->
     [].
 
--spec find_omemo_nodes(binary(), ps_item()) -> [binary()].
-find_omemo_nodes(<<?DEVICELIST_NODE>> = Node, Item) ->
+-spec find_omemo_nodes(binary(), ps_items()) -> [binary()].
+find_omemo_nodes(<<?DEVICELIST_NODE>> = Node, [Item]) ->
     [Node | find_bundle_nodes(Item)];
+find_omemo_nodes(<<?DEVICELIST_NODE>> = Node, []) ->
+    [Node];
 find_omemo_nodes(_Node, _Item) ->
     [].
 
