@@ -153,7 +153,7 @@ maybe_reject(El, {#iq{type = Type, lang = Lang} = IQ,
 		Nodes ->
 		    ?DEBUG("Rejecting IQ ~s of ~s", [Type, jid:encode(JID)]),
 		    case Type of
-			set -> delete_nodes(IQ, Nodes);
+			set -> delete_nodes(JID, Nodes);
 			get -> ok
 		    end,
 		    Txt = <<"OMEMO is disabled">>,
