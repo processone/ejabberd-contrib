@@ -40,7 +40,8 @@
 -define(DEVICELIST_NODE, ?NS_AXOLOTL ".devicelist").
 
 -type c2s_state() :: ejabberd_c2s:state().
--type hook_result() :: {stanza(), c2s_state()} | {stop, {drop, c2s_state()}}.
+-type hook_result() :: {stanza() | drop, c2s_state()} |
+		       {stop, {drop, c2s_state()}}.
 
 %%--------------------------------------------------------------------
 %% gen_mod callbacks.
