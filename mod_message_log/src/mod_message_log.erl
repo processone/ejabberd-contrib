@@ -166,9 +166,10 @@ log_packet_receive({#message{} = Msg, _C2SState} = Acc) ->
 log_packet_receive({_Stanza, _C2SState} = Acc) ->
     Acc.
 
--spec log_packet_offline(message()) -> any().
-log_packet_offline(Msg) ->
-    log_packet(offline, Msg).
+-spec log_packet_offline({any(), message()}) -> {any(), message()}.
+log_packet_offline({_Action, Msg} = Acc) ->
+    log_packet(offline, Msg),
+    Acc.
 
 -spec reopen_log() -> any().
 reopen_log() ->
