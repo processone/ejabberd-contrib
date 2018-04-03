@@ -52,7 +52,6 @@
 
 -include("xmpp.hrl").
 
--define(PROCNAME, ?MODULE).
 -define(DEFAULT_FILENAME, <<"message.log">>).
 -define(FILE_MODES, [append, raw]).
 
@@ -75,7 +74,7 @@ start(Host, Opts) ->
 		       log_packet_receive, 42),
     ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
 		       log_packet_offline, 42),
-    case gen_mod:start_child(?MODULE, Host, Opts) of
+    case gen_mod:start_child(?MODULE, global, Opts) of
 	{ok, Ref} ->
 	    {ok, Ref};
 	{error, {already_started, Ref}} ->
@@ -92,7 +91,7 @@ stop(Host) ->
 			  log_packet_receive, 42),
     ejabberd_hooks:delete(offline_message_hook, Host, ?MODULE,
 			  log_packet_offline, 42),
-    gen_mod:stop_child(?MODULE, Host),
+    gen_mod:stop_child(?MODULE, global),
     ok.
 
 -spec mod_opt_type(atom()) -> fun((term()) -> term()).
@@ -173,7 +172,8 @@ log_packet_offline({_Action, Msg} = Acc) ->
 
 -spec reopen_log() -> any().
 reopen_log() ->
-    gen_server:cast(?PROCNAME, reopen_log).
+    Proc = gen_mod:get_module_proc(global, ?MODULE),
+    gen_server:cast(Proc, reopen_log).
 
 %% -------------------------------------------------------------------
 %% Internal functions.
@@ -188,7 +188,8 @@ log_packet(Direction, #message{from = From, to = To, type = Type} = Msg) ->
 				      false ->
 					  {Type, Direction}
 				  end,
-	    gen_server:cast(?PROCNAME, {message, Direction1, From, To, Type1});
+	    Proc = gen_mod:get_module_proc(global, ?MODULE),
+	    gen_server:cast(Proc, {message, Direction1, From, To, Type1});
 	false ->
 	    ok
     end.
