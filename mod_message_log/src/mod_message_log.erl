@@ -113,8 +113,7 @@ depends(_Host, _Opts) ->
 init(Opts) ->
     process_flag(trap_exit, true),
     ejabberd_hooks:add(reopen_log_hook, ?MODULE, reopen_log, 42),
-    Filename = gen_mod:get_opt(filename, Opts, fun iolist_to_binary/1,
-			       ?DEFAULT_FILENAME),
+    Filename = gen_mod:get_opt(filename, Opts),
     {ok, IoDevice} = file:open(Filename, ?FILE_MODES),
     {ok, #state{filename = Filename, iodevice = IoDevice}}.
 
