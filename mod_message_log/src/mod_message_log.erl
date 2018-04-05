@@ -109,8 +109,8 @@ depends(_Host, _Opts) ->
 %% -------------------------------------------------------------------
 %% gen_server callbacks.
 %% -------------------------------------------------------------------
--spec init(gen_mod:opts()) -> {ok, state()}.
-init(Opts) ->
+-spec init(list()) -> {ok, state()}.
+init([_Host, Opts]) ->
     process_flag(trap_exit, true),
     ejabberd_hooks:add(reopen_log_hook, ?MODULE, reopen_log, 42),
     Filename = gen_mod:get_opt(filename, Opts),
