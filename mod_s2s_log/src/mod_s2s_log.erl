@@ -32,7 +32,8 @@
          init/1,
 	 stop/1,
 	 depends/2,
-	 mod_opt_type/1]).
+	 mod_opt_type/1,
+	 mod_options/1]).
 %% Hooks:
 -export([reopen_log/0,
 	 s2s_out_auth/2,
@@ -114,9 +115,10 @@ depends(_, _) ->
     [].
 
 mod_opt_type(filename) ->
-    fun iolist_to_binary/1;
-mod_opt_type(_) ->
-    [filename].
+    fun iolist_to_binary/1.
+
+mod_options(_Host) ->
+    [{filename, ?DEFAULT_FILENAME}].
 
 %% ---
 %% Internal functions
