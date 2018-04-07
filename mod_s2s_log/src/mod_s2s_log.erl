@@ -3,8 +3,6 @@
 %%% Author  : Mickael Remond <mremond@process-one.net>
 %%% Purpose : Log all s2s connections in a file
 %%% Created :  14 Mar 2008 by Mickael Remond <mremond@process-one.net>
-%%% Usage   : Add the following line in modules section of ejabberd.cfg:
-%%%              {mod_s2s_log, [{filename, "/path/to/s2s.log"}]}
 %%%
 %%%
 %%% ejabberd, Copyright (C) 2002-2008   ProcessOne
@@ -18,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License along
 %%% with this program; if not, write to the Free Software Foundation, Inc.,
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
@@ -26,8 +24,6 @@
 %%%----------------------------------------------------------------------
 -module(mod_s2s_log).
 -author('mremond@process-one.net').
-
-%% TODO: Support reopen log event
 
 -behaviour(gen_mod).
 
