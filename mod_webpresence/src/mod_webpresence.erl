@@ -12,51 +12,48 @@
 -behaviour(gen_mod).
 
 %% API
--export([start_link/2,
-         start/2,
+-export([start/2,
          stop/1,
          remove_user/2,
          web_menu_host/3, web_page_host/3,
+         process_disco_info/1,
+         process_disco_items/1,
+         process_vcard/1,
+         process_register/1,
          process/2
         ]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
+	 terminate/2, code_change/3,
+	 mod_opt_type/1, mod_options/1, depends/2]).
+
+%% API
+-export([start_link/0]).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_web_admin.hrl").
 -include("ejabberd_http.hrl").
 
--record(webpresence, {us, ridurl = false, jidurl = false, xml = false, avatar = false, js = false, text = false, icon = "---"}).
+-record(webpresence, {us, ridurl = false, jidurl = false, xml = false, avatar = false, js = false, text = false, icon = "jsf-text"}).
 -record(state, {host, server_host, base_url, access}).
--record(presence, {resource, show, priority, status}).
+-record(presence2, {resource, show, priority, status}).
 
 %% Copied from ejabberd_sm.erl
 -record(session, {sid, usr, us, priority, info}).
 
--define(PROCNAME, ejabberd_mod_webpresence).
 -define(PIXMAPS_DIR, <<"pixmaps">>).
 -define(AUTO_ACL, webpresence_auto).
-
 
 %%====================================================================
 %% API
 %%====================================================================
-%%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
-%%--------------------------------------------------------------------
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-	 temporary, 1000, worker, [?MODULE]},
     Default_dir = case code:priv_dir(ejabberd) of
 		      {error, _} -> ?PIXMAPS_DIR;
 		      Path -> filename:join([Path, ?PIXMAPS_DIR])
@@ -64,13 +61,42 @@ start(Host, Opts) ->
     Dir = gen_mod:get_opt(pixmaps_path, Opts, fun(D) -> D end, Default_dir),
     catch ets:new(pixmaps_dirs, [named_table, public]),
     ets:insert(pixmaps_dirs, {directory, Dir}),
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    case gen_mod:start_child(?MODULE, Host, Opts) of
+       {ok, Ref} ->
+           {ok, Ref};
+       {error, {already_started, Ref}} ->
+           {ok, Ref};
+       {error, Reason} ->
+           {error, Reason}
+    end.
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
     gen_server:call(Proc, stop),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    gen_mod:stop_child(?MODULE, Host),
+    ok.
+
+-spec mod_opt_type(atom()) -> fun((term()) -> term()).
+mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(access) -> fun acl:access_rules_validator/1;
+mod_opt_type(pixmaps_path) -> fun iolist_to_binary/1;
+mod_opt_type(port) ->
+    fun(I) when is_integer(I), I>0, I<65536 -> I end;
+mod_opt_type(path) -> fun iolist_to_binary/1;
+mod_opt_type(baseurl) -> fun iolist_to_binary/1.
+
+-spec mod_options(binary()) -> [{atom(), any()}].
+mod_options(Host) ->
+    [{host, <<"webpresence.@HOST@">>},
+     {access, none},
+     {pixmaps_path, ?PIXMAPS_DIR},
+     {port, 5280},
+     {path, <<"presence">>},
+     {baseurl, iolist_to_binary(io_lib:format(<<"http://~s:5280/presence/">>, [Host]))}].
+
+-spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
+depends(_Host, _Opts) ->
+    [].
 
 %%====================================================================
 %% gen_server callbacks
@@ -96,7 +122,8 @@ init([Host, Opts]) ->
     BaseURL1 = gen_mod:get_opt(baseurl, Opts, fun(O) -> O end,
                                iolist_to_binary(io_lib:format(<<"http://~s:~p/~s/">>, [Host, Port, Path]))),
     BaseURL2 = ejabberd_regexp:greplace(BaseURL1, <<"@HOST@">>, Host),
-    ejabberd_router:register_route(MyHost),
+    register_iq_handlers(MyHost),
+    ejabberd_router:register_route(MyHost, Host),
     ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 50),
     ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, web_page_host, 50),
@@ -104,6 +131,22 @@ init([Host, Opts]) ->
 		server_host = Host,
 		base_url = BaseURL2,
 		access = Access}}.
+
+register_iq_handlers(Host) ->
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_REGISTER,
+                                  ?MODULE, process_register),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
+                                  ?MODULE, process_vcard),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
+                                  ?MODULE, process_disco_info),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
+                                  ?MODULE, process_disco_items).
+
+unregister_iq_handlers(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_REGISTER),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS).
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -132,26 +175,19 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({route, From, To, Packet},
+handle_info({route, Packet},
 	    #state{host = Host,
 		   server_host = ServerHost,
 		   base_url = BaseURL,
 		   access = Access} = State) ->
+    From = xmpp:get_from(Packet),
+    To = xmpp:get_to(Packet),
     case catch do_route(Host, ServerHost, Access, From, To, Packet, BaseURL) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
 	    ok
     end,
-    {noreply, State};
-
-
-handle_info({tell_baseurl, Pid},
-	    #state{base_url = BaseURL} = State) ->
-    Pid ! {baseurl_is, BaseURL},
-    {noreply, State};
-
-handle_info(_Info, State) ->
     {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -163,6 +199,7 @@ handle_info(_Info, State) ->
 %%--------------------------------------------------------------------
 terminate(_Reason, #state{host = Host}) ->
     ejabberd_router:unregister_route(Host),
+    unregister_iq_handlers(Host),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:delete(webadmin_page_host, Host, ?MODULE, web_page_host, 50),
@@ -183,100 +220,86 @@ do_route(Host, ServerHost, Access, From, To, Packet, BaseURL) ->
 	allow ->
 	    do_route1(Host, From, To, Packet, BaseURL);
 	_ ->
-	    #xmlel{attrs = Attrs} = Packet,
-            Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
+            Lang = xmpp:get_lang(Packet),
 	    ErrText = <<"Access denied by service policy">>,
-	    Err = jlib:make_error_reply(Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
-	    ejabberd_router:route(To, From, Err)
+	    Err = xmpp:err_forbidden(ErrText, Lang),
+	    ejabberd_router:route_error(Packet, Err)
     end.
 
-do_route1(Host, From, To, Packet, BaseURL) ->
-    #xmlel{name = Name, attrs = Attrs} = Packet,
-    case Name of
-        <<"iq">> -> do_route1_iq(Host, From, To, Packet, BaseURL, jlib:iq_query_info(Packet));
-        _ -> case fxml:get_attr_s(<<"type">>, Attrs) of
-		 <<"error">> -> ok;
-		 <<"result">> -> ok;
-		 _ -> Err = jlib:make_error_reply(Packet, ?ERR_ITEM_NOT_FOUND),
-		      ejabberd_router:route(To, From, Err)
-	     end
+-spec process_vcard(iq()) -> iq().
+process_vcard(#iq{type = get, lang = Lang, sub_els = [#vcard_temp{}]} = IQ) ->
+    Desc = translate:translate(Lang, <<"ejabberd Web Presence module">>),
+    xmpp:make_iq_result(
+      IQ, #vcard_temp{fn = <<"ejabberd/mod_webpresence">>,
+                      url = ?EJABBERD_URI,
+                      desc = <<Desc/binary, $\n, ?COPYRIGHT>>});
+process_vcard(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_vcard(#iq{lang = Lang} = IQ) ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
+
+do_route1(_Host, _From, _To, #iq{} = IQ, _BaseURL) ->
+    ejabberd_local:process_iq(IQ);
+do_route1(_Host, _From, _To, Packet, _BaseURL) ->
+    case xmpp:get_type(Packet) of
+	error -> ok;
+	result -> ok;
+	_ ->
+	    Err = xmpp:err_item_not_found(),
+	    ejabberd_router:route_error(Packet, Err)
     end.
 
-do_route1_iq(_, From, To, _, _,
-	     #iq{type = get, xmlns = ?NS_DISCO_INFO, lang = Lang} = IQ) ->
-    SubEl = #xmlel{
-                name = <<"query">>,
-                attrs = [{<<"xmlns">>, ?NS_DISCO_INFO}],
-                children = iq_disco_info(Lang)
-               },
-    Res = IQ#iq{type = result, sub_el = [SubEl]},
-    ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
+-spec process_register(iq()) -> iq().
+process_register(#iq{type = get, from = From, to = To, lang = Lang,
+                     sub_els = [#register{}]} = IQ) ->
+    Host = To#jid.lserver,
+    ServerHost = ejabberd_router:host_of_route(Host),
+    xmpp:make_iq_result(IQ, iq_get_register_info(Host, From, Lang));
+process_register(#iq{type = set, from = From, to = To,
+                     lang = Lang, sub_els = [El = #register{}]} = IQ) ->
+    Host = To#jid.lserver,
+    ServerHost = ejabberd_router:host_of_route(Host),
+    case process_iq_register_set(ServerHost, Host, From, El, Lang) of
+        {result, Result} ->
+            xmpp:make_iq_result(IQ, Result);
+        {error, Err} ->
+            xmpp:make_error(IQ, Err)
+    end.
 
-do_route1_iq(_, _, _, _, _,
-	     #iq{type = get, xmlns = ?NS_DISCO_ITEMS}) ->
-    ok;
 
-do_route1_iq(Host, From, To, _, _,
-	     #iq{type = get, xmlns = ?NS_REGISTER, lang = Lang} = IQ) ->
-    SubEl = #xmlel{
-               name = <<"query">>,
-               attrs = [{<<"xmlns">>, ?NS_DISCO_INFO}],
-               children = iq_get_register_info(Host, From, Lang)
-              },
-    Res = IQ#iq{type = result, sub_el = [SubEl]},
-    ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
+-spec process_disco_info(iq()) -> iq().
+process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_disco_info(#iq{type = get, lang = Lang,
+                       sub_els = [#disco_info{node = <<"">>}]} = IQ) ->
+    Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
+                ?NS_REGISTER, ?NS_VCARD],
+    Identity = #identity{category = <<"component">>,
+                         type = <<"presence">>,
+                         name = translate:translate(Lang, <<"Web Presence">>)},
+    xmpp:make_iq_result(
+      IQ, #disco_info{features = Features,
+                      identities = [Identity]});
+process_disco_info(#iq{type = get, lang = Lang,
+                       sub_els = [#disco_info{}]} = IQ) ->
+    xmpp:make_error(IQ, xmpp:err_item_not_found(<<"Node not found">>, Lang));
+process_disco_info(#iq{lang = Lang} = IQ) ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
-do_route1_iq(Host, From, To, Packet, BaseURL,
-	     #iq{type = set, xmlns = ?NS_REGISTER, lang = Lang, sub_el = SubEl} = IQ) ->
-    case process_iq_register_set(From, SubEl, Host, BaseURL, Lang) of
-	{result, IQRes} ->
-            SubEl2 = #xmlel{
-                        name = <<"query">>,
-                        attrs = [{<<"xmlns">>, ?NS_REGISTER}],
-                        children = IQRes
-                       },
-	    Res = IQ#iq{type = result, sub_el = [SubEl2]},
-	    ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
-	{error, Error} ->
-	    Err = jlib:make_error_reply(Packet, Error),
-	    ejabberd_router:route(To, From, Err)
-    end;
-
-do_route1_iq(_Host, From, To, _, _,
-	     #iq{type = get, xmlns = ?NS_VCARD = XMLNS} = IQ) ->
-    SubEl = #xmlel{
-               name = <<"vCard">>,
-               attrs = [{<<"xmlns">>, XMLNS}],
-               children = iq_get_vcard()
-              },
-    Res = IQ#iq{type = result, sub_el = [SubEl]},
-    ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
-
-do_route1_iq(_Host, From, To, Packet, _, #iq{}) ->
-    Err = jlib:make_error_reply(Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
-    ejabberd_router:route(To, From, Err);
-
-do_route1_iq(_, _, _, _, _, _) ->
-    ok.
-
-iq_disco_info(Lang) ->
-    [#xmlel{
-       name = <<"identity">>,
-       attrs = [{<<"category">>, <<"component">>},
-                {<<"type">>, <<"presence">>},
-                {<<"name">>, ?T(<<"Web Presence">>)}],
-       children = []
-      },
-     #xmlel{
-        name = <<"feature">>,
-        attrs = [{<<"var">>, ?NS_REGISTER}],
-        children = []
-       },
-     #xmlel{
-        name = <<"feature">>,
-        attrs = [{<<"var">>, ?NS_VCARD}],
-        children = []
-       }].
+-spec process_disco_items(iq()) -> iq().
+process_disco_items(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_disco_items(#iq{type = get,
+                        sub_els = [#disco_items{}]} = IQ) ->
+    xmpp:make_iq_result(IQ, #disco_items{});
+process_disco_items(#iq{lang = Lang} = IQ) ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -define(XFIELDS(Type, Label, Var, Vals),
         #xmlel{
@@ -319,124 +342,94 @@ iq_disco_info(Lang) ->
 ridurl_out(false) -> <<"false">>;
 ridurl_out(Id) when is_binary(Id) -> <<"true">>.
 
-to_bool(<<"false">>) -> false;
-to_bool(<<"true">>) -> true;
-to_bool(<<"0">>) -> false;
-to_bool(<<"1">>) -> true.
-
 get_pr(LUS) ->
     case catch mnesia:dirty_read(webpresence, LUS) of
-	[#webpresence{jidurl = J, ridurl = H, xml = X, avatar = A, js = S, text = T, icon = I}] ->
-	    {J, H, X, A, S, T, I, true};
-	_ ->
-	    {true, false, false, false, false, false, <<"---">>, false}
+       [#webpresence{jidurl = J, ridurl = H, xml = X, avatar = A, js = S, text = T, icon = I}] ->
+           {J, H, X, A, S, T, I, true};
+       _ ->
+           {true, false, false, false, false, false, <<"">>, false}
     end.
 
-get_pr_rid(LUS) ->
-    {_, H, _, _, _, _, _, _} = get_pr(LUS),
-    H.
 
-iq_get_register_info(_Host, From, Lang) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
-    LUS = {LUser, LServer},
-    {JidUrl, RidUrl, XML, Avatar, JS, Text, Icon, Registered} = get_pr(LUS),
-    RegisteredXML = case Registered of
-			true -> [#xmlel{name = <<"registered">>, attrs = [], children = []}];
-			false -> []
-		    end,
-    RegisteredXML ++
-        [
-         #xmlel{
-            name = <<"instructions">>,
-            attrs = [],
-            children = [{xmlcdata, ?T(<<"You need an x:data capable client to register presence">>)}]
-           },
-         #xmlel{
-            name = <<"x">>,
-            attrs = [{<<"xmlns">>, ?NS_XDATA}],
-            children = [
-                        #xmlel{
-                           name = <<"title">>,
-                           attrs = [],
-                           children = [{xmlcdata, ?T(<<"Web Presence">>)}]
-                          },
-                        #xmlel{
-                           name = <<"instructions">>,
-                           attrs = [],
-                           children = [{xmlcdata, ?T(<<"What features do you want to enable?">>)}]
-                          },
-                        ?XFIELDFIXED(?BC([?T(<<"URL Type">>), <<". ">>, ?T(<<"Select one at least">>)])),
-                        ?XFIELD(<<"boolean">>, <<"Jabber ID">>, <<"jidurl">>, ?ATOM2BINARY(JidUrl)),
-                        ?XFIELD(<<"boolean">>, <<"Random ID">>, <<"ridurl">>, ridurl_out(RidUrl)),
-                        ?XFIELDFIXED(?BC([?T(<<"Output Type">>), <<". ">>, ?T(<<"Select one at least">>)])),
-                        ?XFIELDS(<<"list-single">>, ?T(<<"Icon Theme">>), <<"icon">>,
-                                 [
-                                  #xmlel{
-                                     name = <<"value">>,
-                                     attrs = [],
-                                     children = [{xmlcdata, Icon}]
-                                    },
-                                  #xmlel{
-                                     name = <<"option">>,
-                                     attrs = [{<<"label">>, <<"---">>}],
-                                     children = [
-                                                 #xmlel{
-                                                    name = <<"value">>,
-                                                    attrs = [],
-                                                    children = [{xmlcdata, <<"---">>}]
-                                                   }
-                                                ]
-                                    }
-                                ] ++ available_themes(xdata)
-                                ),
-                        ?XFIELD(<<"boolean">>, <<"XML">>, <<"xml">>, ?ATOM2BINARY(XML)),
-                        ?XFIELD(<<"boolean">>, <<"JavaScript">>, <<"js">>, ?ATOM2BINARY(JS)),
-                        ?XFIELD(<<"boolean">>, <<"Text">>, <<"text">>, ?ATOM2BINARY(Text)),
-                        ?XFIELD(<<"boolean">>, <<"Avatar">>, <<"avatar">>, ?ATOM2BINARY(Avatar))
-                       ]
-           }
-        ].
+iq_get_register_info(Host, From, Lang) ->
+    LUS = {From#jid.luser, From#jid.lserver},
+    {_JidUrl, _RidUrl, _XML, _Avatar, _JS, _Text, Icon, Registered} = get_pr(LUS),
+    Nick = Icon,
+    Title = <<(translate:translate(
+                 Lang, <<"Web Presence Registration at ">>))/binary, Host/binary>>,
+    Inst = translate:translate(Lang, <<"Enter iconset you want to use by default">>),
+    Fields = muc_register:encode([{roomnick, Nick}], Lang),
+    X = #xdata{type = form, title = Title,
+               instructions = [Inst], fields = Fields},
+    #register{nick = Nick,
+              registered = Registered,
+              instructions =
+                  translate:translate(
+                    Lang, <<"You need a client that supports x:data "
+                            "to register to Web Presence">>),
+              xdata = X}.
 
-%%%% TODO: Check if remote users are allowed to reach here: they should not be allowed
-iq_set_register_info(From, {Host, JidUrl, RidUrl, XML, Avatar, JS, Text, Icon, _, Lang} = Opts) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
-    LUS = {LUser, LServer},
-    Check_URLTypes = (JidUrl == true) or (RidUrl =/= false),
-    Check_OutputTypes = (XML == true) or (Avatar == true) or (JS == true) or (Text == true) or (Icon =/= <<"---">>),
-    case Check_URLTypes and Check_OutputTypes of
-	true -> iq_set_register_info2(From, LUS, Opts);
-	false -> unregister_webpresence(From, Host, Lang)
+process_iq_register_set(ServerHost, Host, From,
+                        #register{remove = true}, Lang) ->
+    unregister_webpresence(From, Host, Lang);
+process_iq_register_set(_ServerHost, _Host, _From,
+                        #register{xdata = #xdata{type = cancel}}, _Lang) ->
+    {result, undefined};
+process_iq_register_set(ServerHost, Host, From,
+                        #register{nick = Nick, xdata = XData}, Lang) ->
+    case XData of
+        #xdata{type = submit, fields = Fs} ->
+            try
+                Options = muc_register:decode(Fs),
+                N = proplists:get_value(roomnick, Options),
+                iq_set_register_info(ServerHost, Host, From, N, Lang)
+            catch _:{muc_register, Why} ->
+                    ErrText = muc_register:format_error(Why),
+                    {error, xmpp:err_bad_request(ErrText, Lang)}
+            end;
+        #xdata{} ->
+            Txt = <<"Incorrect data form">>,
+            {error, xmpp:err_bad_request(Txt, Lang)};
+        _ when is_binary(Nick), Nick /= <<"">> ->
+            iq_set_register_info(ServerHost, Host, From, Nick, Lang);
+        _ ->
+            ErrText = <<"You must fill in field \"Nickname\" in the form">>,
+            {error, xmpp:err_not_acceptable(ErrText, Lang)}
     end.
 
-iq_set_register_info2(From, LUS, {Host, JidUrl, RidUrl, XML, Avatar, JS, Text, Icon, BaseURL, Lang}) ->
-    RidUrl2 = get_rid_final_value(RidUrl, LUS),
+iq_set_register_info(ServerHost, Host, From, Nick,
+                     Lang) ->
+    case iq_set_register_info2(ServerHost, Host, From, Nick, Lang) of
+      {atomic, ok} -> {result, undefined};
+      {atomic, false} ->
+          ErrText = <<"That nickname is registered by another "
+                      "person">>,
+          {error, xmpp:err_conflict(ErrText, Lang)};
+      _ ->
+          Txt = <<"Database failure">>,
+          {error, xmpp:err_internal_server_error(Txt, Lang)}
+    end.
+
+iq_set_register_info2(ServerHost, Host, From, Icon, Lang) ->
+    LServer = jid:nameprep(ServerHost),
+    %% RidUrl2 = get_rid_final_value(RidUrl, LUS),
+    LUS = {From#jid.luser, From#jid.lserver},
     WP = #webpresence{us = LUS,
-		      jidurl = JidUrl,
-		      ridurl = RidUrl2,
-		      xml = XML,
-		      avatar = Avatar,
-		      js = JS,
-		      text = Text,
+		      jidurl = true,
+		      ridurl = false,
+		      xml = true,
+		      avatar = false,
+		      js = true,
+		      text = true,
 		      icon = Icon},
     F = fun() -> mnesia:write(WP) end,
     case mnesia:transaction(F) of
 	{atomic, ok} ->
+	    BaseURL = get_baseurl(ServerHost),
 	    send_message_registered(WP, From, Host, BaseURL, Lang),
-	    {result, []};
+	    {atomic, ok};
 	_ ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR}
-    end.
-
-get_rid_final_value(false, _) -> false;
-get_rid_final_value(true, {U, S} = LUS) ->
-    case get_pr_rid(LUS) of
-	false ->
-	    iolist_to_binary(integer_to_list(erlang:phash2(U) * erlang:phash2(S)
-			    * calendar:datetime_to_gregorian_seconds(
-				calendar:local_time()))
-		++ randoms:get_string());
-	H when is_binary(H) ->
-	    H
+	    {error, xmpp:err_internal_server_error()}
     end.
 
 send_message_registered(WP, To, Host, BaseURL, Lang) ->
@@ -536,73 +529,13 @@ send_headline(Host, To, Subject, Body) ->
                     ]
         }).
 
-get_attr(Attr, XData, Default) ->
-    case lists:keysearch(Attr, 1, XData) of
-	{value, {_, [Value]}} -> Value;
-	false -> Default
-    end.
-
-process_iq_register_set(From, SubEl, Host, BaseURL, Lang) ->
-    #xmlel{name = _, attrs = _, children = Els} = SubEl,
-    case fxml:get_subtag(SubEl, <<"remove">>) of
-	false -> case catch process_iq_register_set2(From, Els, Host, BaseURL, Lang) of
-		     {'EXIT', _} -> {error, ?ERR_BAD_REQUEST};
-		     R -> R
-		 end;
-	_ -> unregister_webpresence(From, Host, Lang)
-    end.
-
-process_iq_register_set2(From, Els, Host, BaseURL, Lang) ->
-    [
-     #xmlel{
-        name = <<"x">>,
-        attrs = _Attrs1,
-        children = _Els1
-       } = XEl
-    ] = fxml:remove_cdata(Els),
-    case {fxml:get_tag_attr_s(<<"xmlns">>, XEl), fxml:get_tag_attr_s(<<"type">>, XEl)} of
-	{?NS_XDATA, <<"cancel">>} ->
-	    {result, []};
-	{?NS_XDATA, <<"submit">>} ->
-	    XData = jlib:parse_xdata_submit(XEl),
-	    false = (invalid == XData),
-	    JidUrl = get_attr(<<"jidurl">>, XData, <<"false">>),
-	    RidUrl = get_attr(<<"ridurl">>, XData, <<"false">>),
-	    XML = get_attr(<<"xml">>, XData, <<"false">>),
-	    Avatar = get_attr(<<"avatar">>, XData, <<"false">>),
-	    JS = get_attr(<<"js">>, XData, <<"false">>),
-	    Text = get_attr(<<"text">>, XData, <<"false">>),
-	    Icon = get_attr(<<"icon">>, XData, <<"---">>),
-	    iq_set_register_info(From, {Host, to_bool(JidUrl), to_bool(RidUrl), to_bool(XML), to_bool(Avatar), to_bool(JS), to_bool(Text), Icon, BaseURL, Lang})
-    end.
-
 unregister_webpresence(From, Host, Lang) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
-    remove_user(LUser, LServer),
+    remove_user(From#jid.luser, From#jid.lserver),
     send_message_unregistered(From, Host, Lang),
-    {result, []}.
+    {result, undefined}.
 
 remove_user(User, Server) ->
     mnesia:dirty_delete(webpresence, {User, Server}).
-
-iq_get_vcard() ->
-    [
-     #xmlel{
-        name = <<"FN">>,
-        attrs = [],
-        children = [{xmlcdata, <<"ejabberd/mod_webpresence">>}]
-       },
-     #xmlel{
-        name = <<"URL">>,
-        attrs = [],
-        children = [{xmlcdata, <<"http://www.ejabberd.im/mod_webpresence">>}]
-       },
-     #xmlel{
-        name = <<"DESC">>,
-        attrs = [],
-        children = [{xmlcdata, <<"ejabberd web presence module\nCopyright (c) 2006-2007 Igor Goryachev, 2007 Badlop, 2014 runcom <antonio.murdaca@gmail.com>">>}]
-       }
-    ].
 
 get_wp(LUser, LServer) ->
     LUS = {LUser, LServer},
@@ -625,10 +558,10 @@ try_auto_webpresence(LUser, LServer) ->
 			 ridurl = false,
 			 jidurl = true,
 			 xml = true,
-			 avatar = true,
+			 avatar = false,
 			 js = true,
 			 text = true,
-			 icon = <<"jsf-jabber-text">>}
+			 icon = "jsf-jabber-text"}
    end.
 
 get_status_weight(Show) ->
@@ -641,12 +574,12 @@ get_status_weight(Show) ->
         _                 -> 9
     end.
 
-session_to_presence(#session{sid = {_, Pid}, priority = Priority}) ->
-    {_User, Resource, Show, Status} = ejabberd_c2s:get_presence(Pid),
-    #presence{resource = Resource,
-              show = Show,
-              priority = Priority,
-              status = Status}.
+session_to_presence(#session{sid = {_, Pid}}) ->
+    P = ejabberd_c2s:get_presence(Pid),
+    #presence2{resource = (P#presence.from)#jid.resource,
+              show = misc:atom_to_binary(P#presence.show),
+              priority = P#presence.priority,
+              status = xmpp:get_text(P#presence.status)}.
 
 get_presences({bare, LUser, LServer}) ->
     [session_to_presence(Session) ||
@@ -656,12 +589,12 @@ get_presences({sorted, LUser, LServer}) ->
     lists:sort(
       fun(A, B) ->
               if
-                  A#presence.priority == B#presence.priority ->
-                      WA = get_status_weight(A#presence.show),
-                      WB = get_status_weight(B#presence.show),
+                  A#presence2.priority == B#presence2.priority ->
+                      WA = get_status_weight(A#presence2.show),
+                      WB = get_status_weight(B#presence2.show),
                       WA < WB;
                   true ->
-                      A#presence.priority > B#presence.priority
+                      A#presence2.priority > B#presence2.priority
               end
       end,
       get_presences({bare, LUser, LServer}));
@@ -678,11 +611,11 @@ get_presences({xml, LUser, LServer, Show_us}) ->
                             #xmlel{
                                name = <<"resource">>,
                                attrs = [
-                                        {<<"name">>, Presence#presence.resource},
-                                        {<<"show">>, Presence#presence.show},
-                                        {<<"priority">>, iolist_to_binary(integer_to_list(Presence#presence.priority))}
+                                        {<<"name">>, Presence#presence2.resource},
+                                        {<<"show">>, Presence#presence2.show},
+                                        {<<"priority">>, iolist_to_binary(integer_to_list(Presence#presence2.priority))}
                                        ],
-                               children = [{xmlcdata, Presence#presence.status}]
+                               children = [{xmlcdata, Presence#presence2.status}]
                               }
                     end,
                     get_presences({sorted, LUser, LServer})
@@ -694,13 +627,13 @@ get_presences({status, LUser, LServer, LResource}) ->
 	[] -> <<"unavailable">>;
 	Rs ->
 	    {value, R} = lists:keysearch(LResource, 2, Rs),
-	    R#presence.show %% TODO why was this "status"?!
+	    R#presence2.status
     end;
 
 get_presences({status, LUser, LServer}) ->
     case get_presences({sorted, LUser, LServer}) of
         [Highest | _Rest] ->
-            Highest#presence.show; %% TODO why was this "status"?!
+            Highest#presence2.status;
         _ ->
             <<"unavailable">>
     end;
@@ -710,13 +643,13 @@ get_presences({show, LUser, LServer, LResource}) ->
 	[] -> <<"unavailable">>;
 	Rs ->
 	    {value, R} = lists:keysearch(LResource, 2, Rs),
-	    R#presence.show
+	    R#presence2.show
     end;
 
 get_presences({show, LUser, LServer}) ->
     case get_presences({sorted, LUser, LServer}) of
         [Highest | _Rest] ->
-            Highest#presence.show;
+            Highest#presence2.show;
         _ ->
             <<"unavailable">>
     end.
@@ -744,12 +677,12 @@ make_js(WP, Prs, Show_us, Lang, Q) ->
 			     <<"}">>])];
 			_ -> lists:map(
 			       fun(Pr) ->
-				       Show =  Pr#presence.show,
-				       ?BC([<<"{name:'">>, Pr#presence.resource, <<"',\n">>,
-					   <<" priority:">>, intund2string(Pr#presence.priority), <<",\n">>,
+				       Show =  Pr#presence2.show,
+				       ?BC([<<"{name:'">>, Pr#presence2.resource, <<"',\n">>,
+					   <<" priority:">>, intund2string(Pr#presence2.priority), <<",\n">>,
 					   <<" show:'">>, Show, <<"',\n">>,
 					   <<" long_show:'">>, long_show(Show, Lang), <<"',\n">>,
-					   <<" status:'">>, escape(Pr#presence.status), <<"',\n">>,
+					   <<" status:'">>, escape(Pr#presence2.status), <<"',\n">>,
 					   FunImage(WP#webpresence.icon, Show),
 					   <<"}">>])
 			       end,
@@ -785,11 +718,8 @@ escape(S1) ->
     re:replace(S2, "\n", "\\n", [global, {return, list}]).
 
 get_baseurl(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    Proc ! {tell_baseurl, self()},
-    receive
-	{baseurl_is, BaseURL} -> BaseURL
-    end.
+    BaseURL1 = gen_mod:get_module_opt(Host, ?MODULE, baseurl),
+    ejabberd_regexp:greplace(BaseURL1, <<"@HOST@">>, Host).
 
 -define(XML_HEADER, <<"<?xml version='1.0' encoding='utf-8'?>">>).
 
@@ -878,9 +808,9 @@ show_presence({avatar, WP, LUser, LServer}) ->
     true = WP#webpresence.avatar,
     [{_, Module, Function, _Opts}] = ets:lookup(sm_iqtable, {?NS_VCARD, LServer}),
     JID = jlib:make_jid(LUser, LServer, <<"">>),
-    IQ = #iq{type = get, xmlns = ?NS_VCARD},
+    IQ = #iq{type = get}, %%+++++, xmlns = ?NS_VCARD},
     IQr = Module:Function(JID, JID, IQ),
-    [VCard] = IQr#iq.sub_el,
+    [VCard] = ok, %%+++++ IQr#iq.sub_el,
     Mime = fxml:get_path_s(VCard, [{elem, <<"PHOTO">>}, {elem, <<"TYPE">>}, cdata]),
     BinVal = fxml:get_path_s(VCard, [{elem, <<"PHOTO">>}, {elem, <<"BINVAL">>}, cdata]),
     Photo = jlib:decode_base64(BinVal),
