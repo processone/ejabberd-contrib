@@ -31,7 +31,7 @@
 	 depends/2,
 	 split_line/1,
 	 process/2,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, mod_options/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -183,6 +183,10 @@ mod_opt_type(allowed_destinations) ->
 mod_opt_type(allowed_stanza_types) ->
     fun (all) -> all; (A) when is_list(A) -> A end;
 mod_opt_type(access_commands) ->
-    fun (A) when is_list(A) -> A end;
-mod_opt_type(_) ->
-    [allowed_ips, allowed_destinations, allowed_stanza_types, access_commands].
+    fun (A) when is_list(A) -> A end.
+
+mod_options(_Host) ->
+    [{allowed_ips, all},
+     {allowed_destinations, all},
+     {allowed_stanza_types, all},
+     {access_commands, []}].
