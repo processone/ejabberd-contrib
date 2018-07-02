@@ -33,7 +33,6 @@
 	 process/2,
 	 mod_opt_type/1, mod_options/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_ctl.hrl").
