@@ -2,7 +2,7 @@
 
 -behaviour(gen_mod).
 
--include("ejabberd.hrl").
+% -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 
@@ -12,7 +12,8 @@
   on_filter_packet/1,
   mod_opt_type/1,
   depends/2,
-  reload/3
+  reload/3,
+  mod_options/1
 ]).
 
 -import(bloom_gen_server, [start/0, stop/0, member/1]).
@@ -92,3 +93,5 @@ mod_opt_type(charmaps) -> fun (A) when is_list(A) -> A end;
 mod_opt_type(_) -> [blacklists, charmaps].
 depends(_Host, _Opts) -> [].
 reload(_Host, _NewOpts, _OldOpts) -> ok.
+mod_options(_) ->
+  [{blacklists, []},{charmaps, []}].
