@@ -14,7 +14,6 @@
 -export([start/2, init/7, stop/1,
 	 send_packet/1, receive_packet/1]).
 
--include("ejabberd.hrl").
 -include("xmpp.hrl").
 
 -define(PROCNAME, ejabberd_mod_logxml).

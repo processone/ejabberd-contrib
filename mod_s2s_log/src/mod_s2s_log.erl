@@ -39,7 +39,6 @@
 	 s2s_out_auth/2,
 	 s2s_in_auth/3]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -define(PROCNAME, ?MODULE).

@@ -31,7 +31,6 @@
 %% API
 -export([start_link/0]).
 
--include("ejabberd.hrl").
 -include("xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_web_admin.hrl").
@@ -231,8 +230,8 @@ process_vcard(#iq{type = get, lang = Lang, sub_els = [#vcard_temp{}]} = IQ) ->
     Desc = translate:translate(Lang, <<"ejabberd Web Presence module">>),
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd/mod_webpresence">>,
-                      url = ?EJABBERD_URI,
-                      desc = <<Desc/binary, $\n, ?COPYRIGHT>>});
+                      url = ejabberd_config:get_uri(),
+                      desc = Desc});
 process_vcard(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
@@ -920,7 +919,7 @@ process2([User, Server | Tail], Request) ->
 
 serve_web_presence(TypeURL, User, Server, Tail, #request{lang = Lang1, q = Q}) ->
     LServer = jlib:nameprep(Server),
-    true = lists:member(Server, ?MYHOSTS),
+    true = lists:member(Server, ejabberd_config:get_myhosts()),
     LUser = jlib:nodeprep(User),
     WP = get_wp(LUser, LServer),
     case TypeURL of

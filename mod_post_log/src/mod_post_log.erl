@@ -20,7 +20,6 @@
 	 log_user_send/4,
          post_result/1]).
 
--include("ejabberd.hrl").
 -include("xmpp.hrl").
 
 start(Host, _Opts) ->

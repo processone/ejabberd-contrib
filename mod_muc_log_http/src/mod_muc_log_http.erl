@@ -16,7 +16,6 @@
 	 process/2
 	]).
 
--include("ejabberd.hrl").
 -include("xmpp.hrl").
 -include("ejabberd_http.hrl").
 -include("mod_muc_room.hrl").
@@ -101,7 +100,7 @@ get_room_config(Room_pid) ->
 
 show_dir_listing(DirName, LocalPath) ->
 	Header = io_lib:format("Name                                               Last modified             Size Description~n", []),
-	Address = io_lib:format("<address>ejabberd/~s Server</address>", [?VERSION]),
+	Address = io_lib:format("<address>ejabberd/~s Server</address>", [ejabberd_config:get_version()]),
 
 	{ok, Listing} = file:list_dir(DirName),
 	Listing2 = lists:sort(Listing),

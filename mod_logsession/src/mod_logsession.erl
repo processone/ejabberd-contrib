@@ -38,7 +38,6 @@
 	 forbidden/1
 	]).
 
--include("ejabberd.hrl").
 -include("xmpp.hrl").
 -include("ejabberd_commands.hrl").
 

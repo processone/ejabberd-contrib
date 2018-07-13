@@ -13,8 +13,7 @@
 
 -export([start/2, loop/5, stop/1]).
 
--include("ejabberd.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_roster.hrl").
 
 -define(PROCNAME, ejabberd_mod_stats2file).

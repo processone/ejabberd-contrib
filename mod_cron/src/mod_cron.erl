@@ -21,11 +21,10 @@
 	 stop/1]).
 
 -include("ejabberd_commands.hrl").
--include("ejabberd.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -record(task, {taskid, timerref, host, task}).
 

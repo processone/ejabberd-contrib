@@ -14,8 +14,7 @@
 -export([web_menu_node/3, web_page_node/5,
 	 start/2, stop/1]).
 
--include("ejabberd.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 

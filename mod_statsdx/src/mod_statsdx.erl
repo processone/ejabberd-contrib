@@ -28,7 +28,6 @@
 	 %%user_logout_sm/3,
 	 user_login/1, user_logout/4]).
 
--include("ejabberd.hrl").
 -include("ejabberd_commands.hrl").
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -1582,7 +1581,7 @@ get_sessions_filtered(Filter, server) ->
 	      end
       end,
       [],
-      ?MYHOSTS);
+      ejabberd_config:get_myhosts());
 get_sessions_filtered(Filter, Host) ->
     Match = case Filter of
 		[{<<"client">>, Client}] -> {{session, '$1'}, jlib:binary_to_atom(Client), '$2', '$3', '$4', '$5', '$6', '$7'};
