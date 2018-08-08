@@ -30,7 +30,7 @@
          opt_type/1,
          stop/1]).
 
--include("ejabberd.hrl").
+-include("scram.hrl").
 -include("logger.hrl").
 
 %%%----------------------------------------------------------------------
