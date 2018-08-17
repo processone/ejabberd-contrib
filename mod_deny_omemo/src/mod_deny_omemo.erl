@@ -80,6 +80,8 @@ depends(_Host, _Opts) ->
 %% ejabberd_hooks callbacks.
 %%--------------------------------------------------------------------
 -spec user_send_packet({stanza() | drop, c2s_state()}) -> hook_result().
+user_send_packet({#message{}, _C2SState} = Acc) ->
+    maybe_reject_msg(Acc);
 user_send_packet({#iq{type = set,
 		      from = #jid{luser = LUser, lserver = LServer},
 		      to = #jid{luser = LUser, lserver = LServer,
@@ -87,7 +89,7 @@ user_send_packet({#iq{type = set,
 		      sub_els = [SubEl]}, _C2SState} = Acc) ->
     try xmpp:decode(SubEl) of
 	#pubsub{publish = Publish} ->
-	    maybe_reject(Publish, Acc);
+	    maybe_reject_iq(Publish, Acc);
 	_ ->
 	    Acc
     catch _:{xmpp_codec, _Reason} ->
@@ -102,7 +104,7 @@ user_send_packet({#iq{type = get,
        FromS /= ToS ->
     try xmpp:decode(SubEl) of
 	#pubsub{items = Items} ->
-	    maybe_reject(Items, Acc);
+	    maybe_reject_iq(Items, Acc);
 	_ ->
 	    Acc
     catch _:{xmpp_codec, _Reason} ->
@@ -131,7 +133,7 @@ user_receive_packet({#message{} = Msg,
 		    end
 	    end;
 	_ ->
-	    Acc
+	    maybe_reject_msg(Acc)
     end;
 user_receive_packet(Acc) ->
     Acc.
@@ -139,10 +141,29 @@ user_receive_packet(Acc) ->
 %%--------------------------------------------------------------------
 %% Internal functions.
 %%--------------------------------------------------------------------
--spec maybe_reject(ps_publish() | ps_items(), {iq(), c2s_state()})
-      -> {iq(), c2s_state()} | {stop, {drop, c2s_state()}}.
-maybe_reject(El, {#iq{type = Type, lang = Lang} = IQ,
+-spec maybe_reject_msg({message(), c2s_state()})
+      -> {message(), c2s_state()} | {stop, {drop, c2s_state()}}.
+maybe_reject_msg({#message{lang = Lang} = Msg,
 		  #{lserver := LServer, jid := JID} = C2SState} = Acc) ->
+    Access = gen_mod:get_module_opt(LServer, ?MODULE, access),
+    case acl:match_rule(LServer, Access, JID) of
+	allow ->
+	    Acc;
+	deny ->
+	    case is_omemo_msg(Msg) of
+		true ->
+		    ?DEBUG("Rejecting message from ~s", [jid:encode(JID)]),
+		    bounce_error(Msg, Lang),
+		    {stop, {drop, C2SState}};
+		false ->
+		    Acc
+	    end
+    end.
+
+-spec maybe_reject_iq(ps_publish() | ps_items(), {iq(), c2s_state()})
+      -> {iq(), c2s_state()} | {stop, {drop, c2s_state()}}.
+maybe_reject_iq(El, {#iq{type = Type, lang = Lang} = IQ,
+		     #{lserver := LServer, jid := JID} = C2SState} = Acc) ->
     Access = gen_mod:get_module_opt(LServer, ?MODULE, access),
     case acl:match_rule(LServer, Access, JID) of
 	allow ->
@@ -157,9 +178,7 @@ maybe_reject(El, {#iq{type = Type, lang = Lang} = IQ,
 			set -> delete_nodes(JID, Nodes);
 			get -> ok
 		    end,
-		    Txt = <<"OMEMO is disabled">>,
-		    Err = xmpp:err_policy_violation(Txt, Lang),
-		    ejabberd_router:route_error(IQ, Err),
+		    bounce_error(IQ, Lang),
 		    {stop, {drop, C2SState}}
 	    end
     end.
@@ -198,3 +217,20 @@ delete_nodes(JID, Nodes) ->
     lists:foreach(fun(Node) ->
 			  mod_pubsub:delete_node(LJID, Node, JID)
 		  end, Nodes).
+
+-spec is_omemo_msg(message()) -> boolean().
+is_omemo_msg(#message{type = error}) ->
+    false;
+is_omemo_msg(#message{sub_els = SubEls}) ->
+    case lists:keyfind(<<"encrypted">>, #xmlel.name, SubEls) of
+	#xmlel{attrs = Attrs} ->
+	    lists:member({<<"xmlns">>, <<?NS_AXOLOTL>>}, Attrs);
+	false ->
+	    false
+    end.
+
+-spec bounce_error(stanza(), binary()) -> ok.
+bounce_error(Pkt, Lang) ->
+    Txt = <<"OMEMO is disabled">>,
+    Err = xmpp:err_policy_violation(Txt, Lang),
+    ejabberd_router:route_error(Pkt, Err).

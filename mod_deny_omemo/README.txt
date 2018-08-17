@@ -12,7 +12,7 @@ Unless the configured access rule (called 'omemo' by default) returns
 Requests to query the devicelist from other users are rejected.  Requests
 to publish a devicelist are also rejected, and all OMEMO nodes referenced
 in that devicelist are removed.  Incoming devicelist updates are silently
-dropped.
+dropped.  OMEMO-encrypted messages are bounced with an error message.
 
 
 	CONFIGURATION
