@@ -240,7 +240,7 @@ process_vcard(#iq{lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 do_route1(_Host, _From, _To, #iq{} = IQ, _BaseURL) ->
-    ejabberd_local:process_iq(IQ);
+    ejabberd_router:process_iq(IQ);
 do_route1(_Host, _From, _To, Packet, _BaseURL) ->
     case xmpp:get_type(Packet) of
 	error -> ok;
@@ -254,7 +254,6 @@ do_route1(_Host, _From, _To, Packet, _BaseURL) ->
 process_register(#iq{type = get, from = From, to = To, lang = Lang,
                      sub_els = [#register{}]} = IQ) ->
     Host = To#jid.lserver,
-    ServerHost = ejabberd_router:host_of_route(Host),
     xmpp:make_iq_result(IQ, iq_get_register_info(Host, From, Lang));
 process_register(#iq{type = set, from = From, to = To,
                      lang = Lang, sub_els = [El = #register{}]} = IQ) ->
@@ -368,7 +367,7 @@ iq_get_register_info(Host, From, Lang) ->
                             "to register to Web Presence">>),
               xdata = X}.
 
-process_iq_register_set(ServerHost, Host, From,
+process_iq_register_set(_ServerHost, Host, From,
                         #register{remove = true}, Lang) ->
     unregister_webpresence(From, Host, Lang);
 process_iq_register_set(_ServerHost, _Host, _From,
@@ -410,14 +409,13 @@ iq_set_register_info(ServerHost, Host, From, Nick,
     end.
 
 iq_set_register_info2(ServerHost, Host, From, Icon, Lang) ->
-    LServer = jid:nameprep(ServerHost),
     %% RidUrl2 = get_rid_final_value(RidUrl, LUS),
     LUS = {From#jid.luser, From#jid.lserver},
     WP = #webpresence{us = LUS,
 		      jidurl = true,
 		      ridurl = false,
 		      xml = true,
-		      avatar = false,
+		      avatar = true,
 		      js = true,
 		      text = true,
 		      icon = Icon},
@@ -433,8 +431,7 @@ iq_set_register_info2(ServerHost, Host, From, Icon, Lang) ->
 
 send_message_registered(WP, To, Host, BaseURL, Lang) ->
     {User, Server} = WP#webpresence.us,
-    JID = jlib:make_jid(User, Server, <<"">>),
-    JIDS = jlib:jid_to_string(JID),
+    JIDS = jid:encode({User, Server, <<"">>}),
     Oavatar = case WP#webpresence.avatar of
 		  false -> <<"">>;
 		  true -> <<"  avatar\n"
@@ -509,7 +506,7 @@ send_message_unregistered(To, Host, Lang) ->
 
 send_headline(Host, To, Subject, Body) ->
     ejabberd_router:route(
-      jlib:make_jid(<<"">>, Host, <<"">>),
+      jid:make(<<"">>, Host, <<"">>),
       To,
       #xmlel{
          name = <<"message">>,
@@ -548,7 +545,7 @@ get_wp(LUser, LServer) ->
     end.
 
 try_auto_webpresence(LUser, LServer) ->
-    From = jlib:make_jid(LUser, LServer, <<"">>),
+    From = jid:make(LUser, LServer, <<"">>),
     case acl:match_rule(LServer, ?AUTO_ACL, From) of
 	deny ->
 	    #webpresence{};
@@ -557,7 +554,7 @@ try_auto_webpresence(LUser, LServer) ->
 			 ridurl = false,
 			 jidurl = true,
 			 xml = true,
-			 avatar = false,
+			 avatar = true,
 			 js = true,
 			 text = true,
 			 icon = "jsf-jabber-text"}
@@ -805,14 +802,14 @@ show_presence({text, WP, LUser, LServer, LResource}) ->
 
 show_presence({avatar, WP, LUser, LServer}) ->
     true = WP#webpresence.avatar,
-    [{_, Module, Function, _Opts}] = ets:lookup(sm_iqtable, {?NS_VCARD, LServer}),
-    JID = jlib:make_jid(LUser, LServer, <<"">>),
-    IQ = #iq{type = get}, %%+++++, xmlns = ?NS_VCARD},
-    IQr = Module:Function(JID, JID, IQ),
-    [VCard] = ok, %%+++++ IQr#iq.sub_el,
+    [{_, Module, Function}] = ets:lookup(ejabberd_sm, {LServer, ?NS_VCARD}),
+    JID = jid:make(LUser, LServer, <<"">>),
+    IQ = #iq{type = get, from = JID, to = JID},
+    IQr = Module:Function(IQ),
+    [VCard] = IQr#iq.sub_els,
     Mime = fxml:get_path_s(VCard, [{elem, <<"PHOTO">>}, {elem, <<"TYPE">>}, cdata]),
     BinVal = fxml:get_path_s(VCard, [{elem, <<"PHOTO">>}, {elem, <<"BINVAL">>}, cdata]),
-    Photo = jlib:decode_base64(BinVal),
+    Photo = misc:decode_base64(BinVal),
     {200, [{"Content-Type", Mime}], Photo};
 
 show_presence({image_example, Theme, Show}) ->
@@ -918,9 +915,9 @@ process2([User, Server | Tail], Request) ->
     serve_web_presence(jid, User, Server, Tail, Request).
 
 serve_web_presence(TypeURL, User, Server, Tail, #request{lang = Lang1, q = Q}) ->
-    LServer = jlib:nameprep(Server),
+    LServer = jid:nameprep(Server),
     true = lists:member(Server, ejabberd_config:get_myhosts()),
-    LUser = jlib:nodeprep(User),
+    LUser = jid:nodeprep(User),
     WP = get_wp(LUser, LServer),
     case TypeURL of
 	jid -> true = WP#webpresence.jidurl;
