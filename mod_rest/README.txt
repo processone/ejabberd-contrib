@@ -117,7 +117,7 @@ Content-Length: 85
 ejabberd.log shows those messages:
 -------
 =INFO REPORT==== 2-Mar-2009::11:46:05 ===
-I(<0.484.0>:ejabberd_listener:201) : (#Port<0.3661>) Accepted connection {{127,0,0,1},55945} -> {{127,0,0,1},5280}
+I(<0.484.0>:ejabberd_listener:201) : (#Port<0.3661>) Accepted connection {{127,0,0,1},55945} -> {{127,0,0,1},5285}
 
 =INFO REPORT==== 2-Mar-2009::11:46:05 ===
 I(<0.251.0>:ejabberd_http:127) : started: {gen_tcp,#Port<0.3661>}
@@ -152,7 +152,7 @@ about a local Jabber account with enough privileges according to your option:
 
 This example shows how to send a POST using Lynx:
 
-$ lynx http://localhost:5280/rest/ -mime_header -post_data
+$ lynx http://localhost:5285/rest/ -mime_header -post_data
 <message to="nolan@localhost" from="localhost/rest"><body>World</body></message>
 ---
 HTTP/1.0 200 OK
@@ -168,11 +168,11 @@ Ok
 
 This example shows how to send a POST using Wget:
 
-$ wget http://localhost:5280/rest/ --server-response --post-data '<message to="nolan@localhost" from="localhost/rest"><body>World</body></message>'
+$ wget http://localhost:5285/rest/ --server-response --post-data '<message to="nolan@localhost" from="localhost/rest"><body>World</body></message>'
 
---2009-03-02 12:01:42--  http://localhost:5280/rest/
+--2009-03-02 12:01:42--  http://localhost:5285/rest/
 Resolving localhost... 127.0.0.1
-Connecting to localhost|127.0.0.1|:5280... connected.
+Connecting to localhost|127.0.0.1|:5285... connected.
 HTTP request sent, awaiting response...
   HTTP/1.0 200 OK
   Connection: keep-alive
@@ -196,10 +196,10 @@ Please notice that mod_rest and wget don't work correctly over HTTPS.
 	==============================
 
 To execute an ejabberd command, simply provide its name and arguments as in ejabberdctl:
-wget http://localhost:5280/rest/ --server-response --post-data 'registered_users localhost'
+wget http://localhost:5285/rest/ --server-response --post-data 'registered_users localhost'
 
 If you configure access_commands option, you must provide the credentials like this:
- wget http://localhost:5280/rest/ --server-response --post-data '--auth user1 localhost thepass registered_users localhost'
+ wget http://localhost:5285/rest/ --server-response --post-data '--auth user1 localhost thepass registered_users localhost'
 
 
 	EXAMPLE CALL WITH PYTHON
@@ -209,7 +209,7 @@ This example Python code first calls to send a stanza, and then calls to execute
 -------
 import urllib2
 
-server_url = 'http://localhost:5280/rest/'
+server_url = 'http://localhost:5285/rest/'
 
 call = '<message to="nolan@localhost" from="localhost/rest"><body>World</body></message>'
 resp = urllib2.urlopen(server_url, call)
@@ -232,7 +232,7 @@ This example PHP code implements a call to execute a command (thanks to Qu1cksan
 function sendRESTRequest ($url, $request) {
     // Create a stream context so that we can POST the REST request to $url
     $context = stream_context_create (array ('http' => array ('method' => 'POST'
-                                            ,'header' => "Host: localhost:5280\nContent-Type: text/html; charset=utf-8\nContent-Length: ".strlen($request)
+                                            ,'header' => "Host: localhost:5285\nContent-Type: text/html; charset=utf-8\nContent-Length: ".strlen($request)
                                             ,'content' => $request)));
     // Use file_get_contents for PHP 5+ otherwise use fopen, fread, fclose
     if (version_compare(PHP_VERSION, '5.0.0', '>=')) {
@@ -252,7 +252,7 @@ function sendRESTRequest ($url, $request) {
     }
     return $result;
 }
-$url = "http://localhost:5280/rest";
+$url = "http://localhost:5285/rest";
 $request = "register user12 localhost somepass";
 $response = sendRESTRequest($url, $request);
 echo "Response: $response\n";
