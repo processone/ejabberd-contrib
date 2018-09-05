@@ -120,7 +120,7 @@ get_option_access(Host) ->
 %% This function crashes if the stanza does not satisfy configured restrictions
 check_stanza(Pkt, Host) ->
     To = xmpp:get_to(Pkt),
-    check_member_option(Host, jlib:jid_to_string(To), allowed_destinations),
+    check_member_option(Host, jid:encode(To), allowed_destinations),
     %%+++ {xmlel, StanzaType, _Attrs, _Kids} = Stanza,
     %%+++ check_member_option(Host, StanzaType, allowed_stanza_types),
     allowed.
