@@ -144,7 +144,9 @@ ip_matches(ClientIp, AllowedValues) ->
 	  AllowedValues).
 
 post_request(Pkt) ->
-    mod_mam:user_send_packet({Pkt, #{jid => xmpp:get_from(Pkt)}}),
+    From = xmpp:get_from(Pkt),
+    LServer = From#jid.lserver,
+    ejabberd_hooks:run_fold(user_send_packet, LServer, {Pkt, #{jid => From}}, []),
     case ejabberd_router:route(Pkt) of
 	ok -> {200, [], <<"Ok">>};
         _ -> {500, [], <<"Error">>}
