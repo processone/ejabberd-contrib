@@ -1,0 +1,7 @@
+auth_method: http
+auth_opts:
+  host: "http://localhost:12000"
+  connection_pool_size: 10
+  connection_opts: []
+  basic_auth: ""
+  path_prefix: "/"
