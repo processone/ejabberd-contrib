@@ -221,8 +221,7 @@ write_log(IoDevice, Direction, From, To, Type) ->
     Date = format_date(calendar:local_time()),
     Record = io_lib:format("~s [~s, ~s] ~s -> ~s~n",
 			   [Date, Direction, Type,
-			    jlib:jid_to_string(From),
-			    jlib:jid_to_string(To)]),
+			    jid:encode(From), jid:encode(To)]),
     ok = file:write(IoDevice, [Record]).
 
 -spec format_date(calendar:datetime()) -> io_lib:chars().
