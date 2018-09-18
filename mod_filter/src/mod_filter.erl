@@ -3,21 +3,17 @@
 %%% Author  : Magnus Henoch <henoch@dtek.chalmers.se>
 %%% Purpose : flexible filtering by server policy
 %%% Created : 21 Sep 2005 by Magnus Henoch <henoch@dtek.chalmers.se>
-%%% Updated : 14 Jan 2016 by John Brodie <john@brodie.me>
 %%%----------------------------------------------------------------------
 
 -module(mod_filter).
 -author('henoch@dtek.chalmers.se').
-%% -vsn('$Revision$ ').
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1,
-	 filter_packet/1, mod_opt_type/1]).
+-export([start/2, stop/1, depends/2, mod_options/1, filter_packet/1]).
 
 -include("logger.hrl").
--include("ejabberd.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 start(_Host, _Opts) ->
     ejabberd_hooks:add(filter_packet, global, ?MODULE, filter_packet, 100).
@@ -30,13 +26,15 @@ stop(_Host) ->
 %% From and To are jid records.
 filter_packet(drop) ->
     drop;
-filter_packet({From, To, Packet} = Input) ->
+filter_packet(Packet) ->
+    From = xmpp:get_from(Packet),
+    To = xmpp:get_to(Packet),
     %% It probably doesn't make any sense to block packets to oneself.
     R = if From#jid.luser == To#jid.luser,
 	   From#jid.lserver == To#jid.lserver ->
-		Input;
+		Packet;
 	   true ->
-		check_stanza(Input)
+		check_stanza(Packet)
 	end,
     ?DEBUG("filtering packet...~nFrom: ~p~nTo: ~p~nPacket: ~p~nResult: ~p",
 	   [From, To, Packet, R]),
@@ -46,35 +44,35 @@ filter_packet({From, To, Packet} = Input) ->
 	_ -> R
     end.
 
-check_stanza({_From, _To, #xmlel{name = StanzaType}} = Input) ->
-    AccessRule = case StanzaType of
-		     <<"presence">> ->
+check_stanza(Packet) ->
+    AccessRule = case element(1, Packet) of
+		     presence ->
 			 mod_filter_presence;
-		     <<"message">> ->
+		     message ->
 			 mod_filter_message;
-		     <<"iq">> ->
+		     iq ->
 			 mod_filter_iq
 		 end,
-    check_stanza_type(AccessRule, Input).
+    check_stanza_type(AccessRule, Packet).
 
-check_stanza_type(AccessRule, {From, To, _Packet} = Input) ->
-    FromAccess = acl:match_rule(global, AccessRule, From),
+check_stanza_type(AccessRule, Packet) ->
+    FromAccess = acl:match_rule(global, AccessRule, xmpp:get_from(Packet)),
     case FromAccess of
 	allow ->
-	    check_access(Input);
+	    check_access(Packet);
 	deny ->
 	    {drop, AccessRule, sender};
 	ToAccessRule ->
-	    ToAccess = acl:match_rule(global, ToAccessRule, To),
+	    ToAccess = acl:match_rule(global, ToAccessRule, xmpp:get_to(Packet)),
 	    case ToAccess of
 		allow ->
-		    check_access(Input);
+		    check_access(Packet);
 		deny ->
 		    {drop, AccessRule, receiver}
 	    end
     end.
 
-check_access({From, To, _Packet} = Input) ->
+check_access(Packet) ->
     %% Beginning of a complicated ACL matching procedure.
     %% The access option given to the module applies to senders.
 
@@ -82,26 +80,26 @@ check_access({From, To, _Packet} = Input) ->
     %% anymore what "host" we are on.  Thus hardcoding access rule.
     %%AccessRule = gen_mod:get_module_opt(global, ?MODULE, access, all),
     AccessRule = mod_filter,
-    FromAccess = acl:match_rule(global, AccessRule, From),
+    FromAccess = acl:match_rule(global, AccessRule, xmpp:get_from(Packet)),
     %% If the rule results in 'allow' or 'deny', treat that as the
     %% result.  Else it is a rule to be applied to the receiver.
     case FromAccess of
 	allow ->
-	    Input;
+	    Packet;
 	deny ->
 	    {drop, sender};
 	ToAccessRule ->
-	    ToAccess = acl:match_rule(global, ToAccessRule, To),
+	    ToAccess = acl:match_rule(global, ToAccessRule, xmpp:get_to(Packet)),
 	    case ToAccess of
 		allow ->
-		    Input;
+		    Packet;
 		deny ->
 		    {drop, receiver}
 	    end
     end.
 
-mod_opt_type(access) ->
-    fun (A) when is_atom(A) -> A end;
 
-mod_opt_type(_) ->
-    [access].
+depends(_Host, _Opts) ->
+    [].
+
+mod_options(_) -> [].
