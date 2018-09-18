@@ -1,0 +1,12 @@
+modules:
+  mod_filter: {}
+
+access_rules:
+  mod_filter:
+    - allow: all
+  mod_filter_presence:
+    - allow: all
+  mod_filter_message:
+    - allow: all
+  mod_filter_iq:
+    - allow: all

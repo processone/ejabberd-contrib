@@ -1,0 +1,5 @@
+author: "Magnus Henoch <henoch@dtek.chalmers.se>"
+category: "data"
+summary: "Flexible filtering by server policy"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"
