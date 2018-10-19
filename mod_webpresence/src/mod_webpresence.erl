@@ -573,9 +573,14 @@ get_status_weight(Show) ->
 session_to_presence(#session{sid = {_, Pid}}) ->
     P = ejabberd_c2s:get_presence(Pid),
     #presence2{resource = (P#presence.from)#jid.resource,
-              show = misc:atom_to_binary(P#presence.show),
+              show = misc:atom_to_binary(humanize_show(P#presence.show)),
               priority = P#presence.priority,
               status = xmpp:get_text(P#presence.status)}.
+
+humanize_show(undefined) ->
+    available;
+humanize_show(Show) ->
+    Show.
 
 get_presences({bare, LUser, LServer}) ->
     [session_to_presence(Session) ||
