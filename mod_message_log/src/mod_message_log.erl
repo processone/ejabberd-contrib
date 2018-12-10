@@ -206,7 +206,7 @@ is_carbon(_Msg) ->
 
 -spec should_log(message()) -> boolean().
 should_log(#message{meta = #{carbon_copy := true}} = Msg) ->
-    should_log(xmpp_util:unwrap_carbon(Msg));
+    should_log(misc:unwrap_carbon(Msg));
 should_log(#message{type = error}) ->
     false;
 should_log(#message{body = Body, sub_els = SubEls}) ->
