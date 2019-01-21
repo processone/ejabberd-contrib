@@ -407,8 +407,10 @@ handle_info({route_chan, Channel, Resource,
 		    Err = xmpp:err_feature_not_implemented(),
 		    ejabberd_router:route_error(Packet, Err);
 		?NS_VCARD ->
-		    Res = io_lib:format("WHOIS ~s \r\n", [Resource]),
-		    _ = (?SEND(Res)),
+			%% TODO: catch WHOIS replies and translate their details to something resembling vCards
+			%% For now this just errors out.
+		    %% Res = io_lib:format("WHOIS ~s \r\n", [Resource]),
+		    %% _ = (?SEND(Res)),
 		    Err = xmpp:err_feature_not_implemented(),
 		    ejabberd_router:route_error(Packet, Err);
 		_ ->
