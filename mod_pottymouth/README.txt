@@ -15,32 +15,22 @@ and bitarray being a dep of etbloom), so bitarray needs to be installed manually
 before installation of mod_pottymouth.
 
 This is how I got it to work... YMMV.
-Given $EJABBERD_HOME is the base directory of your ejabberd install:
 
-mkdir -p $EJABBERD_HOME/erlang-lib/bitarray
-cd $EJABBERD_HOME/erlang-lib/bitarray
-clone https://github.com/ferd/bitarray git repo
-run: /usr/lib/erlang/bin/escript rebar get-deps
-run: /usr/lib/erlang/bin/escript rebar compile
-run: /usr/bin/install -c -d /usr/local/lib/bitarray-1.0.0/ebin
-run: /usr/bin/install -c -d /usr/local/lib/bitarray-1.0.0/priv
-run: /usr/bin/install -c -m 644 ./ebin/bitarray.app /usr/local/lib/bitarray-1.0.0/ebin/bitarray.app
-run: /usr/bin/install -c -m 644 ./ebin/bitarray.beam /usr/local/lib/bitarray-1.0.0/ebin/bitarray.beam
-run: /usr/bin/install -c -m 644 ./priv/bitarray.so /usr/local/lib/bitarray-1.0.0/priv/bitarray.so
+1. Make sure ejabberd is running
+2. Get the updated ejabberd-contrib sources:
+   ejabberdctl modules_update_specs
+3. Then get manually the dependencies, as the scripts can't do it:
+   cd ~/.ejabberd-modules/sources/ejabberd-contrib/mod_pottymouth/deps/etbloom/
+   chmod +x rebar
+   ./rebar get-deps
+   ./rebar compile
+   cp -R deps/bitarray/ebin ../../
+   cp -R deps/bitarray/priv ../../
+   cp -R deps/proper/ebin ../../
+4. Finally, when you install the module, its dependencies will be installed as well:
+   ejabberdctl module_install mod_pottymouth
 
-To install mod_pottymouth in ejabberd:
-
-cd ~/.ejabberd-modules/sources
-clone the ejabberd-contrib git repo
-cd mod_pottymouth
-edit: ./conf/mod_pottymouth.yml
-
-make sure ejabberd is running
-run: ejabberdctl module_install mod_pottymouth
-run: ejabberdctl restart
-module will be installed in: ~/.ejabberd-modules/mod_pottymouth
-
-Config file format:
+Configuration file is ~/.ejabberd-modules/mod_pottymouth/conf/mod_pottymouth.yml
 
 modules:
     mod_pottymouth:
