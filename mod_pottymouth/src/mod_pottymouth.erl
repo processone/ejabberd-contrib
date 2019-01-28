@@ -44,6 +44,15 @@ filterWords(L) ->
   lists:map(fun censorWord/1, L).
 
 filterMessageText(Lang, MessageText) ->
+    try filterMessageText2(Lang, MessageText) of
+        R ->
+            R
+    catch exit:{noproc,{gen_server,call,[_,_]}} ->
+	?DEBUG("Blacklist of language '~p' not found, using 'default' list.", [Lang]),
+	filterMessageText2(default, MessageText)
+    end.
+
+filterMessageText2(Lang, MessageText) ->
   % we want to token-ize utf8 'words'
   MessageWords = string:tokens(unicode:characters_to_list(MessageText, utf8), " "),
   MessageTerms = [{Lang, Word} || Word <- MessageWords],
