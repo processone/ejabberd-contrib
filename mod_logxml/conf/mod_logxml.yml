@@ -9,7 +9,6 @@ modules:
        - send
        - recv
      logdir: "/tmp/logs/"
-     timezone: universal
      show_ip: false
      rotate_days: 1
      rotate_megs: 100

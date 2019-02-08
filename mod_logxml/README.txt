@@ -33,13 +33,6 @@ orientation:
 logdir: 
     Base filename, including absolute path
     Default value: "/tmp/jabberlogs/"
-timezone:
-    The time zone for the logs is configurable with this option. 
-    Allowed values are 'local' and 'universal'.
-    With the first value, the local time, 
-    as reported to Erlang by the operating system, will be used. 
-    With the latter, GMT/UTC time will be used. 
-    Default value: local
 show_ip: 
     If the IP address of the local user should be logged to file.
     Default value: false
@@ -76,7 +69,6 @@ modules:
        - send
        - recv
      logdir: "/tmp/logs/"
-     timezone: universal
      show_ip: false
      rotate_days: 1
      rotate_megs: 100

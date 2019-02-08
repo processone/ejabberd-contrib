@@ -11,7 +11,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, init/7, stop/1,
+-export([start/2, init/6, stop/1,
 	 send_packet/1, receive_packet/1]).
 
 -include("xmpp.hrl").
@@ -36,9 +36,6 @@ start(Host, Opts) ->
 	 end,
     RotateO = {Rd, Rf, Rp},
     CheckRKP = gen_mod:get_opt(check_rotate_kpackets, Opts, fun(A) -> A end, 1),
-
-    Timezone = gen_mod:get_opt(timezone, Opts, fun(A) -> A end, local),
-
     Orientation = gen_mod:get_opt(orientation, Opts, fun(A) -> A end, [send, recv]),
     Stanza = gen_mod:get_opt(stanza, Opts, fun(A) -> A end, [iq, message, presence, other]),
     Direction = gen_mod:get_opt(direction, Opts, fun(A) -> A end, [internal, vhosts, external]),
@@ -52,7 +49,7 @@ start(Host, Opts) ->
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, receive_packet, 90),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
 	     spawn(?MODULE, init, [binary_to_list(Host), Logdir, RotateO, CheckRKP,
-				   Timezone, ShowIP, FilterO])),
+				   ShowIP, FilterO])),
     ok.
 
 stop(Host) ->
@@ -62,17 +59,17 @@ stop(Host) ->
     Proc ! stop,
     {wait, Proc}.
 
-init(Host, Logdir, RotateO, CheckRKP, Timezone, ShowIP, FilterO) ->
-    {IoDevice, Filename, Gregorian_day} = open_file(Logdir, Host, Timezone),
+init(Host, Logdir, RotateO, CheckRKP, ShowIP, FilterO) ->
+    {IoDevice, Filename, Gregorian_day} = open_file(Logdir, Host),
     loop(Host, IoDevice, Filename, Logdir, CheckRKP, RotateO, 0, Gregorian_day,
-	 Timezone, ShowIP, FilterO).
+	 ShowIP, FilterO).
 
 %% -------------------
 %% Main
 %% -------------------
 
 manage_rotate(Host, IoDevice, Filename, Logdir, RotateO, PacketC,
-	      Gregorian_day_log, Timezone) ->
+	      Gregorian_day_log) ->
     {RO_days, RO_size, RO_packets} = RotateO,
 
     Rotate1 = case RO_packets of
@@ -99,7 +96,7 @@ manage_rotate(Host, IoDevice, Filename, Logdir, RotateO, PacketC,
     case lists:any(fun(E) -> E end, [Rotate1, Rotate2, Rotate3]) of
 	true -> 
 	    {IoDevice2, Filename2, Gregorian_day2} =
-		rotate_log(IoDevice, Logdir, Host, Timezone),
+		rotate_log(IoDevice, Logdir, Host),
 	    {IoDevice2, Filename2, Gregorian_day2, 0};
 	false -> 
 	    {IoDevice, Filename, Gregorian_day_log, PacketC+1}
@@ -131,7 +128,7 @@ filter(FilterO, E) ->
      {Orientation, Stanza, Direction}}. 
 
 loop(Host, IoDevice, Filename, Logdir, CheckRKP, RotateO, PacketC,
-     Gregorian_day, Timezone, ShowIP, FilterO) ->
+     Gregorian_day, ShowIP, FilterO) ->
     receive
 	{addlog, E} ->
 	    {IoDevice3, Filename3, Gregorian_day3, PacketC3} =
@@ -143,24 +140,24 @@ loop(Host, IoDevice, Filename, Logdir, CheckRKP, RotateO, PacketC,
 				true ->
 				    manage_rotate(Host, IoDevice, Filename,
 						  Logdir, RotateO, PacketC,
-						  Gregorian_day, Timezone);
+						  Gregorian_day);
 				false ->
 				    {IoDevice, Filename, Gregorian_day,
 				     PacketC+1}
 			    end,
-			add_log(IoDevice2, Timezone, ShowIP, E, OSD),
+			add_log(IoDevice2, ShowIP, E, OSD),
 			{IoDevice2, Filename2, Gregorian_day2, PacketC2};
 		    _ ->
 			{IoDevice, Filename, Gregorian_day, PacketC}
 		end,
 	    loop(Host, IoDevice3, Filename3, Logdir, CheckRKP, RotateO,
-		 PacketC3, Gregorian_day3, Timezone, ShowIP, FilterO);
+		 PacketC3, Gregorian_day3, ShowIP, FilterO);
 	stop ->
 	    close_file(IoDevice),
 	    ok;
 	_ ->
 	    loop(Host, IoDevice, Filename, Logdir, CheckRKP, RotateO, PacketC,
-		 Gregorian_day, Timezone, ShowIP, FilterO)
+		 Gregorian_day, ShowIP, FilterO)
     end.
 
 send_packet({P, State}) ->
@@ -184,7 +181,7 @@ get_from_to(Packet) ->
 	#presence{from = F, to = T} -> {F, T}
     end.
 
-add_log(Io, Timezone, ShowIP, {Orientation, From, To, Packet}, _OSD) ->
+add_log(Io, ShowIP, {Orientation, From, To, Packet}, _OSD) ->
     %%{Orientation, Stanza, Direction} = OSD, 
     LocalJID = case Orientation of
 		   send -> From;
@@ -202,26 +199,19 @@ add_log(Io, Timezone, ShowIP, {Orientation, From, To, Packet}, _OSD) ->
 		       end;
 		   false -> ""
 	       end,
-    TimestampISO = get_now_iso(Timezone),
+    TimestampISO = get_now_iso(),
     io:fwrite(Io, "<packet or=\"~p\" ljid=\"~s\" ~sts=\"~s\">~s</packet>~n",
-	      [Orientation, jlib:jid_to_string(LocalJID), LocalIPS,
-	       TimestampISO, binary_to_list(fxml:element_to_binary(xmpp:encode(Packet)))]).
+	      [Orientation, binary_to_list(jid:encode(LocalJID)), LocalIPS,
+	       binary_to_list(TimestampISO), binary_to_list(fxml:element_to_binary(xmpp:encode(Packet)))]).
 
 %% -------------------
 %% File
 %% -------------------
 
-open_file(Logdir, Host, Timezone) ->
-    TimeStamp = get_now_iso(Timezone),
-    Year = string:substr(TimeStamp, 1, 4),
-    Month = string:substr(TimeStamp, 5, 2),
-    Day = string:substr(TimeStamp, 7, 2),
-    Hour = string:substr(TimeStamp, 10, 2),
-    Min = string:substr(TimeStamp, 13, 2),
-    Sec = string:substr(TimeStamp, 16, 2),
-    S = "-",
-    Logname = lists:flatten([Host,S,Year,S,Month,S,Day,S,Hour,S,Min,S,Sec,
-			     ".xml"]),
+open_file(Logdir, Host) ->
+    {{Year, Month, Day}, {Hour, Min, Sec}} = calendar:universal_time(),
+    Logname = str:format("~s-~4..0B~2..0B~2..0BT~2..0B:~2..0B:~2..0B.xml",
+          [Host, Year, Month, Day, Hour, Min, Sec]),
     Filename = filename:join([Logdir, Logname]),
 
     Gregorian_day = get_gregorian_day(),
@@ -243,9 +233,9 @@ close_file(IoDevice) ->
     io:fwrite(IoDevice, "~s~n", ["</log>"]),
     file:close(IoDevice).
 
-rotate_log(IoDevice, Logdir, Host, Timezone) ->
+rotate_log(IoDevice, Logdir, Host) ->
     close_file(IoDevice),
-    open_file(Logdir, Host, Timezone).
+    open_file(Logdir, Host).
 
 make_dir_rec(Dir) ->
     case file:read_file_info(Dir) of
@@ -264,12 +254,8 @@ make_dir_rec(Dir) ->
 
 get_gregorian_day() -> calendar:date_to_gregorian_days(date()).
 
-get_now_iso(Timezone) ->
-    TimeStamp = case Timezone of
-		    local -> calendar:local_time();
-		    universal -> calendar:universal_time()
-		end,
-    binary_to_list(jlib:timestamp_to_legacy(TimeStamp)).
+get_now_iso() ->
+    xmpp_util:encode_timestamp(now()).
 
 calc_div(A, B) when is_integer(A) and is_integer(B) and (B /= 0) ->
     A/B;
