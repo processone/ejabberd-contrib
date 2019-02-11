@@ -12,7 +12,8 @@
 -behaviour(gen_mod).
 
 -export([start/2, init/6, stop/1,
-	 send_packet/1, receive_packet/1]).
+	 send_packet/1, receive_packet/1,
+	 mod_opt_type/1, mod_options/1, depends/2]).
 
 -include("xmpp.hrl").
 
@@ -23,27 +24,27 @@
 %% -------------------
 
 start(Host, Opts) ->
-    Logdir = gen_mod:get_opt(logdir, Opts, fun(A) -> A end, "/tmp/jabberlogs/"),
+    Logdir = gen_mod:get_opt(logdir, Opts),
 
-    Rd = gen_mod:get_opt(rotate_days, Opts, fun(A) -> A end, 1),
-    Rf = case gen_mod:get_opt(rotate_megs, Opts, fun(A) -> A end, 10) of
+    Rd = gen_mod:get_opt(rotate_days, Opts),
+    Rf = case gen_mod:get_opt(rotate_megs, Opts) of
 	     no -> no;
 	     Rf1 -> Rf1*1024*1024
 	 end,
-    Rp = case gen_mod:get_opt(rotate_kpackets, Opts, fun(A) -> A end, 10) of
+    Rp = case gen_mod:get_opt(rotate_kpackets, Opts) of
 	     no -> no;
 	     Rp1 -> Rp1*1000
 	 end,
     RotateO = {Rd, Rf, Rp},
-    CheckRKP = gen_mod:get_opt(check_rotate_kpackets, Opts, fun(A) -> A end, 1),
-    Orientation = gen_mod:get_opt(orientation, Opts, fun(A) -> A end, [send, recv]),
-    Stanza = gen_mod:get_opt(stanza, Opts, fun(A) -> A end, [iq, message, presence, other]),
-    Direction = gen_mod:get_opt(direction, Opts, fun(A) -> A end, [internal, vhosts, external]),
+    CheckRKP = gen_mod:get_opt(check_rotate_kpackets, Opts),
+    Orientation = gen_mod:get_opt(orientation, Opts),
+    Stanza = gen_mod:get_opt(stanza, Opts),
+    Direction = gen_mod:get_opt(direction, Opts),
     FilterO = {
       {orientation, Orientation},
       {stanza, Stanza},
       {direction, Direction}},
-    ShowIP = gen_mod:get_opt(show_ip, Opts, fun(A) -> A end, false),
+    ShowIP = gen_mod:get_opt(show_ip, Opts),
 
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE, send_packet, 90),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, receive_packet, 90),
@@ -63,6 +64,9 @@ init(Host, Logdir, RotateO, CheckRKP, ShowIP, FilterO) ->
     {IoDevice, Filename, Gregorian_day} = open_file(Logdir, Host),
     loop(Host, IoDevice, Filename, Logdir, CheckRKP, RotateO, 0, Gregorian_day,
 	 ShowIP, FilterO).
+
+depends(_Host, _Opts) ->
+    [].
 
 %% -------------------
 %% Main
@@ -261,3 +265,39 @@ calc_div(A, B) when is_integer(A) and is_integer(B) and (B /= 0) ->
     A/B;
 calc_div(_A, _B) ->
     0.5. %% This ensures that no rotation is performed
+
+mod_opt_type(stanza) ->
+    fun (L) when is_list(L) -> [] = L -- [iq, message, presence, other], L end;
+mod_opt_type(direction) ->
+    fun (L) when is_list(L) -> [] = L -- [internal, vhosts, external], L end;
+mod_opt_type(orientation) ->
+    fun (L) when is_list(L) -> [] = L -- [send, recv], L end;
+mod_opt_type(logdir) ->
+    fun iolist_to_binary/1;
+mod_opt_type(show_ip) ->
+    fun (A) when is_boolean(A) -> A end;
+mod_opt_type(rotate_days) ->
+    fun (I) when is_integer(I), I > 0 -> I;
+        (no) -> no
+    end;
+mod_opt_type(rotate_megs) ->
+    fun (I) when is_integer(I), I > 0 -> I;
+        (no) -> no
+    end;
+mod_opt_type(rotate_kpackets) ->
+    fun (I) when is_integer(I), I > 0 -> I;
+        (no) -> no
+    end;
+mod_opt_type(check_rotate_kpackets) ->
+    fun (I) when is_integer(I), I > 0 -> I end.
+
+mod_options(_Host) ->
+    [{stanza, [iq, message, presence, other]},
+     {direction, [internal, vhosts, external]},
+     {orientation, [send, recv]},
+     {logdir, "/tmp/jabberlogs/"},
+     {show_ip, false},
+     {rotate_days, 1},
+     {rotate_megs, 10},
+     {rotate_kpackets, 10},
+     {check_rotate_kpackets, 1}].
