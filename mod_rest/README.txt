@@ -199,7 +199,17 @@ To execute an ejabberd command, simply provide its name and arguments as in ejab
 wget http://localhost:5285/rest/ --server-response --post-data 'registered_users localhost'
 
 If you configure access_commands option, you must provide the credentials like this:
- wget http://localhost:5285/rest/ --server-response --post-data '--auth user1 localhost thepass registered_users localhost'
+wget http://localhost:5285/rest/ --server-response --post-data '--auth user1 localhost thepass registered_users localhost'
+
+
+	EXAMPLE COMMAND WITH CURL
+	==============================
+
+Example call with Curl:
+curl -X POST -i http://localhost:5285/rest/ -d 'create_room testroom muc.localhost localhost'
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Content-Length: 1
 
 
 	EXAMPLE CALL WITH PYTHON
