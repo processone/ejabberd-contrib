@@ -67,9 +67,11 @@ start(_Host, Opts) ->
   ejabberd_hooks:add(filter_packet, global, ?MODULE, on_filter_packet, 0),
   ok.
 
-stop(_Host) ->
-  bloom_gen_server:stop(),
-  normalize_leet_gen_server:stop(),
+stop(Host) ->
+  Blacklists = gen_mod:get_module_opt(Host, ?MODULE, blacklists),
+  lists:map(fun bloom_gen_server:stop/1, Blacklists),
+  CharMaps = gen_mod:get_module_opt(Host, ?MODULE, charmaps),
+  lists:map(fun normalize_leet_gen_server:stop/1, CharMaps),
   ejabberd_hooks:delete(filter_packet, global, ?MODULE, on_filter_packet, 0),
   ok.
 

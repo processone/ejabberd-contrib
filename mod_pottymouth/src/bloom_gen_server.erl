@@ -8,7 +8,7 @@
 -export([member/1]).
 
 %% gen_server callbacks
--export([start/1, stop/0, init/1, handle_call/3, handle_cast/2, handle_info/2,
+-export([start/1, stop/1, init/1, handle_call/3, handle_cast/2, handle_info/2,
         terminate/2, code_change/3]).
 
 serverName(Lang) ->
@@ -20,8 +20,8 @@ member({Lang, Word} = _MessageToken) ->
 start({Lang, BlacklistFile} = _Opts) ->
   gen_server:start_link({local, serverName(Lang)}, ?MODULE, [BlacklistFile], []).
 
-stop() ->
-    ok.
+stop({Lang, _BlacklistFile} = _Opts) ->
+    gen_server:stop(serverName(Lang)).
 
 init([BlacklistFile]) ->
   ?INFO_MSG("Building bloom ~p~n", [BlacklistFile]),
