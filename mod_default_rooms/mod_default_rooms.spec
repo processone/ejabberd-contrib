@@ -1,0 +1,5 @@
+author: "Holger Weiss <holger at zedat.fu-berlin.de>"
+category: "muc"
+summary: "Auto-bookmark rooms on registration"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"
