@@ -293,14 +293,20 @@ s2s_in_handle_info(State, _) ->
 %%--------------------------------------------------------------------
 -spec needs_checking(jid(), jid()) -> boolean().
 needs_checking(From, #jid{lserver = LServer} = To) ->
-    Access = gen_mod:get_module_opt(LServer, ?MODULE, access_spam),
-    case acl:match_rule(LServer, Access, To) of
-	allow ->
-	    ?DEBUG("Spam not filtered for ~s", [jid:encode(To)]),
-	    false;
-	deny ->
-	    ?DEBUG("Spam is filtered for ~s", [jid:encode(To)]),
-	    not mod_roster:is_subscribed(From, To)
+    case gen_mod:is_loaded(LServer, ?MODULE) of
+	true ->
+	    Access = gen_mod:get_module_opt(LServer, ?MODULE, access_spam),
+	    case acl:match_rule(LServer, Access, To) of
+		allow ->
+		    ?DEBUG("Spam not filtered for ~s", [jid:encode(To)]),
+		    false;
+		deny ->
+		    ?DEBUG("Spam is filtered for ~s", [jid:encode(To)]),
+		    not mod_roster:is_subscribed(From, To)
+	    end;
+	false ->
+	    ?DEBUG("~s not loaded for ~s", [?MODULE, LServer]),
+	    false
     end.
 
 -spec check_from(binary(), jid()) -> ham | spam.
