@@ -51,7 +51,7 @@
 
 %% ejabberd_commands callbacks.
 -export([get_commands_spec/0, reload_spam_filter_files/1,
-	 show_spam_filter_cache/1, expire_spam_filter_cache/2]).
+	 get_spam_filter_cache/1, expire_spam_filter_cache/2]).
 
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
@@ -559,9 +559,9 @@ get_commands_spec() ->
 			module = ?MODULE, function = reload_spam_filter_files,
 			args = [{host, binary}],
 			result = {res, restuple}},
-     #ejabberd_commands{name = show_spam_filter_cache, tags = [filter],
+     #ejabberd_commands{name = get_spam_filter_cache, tags = [filter],
 			desc = "Show spam filter cache contents",
-			module = ?MODULE, function = show_spam_filter_cache,
+			module = ?MODULE, function = get_spam_filter_cache,
 			args = [{host, binary}],
 			result = {spammers, {list, {spammer, {tuple,
 				  [{jid, string}, {timestamp, integer}]}}}}},
@@ -598,9 +598,9 @@ reload_spam_filter_files(Host) ->
 	    end
     end.
 
--spec show_spam_filter_cache(binary())
+-spec get_spam_filter_cache(binary())
       -> [{binary(), integer()}] | {error, string()}.
-show_spam_filter_cache(Host) ->
+get_spam_filter_cache(Host) ->
     LServer = jid:nameprep(Host),
     Proc = get_proc_name(LServer),
     try gen_server:call(Proc, get_cache, ?COMMAND_TIMEOUT) of
@@ -619,7 +619,7 @@ expire_spam_filter_cache(<<"global">>, Age) ->
 			      {ok, _} = expire_spam_filter_cache(Host, Age)
 		      end, ejabberd_config:get_myhosts()) of
 	ok ->
-	    {ok, "Expired cache filter entries"}
+	    {ok, "Expired cache entries"}
     catch error:{badmatch, {error, _Reason} = Error} ->
 	    Error
     end;

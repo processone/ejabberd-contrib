@@ -42,7 +42,7 @@ The configurable mod_spam_filter options are:
 - spam_urls_file (default: none)
 
   This option specifies the full path to a plain text file containing a
-  list of URLs known to be mentioned in spam message bodys.  Messages
+  list of URLs known to be mentioned in spam message bodies.  Messages
   containing at least one of the listed URLs will be classified as spam.
   Furthermore, the sender's JID will be cached, so that future traffic
   originating from that JID will be classified as spam as well.
@@ -68,9 +68,9 @@ The configurable mod_spam_filter options are:
 	-----------------
 
 This module provides ejabberdctl/API calls to reread the spam JID/URL
-files, to show the JID cache, and to expire old entries from that cache.
-See:
+files, to print the JID cache contents, and to expire old entries from
+that cache.  See:
 
 $ ejabberdctl help reload-spam-filter-files
-$ ejabberdctl help show-spam-filter-cache
+$ ejabberdctl help get-spam-filter-cache
 $ ejabberdctl help expire-spam-filter-cache
