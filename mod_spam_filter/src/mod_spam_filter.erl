@@ -409,7 +409,7 @@ reload_files(JIDsFile, URLsFile, #state{host = Host} = State) ->
 		true ->
 		    ?INFO_MSG("Reloaded spam URLs for ~s (unchanged)", [Host]);
 		false ->
-		    ?INFO_MSG("Reloaded spam URLs for ~s (modfied)", [Host])
+		    ?INFO_MSG("Reloaded spam URLs for ~s (changed)", [Host])
 	    end,
 	    Txt = <<"Reloaded spam JID/URL files">>,
 	    {{ok, Txt}, State#state{jid_set = JIDsSet, url_set = URLsSet}}
