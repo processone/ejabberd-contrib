@@ -485,12 +485,15 @@ reject(#message{from = From, to = To, type = Type, lang = Lang} = Msg)
        Type /= error ->
     ?INFO_MSG("Rejecting unsolicited message from ~s to ~s",
 	      [jid:encode(From), jid:encode(To)]),
-    Txt = <<"Your traffic is unsolicited">>,
+    Txt = <<"Your message is unsolicited">>,
     Err = xmpp:err_policy_violation(Txt, Lang),
     ejabberd_router:route_error(Msg, Err);
-reject(#presence{from = From, to = To}) ->
+reject(#presence{from = From, to = To, lang = Lang} = Presence) ->
     ?INFO_MSG("Rejecting unsolicited presence from ~s to ~s",
-	      [jid:encode(From), jid:encode(To)]);
+	      [jid:encode(From), jid:encode(To)]),
+    Txt = <<"Your traffic is unsolicited">>,
+    Err = xmpp:err_policy_violation(Txt, Lang),
+    ejabberd_router:route_error(Presence, Err);
 reject(_) ->
     ok.
 
