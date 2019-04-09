@@ -480,15 +480,17 @@ trim(S) ->
     re:replace(S, <<"\\s+$">>, <<>>, [{return, binary}]).
 
 -spec reject(stanza()) -> ok.
-reject(#message{from = From, type = Type, lang = Lang} = Msg)
+reject(#message{from = From, to = To, type = Type, lang = Lang} = Msg)
   when Type /= groupchat,
        Type /= error ->
-    ?INFO_MSG("Rejecting unsolicited message from ~s", [jid:encode(From)]),
+    ?INFO_MSG("Rejecting unsolicited message from ~s to ~s",
+	      [jid:encode(From), jid:encode(To)]),
     Txt = <<"Your traffic is unsolicited">>,
     Err = xmpp:err_policy_violation(Txt, Lang),
     ejabberd_router:route_error(Msg, Err);
-reject(#presence{from = From}) ->
-    ?INFO_MSG("Rejecting unsolicited presence from ~s", [jid:encode(From)]);
+reject(#presence{from = From, to = To}) ->
+    ?INFO_MSG("Rejecting unsolicited presence from ~s to ~s",
+	      [jid:encode(From), jid:encode(To)]);
 reject(_) ->
     ok.
 
