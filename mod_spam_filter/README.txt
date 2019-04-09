@@ -68,9 +68,10 @@ The configurable mod_spam_filter options are:
 	-----------------
 
 This module provides ejabberdctl/API calls to reread the spam JID/URL
-files, to print the JID cache contents, and to expire old entries from
-that cache.  See:
+files, to print the JID cache contents, and to remove entries from that
+cache.  See:
 
 $ ejabberdctl help reload-spam-filter-files
 $ ejabberdctl help get-spam-filter-cache
 $ ejabberdctl help expire-spam-filter-cache
+$ ejabberdctl help drop-from-spam-filter-cache

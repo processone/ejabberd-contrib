@@ -51,7 +51,8 @@
 
 %% ejabberd_commands callbacks.
 -export([get_commands_spec/0, reload_spam_filter_files/1,
-	 get_spam_filter_cache/1, expire_spam_filter_cache/2]).
+	 get_spam_filter_cache/1, expire_spam_filter_cache/2,
+	 drop_from_spam_filter_cache/2]).
 
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
@@ -175,6 +176,9 @@ handle_call({reload_files, JIDsFile, URLsFile}, _From, State) ->
     {reply, {spam_filter, Result}, State1};
 handle_call({expire_cache, Age}, _From, State) ->
     {Result, State1} = expire_cache(Age, State),
+    {reply, {spam_filter, Result}, State1};
+handle_call({drop_from_cache, JID}, _From, State) ->
+    {Result, State1} = drop_from_cache(JID, State),
     {reply, {spam_filter, Result}, State1};
 handle_call(get_cache, _From, #state{jid_cache = Cache} = State) ->
     {reply, {spam_filter, maps:to_list(Cache)}, State};
@@ -549,6 +553,17 @@ expire_cache(Age, #state{jid_cache = Cache} = State) ->
     Txt = format("Expired ~B cache entries", [NumExp]),
     {{ok, Txt}, State#state{jid_cache = Cache1}}.
 
+-spec drop_from_cache(ljid(), state()) -> {{ok, binary()}, state()}.
+drop_from_cache(LJID, #state{jid_cache = Cache} = State) ->
+    Cache1 = maps:remove(LJID, Cache),
+    if map_size(Cache1) < map_size(Cache) ->
+	    Txt = format("~s removed from cache", [jid:encode(LJID)]),
+	    {{ok, Txt}, State#state{jid_cache = Cache1}};
+       true ->
+	    Txt = format("~s wasn't cached", [jid:encode(LJID)]),
+	    {{ok, Txt}, State}
+    end.
+
 %%--------------------------------------------------------------------
 %% ejabberd command callbacks.
 %%--------------------------------------------------------------------
@@ -569,6 +584,12 @@ get_commands_spec() ->
 			desc = "Remove old/unused spam JIDs from cache",
 			module = ?MODULE, function = expire_spam_filter_cache,
 			args = [{host, binary}, {seconds, integer}],
+			result = {res, restuple}},
+     #ejabberd_commands{name = drop_from_spam_filter_cache, tags = [filter],
+			desc = "Drop JID from spam filter cache",
+			module = ?MODULE,
+			function = drop_from_spam_filter_cache,
+			args = [{host, binary}, {jid, binary}],
 			result = {res, restuple}}].
 
 -spec reload_spam_filter_files(binary()) -> {ok | error, string()}.
@@ -633,4 +654,33 @@ expire_spam_filter_cache(Host, Age) ->
 	    {error, "Not configured for " ++ binary_to_list(Host)};
 	  exit:{timeout, _} ->
 	    {error, "Timeout while querying ejabberd"}
+    end.
+
+-spec drop_from_spam_filter_cache(binary(), binary()) -> {ok | error, string()}.
+drop_from_spam_filter_cache(<<"global">>, JID) ->
+    try lists:foreach(fun(Host) ->
+			      {ok, _} = drop_from_spam_filter_cache(Host, JID)
+		      end, ejabberd_config:get_myhosts()) of
+	ok ->
+	    {ok, "Dropped " ++ binary_to_list(JID) ++ " from caches"}
+    catch error:{badmatch, {error, _Reason} = Error} ->
+	    Error
+    end;
+drop_from_spam_filter_cache(Host, EncJID) ->
+    LServer = jid:nameprep(Host),
+    Proc = get_proc_name(LServer),
+    try jid:decode(EncJID) of
+	#jid{} = JID ->
+	    LJID = jid:remove_resource(jid:tolower(JID)),
+	    try gen_server:call(Proc, {drop_from_cache, LJID},
+				?COMMAND_TIMEOUT) of
+		{spam_filter, {Status, Txt}} ->
+		    {Status, binary_to_list(Txt)}
+	    catch exit:{noproc, _} ->
+		    {error, "Not configured for " ++ binary_to_list(Host)};
+		  exit:{timeout, _} ->
+		    {error, "Timeout while querying ejabberd"}
+	    end
+    catch _:{bad_jid, _} ->
+	    {error, "Not a valid JID: " ++ binary_to_list(EncJID)}
     end.
