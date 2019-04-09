@@ -34,6 +34,10 @@ The configurable mod_spam_filter options are:
   This option specifies the full path to a plain text file containing a
   list of known spammer JIDs, one JID per line.  Messages and subscription
   requests sent from one of the listed JIDs will be classified as spam.
+  Messages containing at least one of the listed JIDs will be classified
+  as spam as well.  Furthermore, the sender's JID will be cached, so that
+  future traffic originating from that JID will also be classified as
+  spam.
 
 - spam_urls_file (default: none)
 

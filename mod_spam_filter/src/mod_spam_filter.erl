@@ -62,12 +62,14 @@
 
 -type url() :: binary().
 -type filename() :: binary() | none.
+-type jid_set() :: sets:set(ljid()).
+-type url_set() :: sets:set(url()).
 -type s2s_in_state() :: ejabberd_s2s_in:state().
 
 -record(state,
 	{host = <<>>          :: binary(),
-	 url_set = sets:new() :: sets:set(url()),
-	 jid_set = sets:new() :: sets:set(ljid()),
+	 url_set = sets:new() :: url_set(),
+	 jid_set = sets:new() :: jid_set(),
 	 jid_cache = #{}      :: map(),
 	 max_cache_size = 0   :: non_neg_integer() | unlimited}).
 
@@ -156,34 +158,18 @@ init([Host, Opts]) ->
 -spec handle_call(term(), {pid(), term()}, state())
       -> {reply, {spam_filter, term()}, state()} | {noreply, state()}.
 handle_call({check_jid, From}, _From, #state{jid_set = JIDsSet} = State) ->
-    {Result, State2} =
-	case sets:is_element(From, JIDsSet) of
-	    true ->
-		?DEBUG("Spam JID found: ~s", [jid:encode(From)]),
-		{spam, State};
-	    false ->
-		case cache_lookup(From, State) of
-		    {true, State1} ->
-			?DEBUG("Spam JID found: ~s", [jid:encode(From)]),
-			{spam, State1};
-		    {false, State1} ->
-			?DEBUG("JID not listed: ~s", [jid:encode(From)]),
-			{ham, State1}
-		end
-	end,
-    {reply, {spam_filter, Result}, State2};
-handle_call({check_urls, URLs, From}, _From,
-	    #state{url_set = URLsSet} = State) ->
-    {Result, State1} =
-	case lists:any(fun(URL) -> sets:is_element(URL, URLsSet) end, URLs) of
-	    true ->
-		?DEBUG("Spam URL(s) found: ~p", [URLs]),
-		{spam, cache_insert(From, State)};
-	    false ->
-		?DEBUG("URL(s) not listed: ~p", [URLs]),
-		{ham, State}
-	end,
+    {Result, State1} = filter_jid(From, JIDsSet, State),
     {reply, {spam_filter, Result}, State1};
+handle_call({check_body, URLs, JIDs, From}, _From,
+	    #state{url_set = URLsSet, jid_set = JIDsSet} = State) ->
+    {Result1, State1} = filter_body(URLs, URLsSet, From, State),
+    {Result2, State2} = filter_body(JIDs, JIDsSet, From, State1),
+    Result = if Result1 == spam ->
+		     Result1;
+		true ->
+		     Result2
+	     end,
+    {reply, {spam_filter, Result}, State2};
 handle_call({reload_files, JIDsFile, URLsFile}, _From, State) ->
     {Result, State1} = reload_files(JIDsFile, URLsFile, State),
     {reply, {spam_filter, Result}, State1};
@@ -324,21 +310,20 @@ check_from(Host, From) ->
 
 -spec check_body(binary(), jid(), binary()) -> ham | spam.
 check_body(Host, From, Body) ->
-    case extract_urls(Body) of
-	{urls, URLs} ->
+    case {extract_urls(Body), extract_jids(Body)} of
+	{none, none} ->
+	    ?DEBUG("No JIDs/URLs found in message", []),
+	    ham;
+	{URLs, JIDs} ->
 	    Proc = get_proc_name(Host),
 	    LFrom = jid:remove_resource(jid:tolower(From)),
-	    try gen_server:call(Proc, {check_urls, URLs, LFrom}) of
+	    try gen_server:call(Proc, {check_body, URLs, JIDs, LFrom}) of
 		{spam_filter, Result} ->
 		    Result
 	    catch exit:{timeout, _} ->
-		    ?WARNING_MSG("Timeout while checking body for spam URLs",
-				 []),
+		    ?WARNING_MSG("Timeout while checking body", []),
 		    ham
-	    end;
-	none ->
-	    ?DEBUG("No URL(s) found in message", []),
-	    ham
+	    end
     end.
 
 -spec extract_urls(binary()) -> {urls, [url()]} | none.
@@ -351,6 +336,59 @@ extract_urls(Body) ->
 	nomatch ->
 	    none
     end.
+
+-spec extract_jids(binary()) -> {jids, [ljid()]} | none.
+extract_jids(Body) ->
+    RE = <<"\\S+@\\S+">>,
+    Options = [global, {capture, all, binary}],
+    case re:run(Body, RE, Options) of
+	{match, Captured} when is_list(Captured) ->
+	    {jids, lists:filtermap(fun try_decode_jid/1,
+				   lists:flatten(Captured))};
+	nomatch ->
+	    none
+    end.
+
+-spec try_decode_jid(binary()) -> {true, ljid()} | false.
+try_decode_jid(S) ->
+    try jid:decode(S) of
+	#jid{} = JID ->
+	    {true, jid:remove_resource(jid:tolower(JID))}
+    catch _:{bad_jid, _} ->
+	    false
+    end.
+
+-spec filter_jid(ljid(), jid_set(), state()) -> {ham | spam, state()}.
+filter_jid(From, Set, State) ->
+    case sets:is_element(From, Set) of
+	true ->
+	    ?DEBUG("Spam JID found: ~s", [jid:encode(From)]),
+	    {spam, State};
+	false ->
+	    case cache_lookup(From, State) of
+		{true, State1} ->
+		    ?DEBUG("Spam JID found: ~s", [jid:encode(From)]),
+		    {spam, State1};
+		{false, State1} ->
+		    ?DEBUG("JID not listed: ~s", [jid:encode(From)]),
+		    {ham, State1}
+	    end
+    end.
+
+-spec filter_body({urls, [url()]} | {jids, [ljid()]} | none,
+		  url_set() | jid_set(), jid(), state())
+      -> {ham | spam, state()}.
+filter_body({_, Addrs}, Set, From, State) ->
+    case lists:any(fun(Addr) -> sets:is_element(Addr, Set) end, Addrs) of
+	true ->
+	    ?DEBUG("Spam addresses found: ~p", [Addrs]),
+	    {spam, cache_insert(From, State)};
+	false ->
+	    ?DEBUG("Addresses not listed: ~p", [Addrs]),
+	    {ham, State}
+    end;
+filter_body(none, _Set, _From, State) ->
+    {ham, State}.
 
 -spec reload_files(filename(), filename(), state())
       -> {{ok | error, binary()}, state()}.
@@ -379,13 +417,13 @@ reload_files(JIDsFile, URLsFile, #state{host = Host} = State) ->
 	    {{error, Txt}, State}
     end.
 
--spec read_files(filename(), filename()) -> {sets:set(ljid()), sets:set(url())}.
+-spec read_files(filename(), filename()) -> {jid_set(), url_set()}.
 read_files(JIDsFile, URLsFile) ->
     {read_file(JIDsFile, fun parse_jid/1),
      read_file(URLsFile, fun parse_url/1)}.
 
 -spec read_file(filename(), fun((binary()) -> ljid() | url()))
-      -> sets:set(ljid()) | sets:set(url()).
+      -> jid_set() | url_set().
 read_file(none, _ParseLine) ->
     sets:new();
 read_file(File, ParseLine) ->
@@ -400,8 +438,8 @@ read_file(File, ParseLine) ->
     end.
 
 -spec read_line(file:io_device(), fun((binary()) -> ljid() | url()),
-		sets:set(ljid()) | sets:set(url()))
-      -> sets:set(ljid()) | sets:set(url()).
+		jid_set() | url_set())
+      -> jid_set() | url_set().
 read_line(Fd, ParseLine, Set) ->
     case file:read_line(Fd) of
 	{ok, Line} ->
