@@ -233,7 +233,8 @@ s2s_receive_packet({drop, _State} = Acc) ->
 s2s_receive_packet({#message{from = From,
 			     to = #jid{lserver = LServer} = To,
 			     type = Type, body = Body} = Msg,
-		    State} = Acc) when Type /= error ->
+		    State} = Acc) when Type /= groupchat,
+				       Type /= error ->
     case needs_checking(From, To) of
 	true ->
 	    case check_from(LServer, From) of
