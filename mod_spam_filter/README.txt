@@ -32,12 +32,13 @@ The configurable mod_spam_filter options are:
 - spam_dump_file (default: none)
 
   This option specifies the path to a file that messages classified as
-  spam will be written to.  The @HOST@ keyword will be substituted with
-  the name of the virtual host.  Note that this module doesn't limit the
-  file size, so if you use this option, make sure to monitor disk file
-  usage and to rotate the file if necessary.  After rotation, the command
-  "ejabberdctl reopen-log" can be called to let the module reopen the spam
-  dump file.
+  spam will be written to.  The messages are dumped in raw XML format, and
+  a <delay/> tag with the current timestamp is added.  The @HOST@ keyword
+  will be substituted with the name of the virtual host.  Note that this
+  module doesn't limit the file size, so if you use this option, make sure
+  to monitor disk file usage and to rotate the file if necessary.  After
+  rotation, the command "ejabberdctl reopen-log" can be called to let the
+  module reopen the spam dump file.
 
 - spam_jids_file (default: none)
 
