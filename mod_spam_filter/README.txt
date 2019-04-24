@@ -31,8 +31,8 @@ The configurable mod_spam_filter options are:
 
 - spam_dump_file (default: none)
 
-  This option specifies the full path to a file that messages classified
-  as spam will be written to.  The @HOST@ keyword will be substituted with
+  This option specifies the path to a file that messages classified as
+  spam will be written to.  The @HOST@ keyword will be substituted with
   the name of the virtual host.  Note that this module doesn't limit the
   file size, so if you use this option, make sure to monitor disk file
   usage and to rotate the file if necessary.  After rotation, the command
@@ -41,8 +41,8 @@ The configurable mod_spam_filter options are:
 
 - spam_jids_file (default: none)
 
-  This option specifies the full path to a plain text file containing a
-  list of known spammer JIDs, one JID per line.  Messages and subscription
+  This option specifies the path to a plain text file containing a list of
+  known spammer JIDs, one JID per line.  Messages and subscription
   requests sent from one of the listed JIDs will be classified as spam.
   Messages containing at least one of the listed JIDs will be classified
   as spam as well.  Furthermore, the sender's JID will be cached, so that
@@ -51,9 +51,9 @@ The configurable mod_spam_filter options are:
 
 - spam_urls_file (default: none)
 
-  This option specifies the full path to a plain text file containing a
-  list of URLs known to be mentioned in spam message bodies.  Messages
-  containing at least one of the listed URLs will be classified as spam.
+  This option specifies the path to a plain text file containing a list of
+  URLs known to be mentioned in spam message bodies.  Messages containing
+  at least one of the listed URLs will be classified as spam.
   Furthermore, the sender's JID will be cached, so that future traffic
   originating from that JID will be classified as spam as well.
 
