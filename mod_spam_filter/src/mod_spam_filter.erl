@@ -47,7 +47,8 @@
 
 %% ejabberd_hooks callbacks.
 -export([s2s_in_handle_info/2,
-	 s2s_receive_packet/1]).
+	 s2s_receive_packet/1,
+	 reopen_log/0]).
 
 %% ejabberd_commands callbacks.
 -export([get_commands_spec/0, reload_spam_filter_files/1,
@@ -69,6 +70,7 @@
 
 -record(state,
 	{host = <<>>          :: binary(),
+	 dump_fd = undefined  :: file:io_device() | undefined,
 	 url_set = sets:new() :: url_set(),
 	 jid_set = sets:new() :: jid_set(),
 	 jid_cache = #{}      :: map(),
@@ -104,6 +106,13 @@ depends(_Host, _Opts) ->
     [].
 
 -spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
+mod_opt_type(spam_dump_file) ->
+    fun(none) -> none;
+       (File) ->
+	    {ok, Fd} = file:open(File, [append, raw]),
+	    ok = file:close(Fd),
+	    iolist_to_binary(File)
+    end;
 mod_opt_type(spam_jids_file) ->
     fun(none) -> none;
        (File) ->
@@ -127,7 +136,8 @@ mod_opt_type(cache_size) ->
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
-    [{spam_jids_file, none},
+    [{spam_dump_file, none},
+     {spam_jids_file, none},
      {spam_urls_file, none},
      {access_spam, none},
      {cache_size, 10000}].
@@ -138,6 +148,7 @@ mod_options(_Host) ->
 -spec init(list()) -> {ok, state()} | {stop, term()}.
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
+    DumpFile = expand_host(proplists:get_value(spam_dump_file, Opts), Host),
     JIDsFile = proplists:get_value(spam_jids_file, Opts),
     URLsFile = proplists:get_value(spam_urls_file, Opts),
     try read_files(JIDsFile, URLsFile) of
@@ -146,9 +157,21 @@ init([Host, Opts]) ->
 			       s2s_in_handle_info, 90),
 	    ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE,
 			       s2s_receive_packet, 50),
+	    DumpFd = if DumpFile == none ->
+			     undefined;
+			true ->
+			     Modes = [append, raw, binary, delayed_write],
+			     case file:open(DumpFile, Modes) of
+				 {ok, Fd} ->
+				     Fd;
+				 {error, Reason} ->
+				     throw({open, DumpFile, Reason})
+			     end
+		     end,
 	    {ok, #state{host = Host,
 			jid_set = JIDsSet,
 			url_set = URLsSet,
+			dump_fd = DumpFd,
 			max_cache_size = proplists:get_value(cache_size, Opts)}}
     catch {Op, File, Reason} when Op == open;
 				  Op == read ->
@@ -187,20 +210,42 @@ handle_call(Request, From, State) ->
     {noreply, State}.
 
 -spec handle_cast(term(), state()) -> {noreply, state()}.
-handle_cast({reload, NewOpts, OldOpts}, State) ->
-    JIDsFile = proplists:get_value(spam_jids_file, NewOpts),
-    URLsFile = proplists:get_value(spam_urls_file, NewOpts),
-    State1 = case {proplists:get_value(cache_size, OldOpts),
-		   proplists:get_value(cache_size, NewOpts)} of
-		 {OldMax, NewMax} when NewMax < OldMax ->
-		     shrink_cache(State#state{max_cache_size = NewMax});
-		 {OldMax, NewMax} when NewMax > OldMax ->
-		     State#state{max_cache_size = NewMax};
-		 {_OldMax, _NewMax} ->
+handle_cast({dump, _XML}, #state{dump_fd = undefined} = State) ->
+    {noreply, State};
+handle_cast({dump, XML}, #state{dump_fd = Fd} = State) ->
+    case file:write(Fd, [XML, <<$\n>>]) of
+	ok ->
+	    ok;
+	{error, Reason} ->
+	    ?ERROR_MSG("Cannot write spam to dump file: ~s",
+		       [file:format_error(Reason)])
+    end,
+    {noreply, State};
+handle_cast({reload, NewOpts, OldOpts}, #state{host = Host} = State) ->
+    State1 = case {proplists:get_value(spam_dump_file, OldOpts),
+		   proplists:get_value(spam_dump_file, NewOpts)} of
+		 {OldDumpFile, NewDumpFile} when NewDumpFile /= OldDumpFile ->
+		     close_dump_file(expand_host(OldDumpFile, Host), State),
+		     open_dump_file(expand_host(NewDumpFile, Host), State);
+		 {_OldDumpFile, _NewDumpFile} ->
 		     State
 	     end,
-    {_Result, State2} = reload_files(JIDsFile, URLsFile, State1),
-    {noreply, State2};
+    State2 = case {proplists:get_value(cache_size, OldOpts),
+		   proplists:get_value(cache_size, NewOpts)} of
+		 {OldMax, NewMax} when NewMax < OldMax ->
+		     shrink_cache(State1#state{max_cache_size = NewMax});
+		 {OldMax, NewMax} when NewMax > OldMax ->
+		     State1#state{max_cache_size = NewMax};
+		 {_OldMax, _NewMax} ->
+		     State1
+	     end,
+    JIDsFile = proplists:get_value(spam_jids_file, NewOpts),
+    URLsFile = proplists:get_value(spam_urls_file, NewOpts),
+    {_Result, State3} = reload_files(JIDsFile, URLsFile, State2),
+    {noreply, State3};
+handle_cast(reopen_log, State) ->
+    close_dump_file(State),
+    {noreply, open_dump_file(State)};
 handle_cast(Request, State) ->
     ?ERROR_MSG("Got unexpected request from: ~p", [Request]),
     {noreply, State}.
@@ -211,8 +256,9 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 -spec terminate(normal | shutdown | {shutdown, term()} | term(), state()) -> ok.
-terminate(Reason, #state{host = Host}) ->
+terminate(Reason, #state{host = Host} = State) ->
     ?DEBUG("Stopping spam filter process for ~s: ~p", [Host, Reason]),
+    close_dump_file(State),
     ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE,
 			  s2s_receive_packet, 50),
     ejabberd_hooks:delete(s2s_in_handle_info, Host, ?MODULE,
@@ -278,6 +324,13 @@ s2s_in_handle_info(State, {_Ref, {spam_filter, _}}) ->
     {stop, State};
 s2s_in_handle_info(State, _) ->
     State.
+
+-spec reopen_log() -> ok.
+reopen_log() ->
+    lists:foreach(fun(Host) ->
+			  Proc = get_proc_name(Host),
+			  gen_server:cast(Proc, reopen_log)
+		  end, ejabberd_config:get_myhosts()).
 
 %%--------------------------------------------------------------------
 %% Internal functions.
@@ -488,6 +541,7 @@ reject(#message{from = From, to = To, type = Type, lang = Lang} = Msg)
 	      [jid:encode(From), jid:encode(To)]),
     Txt = <<"Your message is unsolicited">>,
     Err = xmpp:err_policy_violation(Txt, Lang),
+    maybe_dump_spam(Msg),
     ejabberd_router:route_error(Msg, Err);
 reject(#presence{from = From, to = To, lang = Lang} = Presence) ->
     ?INFO_MSG("Rejecting unsolicited presence from ~s to ~s",
@@ -498,9 +552,60 @@ reject(#presence{from = From, to = To, lang = Lang} = Presence) ->
 reject(_) ->
     ok.
 
+-spec open_dump_file(state()) -> state().
+open_dump_file(#state{host = Host} = State) ->
+    DumpFile = gen_mod:get_module_opt(Host, ?MODULE, spam_dump_file),
+    DumpFile1 = expand_host(DumpFile, Host),
+    open_dump_file(DumpFile1, State).
+
+-spec open_dump_file(filename(), state()) -> state().
+open_dump_file(none, State) ->
+    State#state{dump_fd = undefined};
+open_dump_file(Name, State) ->
+    Modes = [append, raw, binary, delayed_write],
+    case file:open(Name, Modes) of
+	{ok, Fd} ->
+	    State#state{dump_fd = Fd};
+	{error, Reason} ->
+	    ?ERROR_MSG("Cannot open ~s: ~s", [Name, file:format_error(Reason)]),
+	    State#state{dump_fd = undefined}
+    end.
+
+-spec close_dump_file(state()) -> ok.
+close_dump_file(#state{host = Host} = State) ->
+    DumpFile = gen_mod:get_module_opt(Host, ?MODULE, spam_dump_file),
+    DumpFile1 = expand_host(DumpFile, Host),
+    close_dump_file(DumpFile1, State).
+
+-spec close_dump_file(binary(), state()) -> ok.
+close_dump_file(_Name, #state{dump_fd = undefined}) ->
+    ok;
+close_dump_file(Name, #state{dump_fd = Fd}) ->
+    case file:close(Fd) of
+	ok ->
+	    ok;
+	{error, Reason} ->
+	    ?ERROR_MSG("Cannot close ~s: ~s", [Name, file:format_error(Reason)])
+    end.
+
+-spec maybe_dump_spam(message()) -> ok.
+maybe_dump_spam(#message{to = #jid{lserver = LServer}} = Msg) ->
+    By = jid:make(<<>>, LServer),
+    Proc = get_proc_name(LServer),
+    Time = erlang:timestamp(),
+    Msg1 = misc:add_delay_info(Msg, By, Time),
+    XML = fxml:element_to_binary(xmpp:encode(Msg1)),
+    gen_server:cast(Proc, {dump, XML}).
+
 -spec get_proc_name(binary()) -> atom().
 get_proc_name(Host) ->
     gen_mod:get_module_proc(Host, ?MODULE).
+
+-spec expand_host(binary() | none, binary()) -> binary() | none.
+expand_host(none, _Host) ->
+    none;
+expand_host(Input, Host) ->
+    misc:expand_keyword(<<"@HOST@">>, Input, Host).
 
 -spec sets_equal(sets:set(), sets:set()) -> boolean().
 sets_equal(A, B) ->
