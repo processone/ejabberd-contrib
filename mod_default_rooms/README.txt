@@ -24,7 +24,7 @@ following:
         - "foo@conference.@HOST@"
         - "bar@conference.@HOST@"
 
-The configurable mod_deny_omemo options are:
+The configurable mod_default_rooms options are:
 
 - rooms (default: [])
 
