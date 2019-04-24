@@ -7,8 +7,9 @@
 	DESCRIPTION
 	-----------
 
-This module allows for specifying one or more rooms that should be bookmarked
-automatically on successful registration via `mod_register`.
+This module allows for specifying one or more rooms that should be
+bookmarked automatically on successful user registration (via
+"mod_register", or, for example, "ejabberdctl register").
 
 
 	CONFIGURATION

@@ -64,8 +64,7 @@ mod_options(_Host) ->
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->
-    [{mod_private, hard},
-     {mod_register, soft}].
+    [{mod_private, hard}].
 
 %%--------------------------------------------------------------------
 %% ejabberd_hooks callbacks.
