@@ -108,10 +108,7 @@ depends(_Host, _Opts) ->
 -spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
 mod_opt_type(spam_dump_file) ->
     fun(none) -> none;
-       (File) ->
-	    {ok, Fd} = file:open(File, [append, raw]),
-	    ok = file:close(Fd),
-	    iolist_to_binary(File)
+       (File) -> iolist_to_binary(File)
     end;
 mod_opt_type(spam_jids_file) ->
     fun(none) -> none;
