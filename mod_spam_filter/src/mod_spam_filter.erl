@@ -157,12 +157,19 @@ init([Host, Opts]) ->
 	    DumpFd = if DumpFile == none ->
 			     undefined;
 			true ->
+			     case filelib:ensure_dir(DumpFile) of
+				 ok ->
+				     ok;
+				 {error, Reason} ->
+				     Dirname = filename:dirname(DumpFile),
+				     throw({open, Dirname, Reason})
+			     end,
 			     Modes = [append, raw, binary, delayed_write],
 			     case file:open(DumpFile, Modes) of
 				 {ok, Fd} ->
 				     Fd;
-				 {error, Reason} ->
-				     throw({open, DumpFile, Reason})
+				 {error, Reason1} ->
+				     throw({open, DumpFile, Reason1})
 			     end
 		     end,
 	    {ok, #state{host = Host,
