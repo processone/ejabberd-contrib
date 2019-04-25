@@ -449,7 +449,7 @@ filter_body(none, _Set, _From, State) ->
     {ham, State}.
 
 -spec reload_files(filename(), filename(), state())
-      -> {{ok | error, binary()}, state()}.
+      -> {ok | {error, binary()}, state()}.
 reload_files(JIDsFile, URLsFile, #state{host = Host} = State) ->
     try read_files(JIDsFile, URLsFile) of
 	{JIDsSet, URLsSet} ->
@@ -465,8 +465,7 @@ reload_files(JIDsFile, URLsFile, #state{host = Host} = State) ->
 		false ->
 		    ?INFO_MSG("Reloaded spam URLs for ~s (changed)", [Host])
 	    end,
-	    Txt = <<"Reloaded spam JID/URL files">>,
-	    {{ok, Txt}, State#state{jid_set = JIDsSet, url_set = URLsSet}}
+	    {ok, State#state{jid_set = JIDsSet, url_set = URLsSet}}
     catch {Op, File, Reason} when Op == open;
 				  Op == read ->
 	    Txt = format("Cannot ~s ~s for ~s: ~s",
@@ -684,7 +683,7 @@ get_commands_spec() ->
 			desc = "Reload spam JID/URL files",
 			module = ?MODULE, function = reload_spam_filter_files,
 			args = [{host, binary}],
-			result = {res, restuple}},
+			result = {res, rescode}},
      #ejabberd_commands{name = get_spam_filter_cache, tags = [filter],
 			desc = "Show spam filter cache contents",
 			module = ?MODULE, function = get_spam_filter_cache,
@@ -706,10 +705,8 @@ get_commands_spec() ->
 -spec reload_spam_filter_files(binary()) -> {ok | error, string()}.
 reload_spam_filter_files(<<"global">>) ->
     try lists:foreach(fun(Host) ->
-			      {ok, _} = reload_spam_filter_files(Host)
-		      end, ejabberd_config:get_myhosts()) of
-	ok ->
-	    {ok, "Reloaded spam JID/URL files"}
+			      ok = reload_spam_filter_files(Host)
+		      end, ejabberd_config:get_myhosts())
     catch error:{badmatch, {error, _Reason} = Error} ->
 	    Error
     end;
@@ -721,8 +718,10 @@ reload_spam_filter_files(Host) ->
 	    Proc = get_proc_name(LServer),
 	    try gen_server:call(Proc, {reload_files, JIDsFile, URLsFile},
 				?COMMAND_TIMEOUT) of
-		{spam_filter, {Status, Txt}} ->
-		    {Status, binary_to_list(Txt)}
+		{spam_filter, ok} ->
+		    ok;
+		{spam_filter, {error, Txt}} ->
+		    {error, binary_to_list(Txt)}
 	    catch exit:{noproc, _} ->
 		    {error, "Not configured for " ++ binary_to_list(Host)};
 		  exit:{timeout, _} ->
