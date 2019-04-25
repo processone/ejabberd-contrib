@@ -330,7 +330,7 @@ reopen_log() ->
     lists:foreach(fun(Host) ->
 			  Proc = get_proc_name(Host),
 			  gen_server:cast(Proc, reopen_log)
-		  end, ejabberd_config:get_myhosts()).
+		  end, get_spam_filter_hosts()).
 
 %%--------------------------------------------------------------------
 %% Internal functions.
@@ -600,6 +600,10 @@ maybe_dump_spam(#message{to = #jid{lserver = LServer}} = Msg) ->
 get_proc_name(Host) ->
     gen_mod:get_module_proc(Host, ?MODULE).
 
+-spec get_spam_filter_hosts() -> [binary()].
+get_spam_filter_hosts() ->
+    [H || H <- ejabberd_config:get_myhosts(), gen_mod:is_loaded(H, ?MODULE)].
+
 -spec expand_host(binary() | none, binary()) -> binary() | none.
 expand_host(none, _Host) ->
     none;
@@ -706,7 +710,7 @@ get_commands_spec() ->
 reload_spam_filter_files(<<"global">>) ->
     try lists:foreach(fun(Host) ->
 			      ok = reload_spam_filter_files(Host)
-		      end, ejabberd_config:get_myhosts())
+		      end, get_spam_filter_hosts())
     catch error:{badmatch, {error, _Reason} = Error} ->
 	    Error
     end;
@@ -748,7 +752,7 @@ get_spam_filter_cache(Host) ->
 expire_spam_filter_cache(<<"global">>, Age) ->
     try lists:foreach(fun(Host) ->
 			      {ok, _} = expire_spam_filter_cache(Host, Age)
-		      end, ejabberd_config:get_myhosts()) of
+		      end, get_spam_filter_hosts()) of
 	ok ->
 	    {ok, "Expired cache entries"}
     catch error:{badmatch, {error, _Reason} = Error} ->
@@ -770,7 +774,7 @@ expire_spam_filter_cache(Host, Age) ->
 drop_from_spam_filter_cache(<<"global">>, JID) ->
     try lists:foreach(fun(Host) ->
 			      {ok, _} = drop_from_spam_filter_cache(Host, JID)
-		      end, ejabberd_config:get_myhosts()) of
+		      end, get_spam_filter_hosts()) of
 	ok ->
 	    {ok, "Dropped " ++ binary_to_list(JID) ++ " from caches"}
     catch error:{badmatch, {error, _Reason} = Error} ->
