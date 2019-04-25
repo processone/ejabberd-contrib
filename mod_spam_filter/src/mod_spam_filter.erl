@@ -710,7 +710,7 @@ get_commands_spec() ->
 			args = [{host, binary}, {jid, binary}],
 			result = {res, restuple}}].
 
--spec reload_spam_filter_files(binary()) -> {ok | error, string()}.
+-spec reload_spam_filter_files(binary()) -> ok | {error, string()}.
 reload_spam_filter_files(<<"global">>) ->
     try lists:foreach(fun(Host) ->
 			      ok = reload_spam_filter_files(Host)
