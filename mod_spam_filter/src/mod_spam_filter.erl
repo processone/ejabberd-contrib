@@ -568,6 +568,7 @@ open_dump_file(Name, State) ->
     Modes = [append, raw, binary, delayed_write],
     case file:open(Name, Modes) of
 	{ok, Fd} ->
+	    ?DEBUG("Opened ~s", [Name]),
 	    State#state{dump_fd = Fd};
 	{error, Reason} ->
 	    ?ERROR_MSG("Cannot open ~s: ~s", [Name, file:format_error(Reason)]),
@@ -586,7 +587,7 @@ close_dump_file(_Name, #state{dump_fd = undefined}) ->
 close_dump_file(Name, #state{dump_fd = Fd}) ->
     case file:close(Fd) of
 	ok ->
-	    ok;
+	    ?DEBUG("Closed ~s", [Name]);
 	{error, Reason} ->
 	    ?ERROR_MSG("Cannot close ~s: ~s", [Name, file:format_error(Reason)])
     end.
