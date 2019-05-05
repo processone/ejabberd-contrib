@@ -154,6 +154,8 @@ init([Host, Opts]) ->
 			       s2s_in_handle_info, 90),
 	    ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE,
 			       s2s_receive_packet, 50),
+	    ejabberd_hooks:add(reopen_log_hook, ?MODULE,
+			       reopen_log, 50),
 	    DumpFd = if DumpFile == none ->
 			     undefined;
 			true ->
@@ -263,6 +265,8 @@ handle_info(Info, State) ->
 terminate(Reason, #state{host = Host} = State) ->
     ?DEBUG("Stopping spam filter process for ~s: ~p", [Host, Reason]),
     close_dump_file(State),
+    ejabberd_hooks:delete(reopen_log_hook, ?MODULE,
+			  reopen_log, 50),
     ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE,
 			  s2s_receive_packet, 50),
     ejabberd_hooks:delete(s2s_in_handle_info, Host, ?MODULE,
