@@ -219,6 +219,7 @@ make_req(Method, Path, LUser, LServer, Password) ->
     PasswordE = list_to_binary(http_uri:encode(binary_to_list(Password))),
     Query = <<"user=", LUserE/binary, "&server=", LServerE/binary, "&pass=", PasswordE/binary>>,
     Header = [{<<"Authorization">>, <<"Basic ", BasicAuth64/binary>>}],
+    ContentType = {<<"Content-Type">>, <<"application/x-www-form-urlencoded">>},
     Connection = cuesport:get_worker(existing_pool_name(LServer)),
 
     ?DEBUG("Making request '~s' for user ~s@~s...", [Path, LUser, LServer]),
@@ -226,7 +227,7 @@ make_req(Method, Path, LUser, LServer, Password) ->
         get -> fusco:request(Connection, <<PathPrefix/binary, Path/binary, "?", Query/binary>>,
                              "GET", Header, "", 2, 5000);
         post -> fusco:request(Connection, <<PathPrefix/binary, Path/binary>>,
-                              "POST", Header, Query, 2, 5000)
+                              "POST", [ContentType|Header], Query, 2, 5000)
     end,
 
     ?DEBUG("Request result: ~s: ~p", [Code, RespBody]),
