@@ -22,8 +22,8 @@ following:
     # [...]
     mod_default_rooms:
       rooms:
-        - "foo@conference.@HOST@"
-        - "bar@conference.@HOST@"
+        - "foo@conference.example.net"
+        - "bar@conference.example.org"
 
 The configurable mod_default_rooms options are:
 
