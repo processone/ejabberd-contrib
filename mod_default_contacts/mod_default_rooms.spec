@@ -1,0 +1,5 @@
+author: "Holger Weiss <holger at zedat.fu-berlin.de>"
+category: "roster"
+summary: "Auto-add roster contacts on registration"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"
