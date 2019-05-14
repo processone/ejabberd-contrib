@@ -23,12 +23,13 @@ following:
   modules:
     # [...]
     mod_default_contacts:
-      -
-        name: "Bob Virding"
-        jid: "bob@example.com"
-      -
-        name: "Alice Armstrong"
-        jid: "alice@example.com"
+      contacts:
+        -
+          name: "Bob Virding"
+          jid: "bob@example.com"
+        -
+          name: "Alice Armstrong"
+          jid: "alice@example.com"
 
 The configurable mod_default_contacts options are:
 
