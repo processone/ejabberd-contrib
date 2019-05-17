@@ -237,9 +237,11 @@ make_req(Method, Path, LUser, LServer, Password) ->
         <<"401">> -> {error, not_authorized};
         <<"403">> -> {error, not_allowed};
         <<"400">> -> {error, RespBody};
+	<<"503">> -> {error, RespBody};
         <<"204">> -> {ok, <<"">>};
         <<"201">> -> {ok, created};
-        <<"200">> -> {ok, RespBody}
+        <<"200">> -> {ok, RespBody};
+        _ -> {error, RespBody}
     end.
 
 %%%----------------------------------------------------------------------
