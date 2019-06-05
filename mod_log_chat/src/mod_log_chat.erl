@@ -159,7 +159,7 @@ write_packet(From, To, Packet, Host) ->
 			}
 		end,
 	    ?DEBUG("FilenameTemplate ~p~n",[FilenameTemplate]),
-	    Filename = io_lib:format(FilenameTemplate, [Y, M, D]),
+	    Filename = make_filename(FilenameTemplate, [Y, M, D]),
 	    ?DEBUG("logging message from ~s into ~s~n",[jlib:jid_to_string(From), Filename]),
 	    File = case file:read_file_info(Filename) of
 		       {ok, _} ->
@@ -183,6 +183,9 @@ write_packet(From, To, Packet, Host) ->
 	    file:close(File)
     end.
 
+make_filename(Template, [Y, M, D]) ->
+    list_to_binary(io_lib:format(Template, [Y, M, D])).
+
 open_logfile(Filename) ->
     case file:open(Filename, [append]) of
 	{ok, File} ->
@@ -193,7 +196,7 @@ open_logfile(Filename) ->
 
 close_previous_logfile(FilenameTemplate, Format, Date) ->
     Yesterday = calendar:gregorian_days_to_date(calendar:date_to_gregorian_days(Date) - 1),
-    Filename = io_lib:format(FilenameTemplate, tuple_to_list(Yesterday)),
+    Filename = make_filename(FilenameTemplate, tuple_to_list(Yesterday)),
     case file:read_file_info(Filename) of
 	{ok, _} ->
 	    File = open_logfile(Filename),
