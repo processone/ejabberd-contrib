@@ -59,7 +59,6 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 
--define(SPAM_FILTER_CACHE, spam_filter_cache).
 -define(COMMAND_TIMEOUT, timer:seconds(30)).
 
 -type url() :: binary().
