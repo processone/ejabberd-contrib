@@ -584,7 +584,7 @@ close_dump_file(#state{host = Host} = State) ->
     DumpFile1 = expand_host(DumpFile, Host),
     close_dump_file(DumpFile1, State).
 
--spec close_dump_file(binary(), state()) -> ok.
+-spec close_dump_file(filename(), state()) -> ok.
 close_dump_file(_Name, #state{dump_fd = undefined}) ->
     ok;
 close_dump_file(Name, #state{dump_fd = Fd}) ->
