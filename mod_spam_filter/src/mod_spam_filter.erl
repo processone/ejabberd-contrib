@@ -249,8 +249,7 @@ handle_cast({reload, NewOpts, OldOpts}, #state{host = Host} = State) ->
     {_Result, State3} = reload_files(JIDsFile, URLsFile, State2),
     {noreply, State3};
 handle_cast(reopen_log, State) ->
-    close_dump_file(State),
-    {noreply, open_dump_file(State)};
+    {noreply, reopen_dump_file(State)};
 handle_cast(Request, State) ->
     ?ERROR_MSG("Got unexpected request from: ~p", [Request]),
     {noreply, State}.
@@ -558,12 +557,6 @@ reject(#presence{from = From, to = To, lang = Lang} = Presence) ->
 reject(_) ->
     ok.
 
--spec open_dump_file(state()) -> state().
-open_dump_file(#state{host = Host} = State) ->
-    DumpFile = gen_mod:get_module_opt(Host, ?MODULE, spam_dump_file),
-    DumpFile1 = expand_host(DumpFile, Host),
-    open_dump_file(DumpFile1, State).
-
 -spec open_dump_file(filename(), state()) -> state().
 open_dump_file(none, State) ->
     State#state{dump_fd = undefined};
@@ -578,12 +571,6 @@ open_dump_file(Name, State) ->
 	    State#state{dump_fd = undefined}
     end.
 
--spec close_dump_file(state()) -> ok.
-close_dump_file(#state{host = Host} = State) ->
-    DumpFile = gen_mod:get_module_opt(Host, ?MODULE, spam_dump_file),
-    DumpFile1 = expand_host(DumpFile, Host),
-    close_dump_file(DumpFile1, State).
-
 -spec close_dump_file(filename(), state()) -> ok.
 close_dump_file(_Name, #state{dump_fd = undefined}) ->
     ok;
@@ -594,6 +581,13 @@ close_dump_file(Name, #state{dump_fd = Fd}) ->
 	{error, Reason} ->
 	    ?ERROR_MSG("Cannot close ~s: ~s", [Name, file:format_error(Reason)])
     end.
+
+-spec reopen_dump_file(state()) -> state().
+reopen_dump_file(#state{host = Host} = State) ->
+    DumpFile = gen_mod:get_module_opt(Host, ?MODULE, spam_dump_file),
+    DumpFile1 = expand_host(DumpFile, Host),
+    close_dump_file(DumpFile1, State),
+    open_dump_file(DumpFile1, State).
 
 -spec maybe_dump_spam(message()) -> ok.
 maybe_dump_spam(#message{to = #jid{lserver = LServer}} = Msg) ->
