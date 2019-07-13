@@ -262,7 +262,9 @@ handle_info(Info, State) ->
 -spec terminate(normal | shutdown | {shutdown, term()} | term(), state()) -> ok.
 terminate(Reason, #state{host = Host} = State) ->
     ?DEBUG("Stopping spam filter process for ~s: ~p", [Host, Reason]),
-    close_dump_file(State),
+    DumpFile = gen_mod:get_module_opt(Host, ?MODULE, spam_dump_file),
+    DumpFile1 = expand_host(DumpFile, Host),
+    close_dump_file(DumpFile1, State),
     ejabberd_hooks:delete(reopen_log_hook, ?MODULE,
 			  reopen_log, 50),
     ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE,
