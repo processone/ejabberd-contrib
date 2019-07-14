@@ -265,12 +265,17 @@ terminate(Reason, #state{host = Host} = State) ->
     DumpFile = gen_mod:get_module_opt(Host, ?MODULE, spam_dump_file),
     DumpFile1 = expand_host(DumpFile, Host),
     close_dump_file(DumpFile1, State),
-    ejabberd_hooks:delete(reopen_log_hook, ?MODULE,
-			  reopen_log, 50),
     ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE,
 			  s2s_receive_packet, 50),
     ejabberd_hooks:delete(s2s_in_handle_info, Host, ?MODULE,
-			  s2s_in_handle_info, 90).
+			  s2s_in_handle_info, 90),
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+	false ->
+	    ejabberd_hooks:delete(reopen_log_hook, ?MODULE,
+				  reopen_log, 50);
+	true ->
+	    ok
+    end.
 
 -spec code_change({down, term()} | term(), state(), term()) -> {ok, state()}.
 code_change(_OldVsn, #state{host = Host} = State, _Extra) ->
