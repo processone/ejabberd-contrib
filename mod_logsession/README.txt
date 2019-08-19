@@ -1,9 +1,9 @@
 
 	mod_logsession - Log session connections to file
 
+	Requirements: ejabberd 19.08 or higher
 	Homepage: http://www.ejabberd.im/mod_logsession
 	Author: Badlop
-	Requirements: ejabberd 17.01 or newer
 
 
 	DESCRIPTION

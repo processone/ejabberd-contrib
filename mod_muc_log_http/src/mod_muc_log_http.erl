@@ -10,11 +10,9 @@
 
 -behaviour(gen_mod).
 
--export([
-	 start/2,
-	 stop/1,
-	 process/2
-	]).
+-export([start/2, stop/1, depends/2, mod_options/1]).
+
+-export([process/2]).
 
 -include("xmpp.hrl").
 -include("ejabberd_http.hrl").
@@ -38,7 +36,7 @@ process(LocalPath, Request) ->
 	serve(LocalPath, Request).
 
 serve(LocalPathBin, #request{host = Host} = Request) ->
-	DocRoot = binary_to_list(gen_mod:get_module_opt(Host, mod_muc_log, outdir, <<"www/muc">>)),
+	DocRoot = binary_to_list(gen_mod:get_module_opt(Host, mod_muc_log, outdir)),
 	LocalPath = [binary_to_list(LPB) || LPB <- LocalPathBin],
 	FileName = filename:join(filename:split(DocRoot) ++ LocalPath),
 	case file:read_file(FileName) of
@@ -230,3 +228,9 @@ start(_Host, _Opts) ->
 
 stop(_Host) ->
     ok.
+
+depends(_Host, _Opts) ->
+    [{mod_muc_log, hard}].
+
+mod_options(_Host) ->
+    [].

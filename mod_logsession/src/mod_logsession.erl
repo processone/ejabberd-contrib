@@ -29,14 +29,11 @@
 
 -behaviour(gen_mod).
 
--export([
-	 start/2,
-	 stop/1,
-	 loop/3,
+-export([start/2, stop/1, depends/2, mod_options/1, mod_opt_type/1]).
+-export([loop/3,
 	 reopen_log/1,
 	 failed_auth/3,
-	 forbidden/1
-	]).
+	 forbidden/1]).
 
 -include("xmpp.hrl").
 -include("ejabberd_commands.hrl").
@@ -54,9 +51,7 @@ start(Host, Opts) ->
     ejabberd_commands:register_commands(commands()),
     Filename1 = gen_mod:get_opt(
 		  sessionlog, 
-		  Opts, 
-		  fun(S) -> S end,
-		  "/tmp/ejabberd_logsession_@HOST@.log"),
+		  Opts),
     Filename = replace_host(Host, Filename1),
     File = open_file(Filename),
     register(get_process_name(Host), spawn(?MODULE, loop, [Filename, File, Host])),
@@ -69,6 +64,15 @@ stop(Host) ->
     Proc = get_process_name(Host),
     exit(whereis(Proc), stop),
     {wait, Proc}.
+
+depends(_Host, _Opts) ->
+    [].
+
+mod_opt_type(sessionlog) ->
+    econf:string().
+
+mod_options(_Host) ->
+    [{sessionlog, "/tmp/ejabberd_logsession_@HOST@.log"}].
 
 %%%----------------------------------------------------------------------
 %%% REQUEST HANDLERS
@@ -83,8 +87,8 @@ forbidden(JID) ->
 
 failed_auth(State, true, _) ->
     State;
-failed_auth(#{lserver := Host, ip := IPPT} = State, false, U) ->
-    get_process_name(Host) ! {log, {failed_auth, U, IPPT}},
+failed_auth(#{lserver := Host, ip := IPPT} = State, {false, Reason}, U) ->
+    get_process_name(Host) ! {log, {failed_auth, U, IPPT, Reason}},
     State.
 
 commands() ->
@@ -144,10 +148,10 @@ make_date(Date) ->
     io_lib:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w", 
 		  [Y, Mo, D, H, Mi, S]).
 
-make_message(Host, {failed_auth, Username, {IPTuple, IPPort}}) ->
+make_message(Host, {failed_auth, Username, {IPTuple, IPPort}, Reason}) ->
     IPString = inet_parse:ntoa(IPTuple),
-    io_lib:format("Failed authentication for ~s@~s from ~s port ~p",
-	[Username, Host, IPString, IPPort]);
+    io_lib:format("Failed authentication for ~s@~s from ~s port ~p: ~s",
+	[Username, Host, IPString, IPPort, Reason]);
 make_message(_Host, {forbidden, JID}) ->
     io_lib:format("Forbidden session for ~s",
 	[jlib:jid_to_string(JID)]).

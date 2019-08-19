@@ -1,6 +1,7 @@
 
 	mod_shcommands - Execute shell commands
 
+	Requires: ejabberd 19.08 or higher
 	Author: Badlop
 	http://ejabberd.im/mod_shcommands
 

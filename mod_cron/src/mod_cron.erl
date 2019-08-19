@@ -11,19 +11,18 @@
 
 -behaviour(gen_mod).
 
--export([
-	 cron_list/1, cron_del/1,
+-export([start/2, stop/1, depends/2, mod_options/1, mod_opt_type/1]).
+-export([cron_list/1, cron_del/1,
 	 run_task/3,
 	 web_menu_host/3, web_page_host/3,
-	 start/2,
          apply_interval/3,
-         apply_interval1/3,
-	 stop/1]).
+         apply_interval1/3]).
 
 -include("ejabberd_commands.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 -include("logger.hrl").
+-include("translate.hrl").
 -include("xmpp.hrl").
 
 -record(task, {taskid, timerref, host, task}).
@@ -36,7 +35,7 @@ start(Host, Opts) ->
     ejabberd_commands:register_commands(commands()),
     ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, web_page_host, 50),
-    Tasks = gen_mod:get_opt(tasks, Opts, []),
+    Tasks = gen_mod:get_opt(tasks, Opts),
     catch ets:new(cron_tasks, [ordered_set, named_table, public, {keypos, 2}]),
     [add_task(Host, Task) || Task <- Tasks],
     ok.
@@ -49,6 +48,14 @@ stop(Host) ->
     [delete_task(Task) || Task <- get_tasks(Host)],
     ok.
 
+depends(_Host, _Opts) ->
+    [].
+
+mod_opt_type(tasks) ->
+    econf:list(econf:any()).
+
+mod_options(_Host) ->
+    [{tasks, []}].
 
 %% ---------------------
 %% Task management
@@ -231,7 +238,7 @@ cron_del(TaskId) ->
 %% ---------------------
 
 web_menu_host(Acc, _Host, Lang) ->
-    [{<<"cron">>, ?T(<<"Cron Tasks">>)} | Acc].
+    [{<<"cron">>, translate:translate(Lang, ?T("Cron Tasks"))} | Acc].
 
 web_page_host(_, Host,
 	      #request{path = [<<"cron">>],
@@ -245,9 +252,13 @@ web_page_host(Acc, _, _) -> Acc.
 make_tasks_table(Tasks, Lang) ->
     TList = lists:map(
 	      fun(T) ->
-		      {Time_num, Time_unit, Mod, Fun, Args} = T#task.task,
+		      [TimeNum, TimeUnit, Mod, Fun, Args, InTimerType] =
+			  [proplists:get_value(Key, T#task.task)
+			   || Key <- [time, units, module, function, arguments, timer_type]],
 		      ?XE(<<"tr">>,
-			  [?XC(<<"td">>, list_to_binary(integer_to_list(Time_num) ++" " ++ atom_to_list(Time_unit))),
+			  [?XC(<<"td">>, list_to_binary(integer_to_list(TimeNum)++" "
+							++atom_to_list(TimeUnit)++" "
+							++atom_to_list(InTimerType))),
 			   ?XC(<<"td">>, list_to_binary(atom_to_list(Mod))),
 			   ?XC(<<"td">>, list_to_binary(atom_to_list(Fun))),
 			   ?XC(<<"td">>, list_to_binary(io_lib:format("~p", [Args])))])

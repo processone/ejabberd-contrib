@@ -70,19 +70,19 @@ maybe_post_request(<<$<,_/binary>> = Data, Host, ClientIp) ->
 	Stanza = {xmlel, _, _, _} = fxml_stream:parse_element(Data),
 	Pkt = xmpp:decode(Stanza),
 	allowed = check_stanza(Pkt, Host),
-	?INFO_MSG("Got valid request with IP ~p:~n~p",
+	?DEBUG("Got valid request with IP ~p:~n~p",
 		  [ClientIp,
 		   Pkt]),
 	post_request(Pkt)
     catch
 	error:{badmatch, _} = Error ->
-	    ?DEBUG("Error when processing REST request: ~nData: ~p~nError: ~p", [Data, Error]),
+	    ?INFO_MSG("Error when processing REST request: ~nData: ~p~nError: ~p", [Data, Error]),
 	    {406, [], "Error: REST request is rejected by service."};
 	error:{Reason, _} = Error ->
-	    ?DEBUG("Error when processing REST request: ~nData: ~p~nError: ~p", [Data, Error]),
+	    ?INFO_MSG("Error when processing REST request: ~nData: ~p~nError: ~p", [Data, Error]),
 	    {500, [], "Error: " ++ atom_to_list(Reason)};
 	Error ->
-	    ?DEBUG("Error when processing REST request: ~nData: ~p~nError: ~p", [Data, Error]),
+	    ?INFO_MSG("Error when processing REST request: ~nData: ~p~nError: ~p", [Data, Error]),
 	    {500, [], "Error"}
     end;    
 maybe_post_request(Data, Host, _ClientIp) ->
@@ -107,39 +107,38 @@ ensure_auth_is_provided(Args) ->
     ["--auth", "", "", "" | Args].
 
 %% This function throws an error if the module is not started in that VHost.
-try_get_option(Host, OptionName, DefaultValue) ->
+try_get_option(Host, OptionName) ->
     case gen_mod:is_loaded(Host, ?MODULE) of
 	true -> ok;
 	_ -> throw({module_must_be_started_in_vhost, ?MODULE, Host})
     end,
-    gen_mod:get_module_opt(Host, ?MODULE, OptionName, fun(I) -> I end, DefaultValue).
+    gen_mod:get_module_opt(Host, ?MODULE, OptionName).
 
 get_option_access(Host) ->
-    try_get_option(Host, access_commands, []).
+    try_get_option(Host, access_commands).
 
 %% This function crashes if the stanza does not satisfy configured restrictions
 check_stanza(Pkt, Host) ->
     To = xmpp:get_to(Pkt),
-    check_member_option(Host, jid:encode(To), allowed_destinations),
-    %%+++ {xmlel, StanzaType, _Attrs, _Kids} = Stanza,
-    %%+++ check_member_option(Host, StanzaType, allowed_stanza_types),
+    check_member_option(Host, To, allowed_destinations),
+    Name = xmpp:get_name(Pkt),
+    check_member_option(Host, Name, allowed_stanza_types),
     allowed.
 
 check_member_option(Host, ClientIp, allowed_ips) ->
-    true = case try_get_option(Host, allowed_ips, all) of
-               all -> true;
+    true = case try_get_option(Host, allowed_ips) of
+               [] -> true;
                AllowedValues -> ip_matches(ClientIp, AllowedValues)
            end;
 check_member_option(Host, Element, Option) ->
-    true = case try_get_option(Host, Option, all) of
-	       all -> true;
+    true = case try_get_option(Host, Option) of
+	       [] -> true;
 	       AllowedValues -> lists:member(Element, AllowedValues)
 	   end.
 
 ip_matches(ClientIp, AllowedValues) ->
-   lists:any(fun(El) ->
-	      {ok, Net, Mask} = acl:parse_ip_netmask(El),
-	      acl:acl_rule_matches({ip,{Net,Mask}}, #{ip => {ClientIp,port}}, host)
+   lists:any(fun({Net, Mask}) ->
+	      acl:match_acl(useless_host, {ip,{Net,Mask}}, #{ip => {ClientIp,useless_port}})
 	  end,
 	  AllowedValues).
 
@@ -178,16 +177,16 @@ splitend([92, 34, 32 | Line], Res) -> {Line, Res};
 splitend([Char | Line], Res) -> splitend(Line, [Char | Res]).
 
 mod_opt_type(allowed_ips) ->
-    fun (all) -> all; (A) when is_list(A) -> A end;
+    econf:list(econf:ip_mask());
 mod_opt_type(allowed_destinations) ->
-    fun (all) -> all; (A) when is_list(A) -> A end;
+    econf:list(econf:jid());
 mod_opt_type(allowed_stanza_types) ->
-    fun (all) -> all; (A) when is_list(A) -> A end;
+    econf:list(econf:enum([<<"iq">>, <<"message">>, <<"presence">>]));
 mod_opt_type(access_commands) ->
     fun (A) when is_list(A) -> A end.
 
 mod_options(_Host) ->
-    [{allowed_ips, all},
-     {allowed_destinations, all},
-     {allowed_stanza_types, all},
+    [{allowed_ips, []},
+     {allowed_destinations, []},
+     {allowed_stanza_types, []},
      {access_commands, []}].

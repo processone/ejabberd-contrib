@@ -1,6 +1,7 @@
 
 	mod_cron - Execute scheduled commands
 
+	Requires: ejabberd 19.08 or higher
 	http://www.ejabberd.im/mod_cron
 	Author: Badlop
 

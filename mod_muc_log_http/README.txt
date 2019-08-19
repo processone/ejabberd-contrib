@@ -2,6 +2,7 @@
 
 	mod_muc_log_http - Serve MUC logs on the web
 
+	Requires: ejabberd 19.08 or higher
 	Homepage: http://ejabberd.im/mod_muc_log_http
 	Author: Badlop
 

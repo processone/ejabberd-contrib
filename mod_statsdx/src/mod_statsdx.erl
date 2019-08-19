@@ -13,7 +13,8 @@
 
 -behaviour(gen_mod).
 
--export([start/2, loop/1, stop/1, mod_opt_type/1, get_statistic/2,
+-export([start/2, stop/1, depends/2, mod_opt_type/1, mod_options/1]).
+-export([loop/1, get_statistic/2,
 	 received_response/3,
 	 %% Commands
 	 getstatsdx/1, getstatsdx/2,
@@ -34,22 +35,21 @@
 -include("mod_roster.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
+-include("translate.hrl").
 
 -define(XCTB(Name, Text), ?XCT(list_to_binary(Name), list_to_binary(Text))).
 
 -define(PROCNAME, ejabberd_mod_statsdx).
 
 %% Copied from ejabberd_s2s.erl Used in function get_s2sconnections/1
--record(s2s, {fromto, pid, key}).
+-record(s2s, {fromto :: {binary(), binary()},
+              pid    :: pid()}).
 
 %%%==================================
 %%%% Module control
 
 start(Host, Opts) ->
-    Hooks = gen_mod:get_opt(hooks, Opts,
-			    fun(O) when is_boolean(O) -> O;
-			       (traffic) -> traffic
-			    end, false),
+    Hooks = gen_mod:get_opt(hooks, Opts),
     %% Default value for the counters
     CD = case Hooks of
 	     true -> 0;
@@ -79,8 +79,17 @@ stop(Host) ->
 	_ -> ?PROCNAME ! {stop, Host}
     end.
 
-mod_opt_type(hooks) -> fun (B) when is_boolean(B) or (B==traffic) -> B end;
-mod_opt_type(_) -> [hooks].
+depends(_Host, _Opts) ->
+    [].
+
+mod_opt_type(hooks) ->
+    econf:enum([false, true, traffic]);
+mod_opt_type(sessionlog) ->
+    econf:string().
+
+mod_options(_Host) ->
+    [{hooks, false},
+     {sessionlog, "/tmp/ejabberd_logsession_@HOST@.log"}].
 
 %%%==================================
 %%%% Stats Server
@@ -764,7 +773,7 @@ user_logout(User, Host, Resource, _Status) ->
     ets:update_counter(TableServer, {user_logout, server}, 1),
     ets:update_counter(TableHost, {user_logout, Host}, 1),
 
-    JID = jlib:make_jid(User, Host, Resource),
+    JID = jid:make(User, Host, Resource),
     case ets:lookup(TableHost, {session, JID}) of
 	[{_, Client_id, OS_id, Lang, ConnType, _Client, _Version, _OS}] ->
 	    ets:delete(TableHost, {session, JID}),
@@ -791,7 +800,7 @@ request_iqversion(User, Host, Resource) ->
     IQ = #iq{type = get,
              from = From,
              to = To,
-             id = randoms:get_string(),
+             id = p1_rand:get_string(),
              sub_els = [Query]},
     HandleResponse = fun(#iq{type = result} = IQr) ->
 			       spawn(?MODULE, received_response,
@@ -848,7 +857,7 @@ received_response(From, #iq{type = Type, lang = Lang1, sub_els = Elc}) ->
     update_counter_create(TableHost, {client_conntype, Host, Client_id, ConnType}, 1),
     update_counter_create(TableServer, {client_conntype, server, Client_id, ConnType}, 1),
 
-    JID = jlib:make_jid(User, Host, Resource),
+    JID = jid:make(User, Host, Resource),
     ets:insert(TableHost, {{session, JID}, Client_id, OS_id, Lang, ConnType, Client, Version, OS}).
 
 get_connection_type(User, Host, Resource) ->
@@ -1004,19 +1013,19 @@ localtime_to_string({{Y, Mo, D},{H, Mi, S}}) ->
 %%%% Web Admin Menu
 
 web_menu_main(Acc, Lang) ->
-    Acc ++ [{<<"statsdx">>, <<(?T(<<"Statistics">>))/binary, " Dx">>}].
+    Acc ++ [{<<"statsdx">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>}].
 
 web_menu_node(Acc, _Node, Lang) ->
-    Acc ++ [{<<"statsdx">>, <<(?T(<<"Statistics">>))/binary, " Dx">>}].
+    Acc ++ [{<<"statsdx">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>}].
 
 web_menu_host(Acc, _Host, Lang) ->
-    Acc ++ [{<<"statsdx">>, <<(?T(<<"Statistics">>))/binary, " Dx">>}].
+    Acc ++ [{<<"statsdx">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>}].
 
 %%%==================================
 %%%% Web Admin Page
 
 web_page_main(_, #request{path=[<<"statsdx">>], lang = Lang} = _Request) ->
-    Res = [?XC(<<"h1">>, <<(?T(<<"Statistics">>))/binary, " Dx">>),
+    Res = [?XC(<<"h1">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>),
 	   ?XC(<<"h3">>, <<"Accounts">>),
 	   ?XAE(<<"table">>, [],
 		[?XE(<<"tbody">>, [
@@ -1124,7 +1133,7 @@ web_page_main(_, #request{path=[<<"statsdx">>], lang = Lang} = _Request) ->
 	  ],
     {stop, Res};
 web_page_main(_, #request{path=[<<"statsdx">>, <<"top">>, Topic, Topnumber], q = _Q, lang = Lang} = _Request) ->
-    Res = [?XC(<<"h1">>, <<(?T(<<"Statistics">>))/binary, " Dx">>),
+    Res = [?XC(<<"h1">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>),
 	   case Topic of
 		<<"offlinemsg">> -> ?XCT(<<"h2">>, <<"Top offline message queues">>);
 		<<"vcard">> -> ?XCT(<<"h2">>, <<"Top vCard sizes">>);
@@ -1144,7 +1153,7 @@ web_page_main(_, #request{path=[<<"statsdx">> | FilterURL], q = Q, lang = Lang} 
     Filter = parse_url_filter(FilterURL),
     Sort_query = get_sort_query(Q),
     FilterS = io_lib:format("~p", [Filter]),
-    Res = [?XC(<<"h1">>, <<(?T(<<"Statistics">>))/binary, " Dx">>),
+    Res = [?XC(<<"h1">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>),
 	   ?XC(<<"h2">>, list_to_binary("Sessions with: " ++ FilterS)),
 	   ?XE(<<"table">>,
 	       [
@@ -1156,7 +1165,7 @@ web_page_main(_, #request{path=[<<"statsdx">> | FilterURL], q = Q, lang = Lang} 
 web_page_main(Acc, _) -> Acc.
 
 do_top_table(_Node, Lang, Topic, TopnumberBin, Host) ->
-    List = get_top_users(Host, jlib:binary_to_integer(TopnumberBin), Topic),
+    List = get_top_users(Host, binary_to_integer(TopnumberBin), Topic),
     %% get_top_users(Topnumber, "roster")
     {List2, _} = lists:mapfoldl(
       fun({Value, UserB, ServerB}, Counter) ->
@@ -1238,7 +1247,7 @@ web_page_node(_, Node, [<<"statsdx">>], _Query, Lang) ->
 	rpc:call(Node, mnesia, system_info, [transaction_log_writes]),
 
     Res =
-	[?XC(<<"h1">>, list_to_binary(io_lib:format(?T("~p statistics"), [Node]))),
+	[?XC(<<"h1">>, list_to_binary(io_lib:format(translate:translate(Lang, ?T("~p statistics")), [Node]))),
 	 ?XC(<<"h3">>, <<"Connections">>),
 	 ?XAE(<<"table">>, [],
 	      [?XE(<<"tbody">>, [
@@ -1335,7 +1344,7 @@ web_page_node(Acc, _, _, _, _) -> Acc.
 web_page_host(_, Host,
 	      #request{path = [<<"statsdx">>],
 		       lang = Lang} = _Request) ->
-    Res = [?XC(<<"h1">>, <<(?T(<<"Statistics">>))/binary, " Dx">>),
+    Res = [?XC(<<"h1">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>),
 	   ?XC(<<"h2">>, Host),
 	   ?XC(<<"h3">>, <<"Accounts">>),
 	   ?XAE(<<"table">>, [],
@@ -1466,7 +1475,7 @@ web_page_host(_, Host,
 	  ],
     {stop, Res};
 web_page_host(_, Host, #request{path=[<<"statsdx">>, <<"top">>, Topic, Topnumber], q = _Q, lang = Lang} = _Request) ->
-    Res = [?XC(<<"h1">>, <<(?T(<<"Statistics">>))/binary, " Dx">>),
+    Res = [?XC(<<"h1">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>),
 	   case Topic of
 		<<"offlinemsg">> -> ?XCT(<<"h2">>, <<"Top offline message queues">>);
 		<<"vcard">> -> ?XCT(<<"h2">>, <<"Top vCard sizes">>);
@@ -1486,7 +1495,7 @@ web_page_host(_, Host, #request{path=[<<"statsdx">> | FilterURL], q = Q,
 				lang = Lang} = _Request) ->
     Filter = parse_url_filter(FilterURL),
     Sort_query = get_sort_query(Q),
-    Res = [?XC(<<"h1">>, <<(?T(<<"Statistics">>))/binary, " Dx">>),
+    Res = [?XC(<<"h1">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>),
 	   ?XC(<<"h2">>, list_to_binary("Sessions with: "++io_lib:format("~p", [Filter]))),
 	   ?XAE(<<"table">>, [],
 		[?XE(<<"tbody">>,
@@ -1550,7 +1559,7 @@ do_sessions_table(_Node, _Lang, Filter, {Sort_direction, Sort_column}, Host) ->
 	      Server = binary_to_list(JID#jid.lserver),
 	      UserURL = "/admin/server/" ++ Server ++ "/user/" ++ User ++ "/",
 	      ?XE(<<"tr">>, [
-			 ?XE(<<"td">>, [?AC(list_to_binary(UserURL), jlib:jid_to_string(JID))]),
+			 ?XE(<<"td">>, [?AC(list_to_binary(UserURL), jid:encode(JID))]),
 			 ?XCTB("td", atom_to_list(Client_id)),
 			 ?XCTB("td", atom_to_list(OS_id)),
 			 ?XCTB("td", LangS),
@@ -1584,12 +1593,12 @@ get_sessions_filtered(Filter, server) ->
       ejabberd_config:get_myhosts());
 get_sessions_filtered(Filter, Host) ->
     Match = case Filter of
-		[{<<"client">>, Client}] -> {{session, '$1'}, jlib:binary_to_atom(Client), '$2', '$3', '$4', '$5', '$6', '$7'};
-		[{<<"os">>, OS}] -> {{session, '$1'}, '$2', jlib:binary_to_atom(OS), '$3', '$4', '$5', '$6', '$7'};
-		[{<<"conntype">>, ConnType}] -> {{session, '$1'}, '$2', '$3', '$4', jlib:binary_to_atom(ConnType), '$5', '$6', '$7'};
+		[{<<"client">>, Client}] -> {{session, '$1'}, misc:binary_to_atom(Client), '$2', '$3', '$4', '$5', '$6', '$7'};
+		[{<<"os">>, OS}] -> {{session, '$1'}, '$2', misc:binary_to_atom(OS), '$3', '$4', '$5', '$6', '$7'};
+		[{<<"conntype">>, ConnType}] -> {{session, '$1'}, '$2', '$3', '$4', misc:binary_to_atom(ConnType), '$5', '$6', '$7'};
 		[{<<"languages">>, Lang}] -> {{session, '$1'}, '$2', '$3', binary_to_list(Lang), '$4', '$5', '$6', '$7'};
-		[{<<"client">>, Client}, {<<"os">>, OS}] -> {{session, '$1'}, jlib:binary_to_atom(Client), jlib:binary_to_atom(OS), '$3', '$4', '$5', '$6', '$7'};
-		[{<<"client">>, Client}, {<<"conntype">>, ConnType}] -> {{session, '$1'}, jlib:binary_to_atom(Client), '$2', '$3', jlib:binary_to_atom(ConnType), '$5', '$6', '$7'};
+		[{<<"client">>, Client}, {<<"os">>, OS}] -> {{session, '$1'}, misc:binary_to_atom(Client), misc:binary_to_atom(OS), '$3', '$4', '$5', '$6', '$7'};
+		[{<<"client">>, Client}, {<<"conntype">>, ConnType}] -> {{session, '$1'}, misc:binary_to_atom(Client), '$2', '$3', misc:binary_to_atom(ConnType), '$5', '$6', '$7'};
 		_ -> {{session, '$1'}, '$2', '$3', '$4', '$5'}
 	    end,
     ets:match_object(table_name(Host), Match).

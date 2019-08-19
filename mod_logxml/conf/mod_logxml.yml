@@ -12,5 +12,5 @@ modules:
      show_ip: false
      rotate_days: 1
      rotate_megs: 100
-     rotate_kpackets: no
+     rotate_kpackets: 0
      check_rotate_kpackets: 1

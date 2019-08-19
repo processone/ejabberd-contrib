@@ -11,7 +11,9 @@
 
 -behaviour(gen_mod).
 
--export([start/2, loop/5, stop/1]).
+
+-export([start/2, stop/1, depends/2, mod_opt_type/1, mod_options/1]).
+-export([loop/5]).
 
 -include("xmpp.hrl").
 -include("mod_roster.hrl").
@@ -26,19 +28,17 @@
 start(_Host, Opts) ->
 	case whereis(?PROCNAME) of
 		undefined ->
-			Interval = gen_mod:get_opt(interval, Opts, fun(O) -> O end, 5),
+			Interval = gen_mod:get_opt(interval, Opts),
 			I = Interval*60*1000,
 			%I = 9000, %+++
 
-			Type = gen_mod:get_opt(type, Opts, fun(O) -> O end, html),
+			Type = gen_mod:get_opt(type, Opts),
 
-			Split = gen_mod:get_opt(split, Opts, fun(O) -> O end, false),
+			Split = gen_mod:get_opt(split, Opts),
 
-			BaseFilename = binary_to_list(gen_mod:get_opt(basefilename, Opts, fun(O) -> O end, "/tmp/ejasta")),
+			BaseFilename = gen_mod:get_opt(basefilename, Opts),
 
-			Hosts_all = ejabberd_config:get_global_option(hosts, fun(O) -> O end),
-			Hosts1 = gen_mod:get_opt(hosts, Opts, fun(O) -> O end, Hosts_all),
-			Hosts = [binary_to_list(H) ||  H <- Hosts1],
+			Hosts = gen_mod:get_opt(hosts, Opts),
 
 			register(?PROCNAME, spawn(?MODULE, loop, [I, Hosts, BaseFilename, Type, Split]));
 		_ ->
@@ -61,6 +61,26 @@ stop(_Host) ->
 			?PROCNAME ! stop
 	end.
 
+depends(_Host, _Opts) ->
+    [{mod_statsdx, hard}].
+
+mod_opt_type(interval) ->
+    econf:pos_int();
+mod_opt_type(type) ->
+    econf:enum([html, txt, dat]);
+mod_opt_type(split) ->
+    econf:bool();
+mod_opt_type(basefilename) ->
+    econf:string();
+mod_opt_type(hosts) ->
+    econf:list(econf:domain()).
+
+mod_options(_Host) ->
+    [{interval, 5},
+     {type, html},
+     {split, false},
+     {basefilename, "/tmp/ejasta"},
+     {hosts, ejabberd_config:get_option(hosts)}].
 
 %% -------------------
 %% write_stat*
@@ -96,12 +116,17 @@ write_statsfiles(true, I, Hs, O, T) ->
 		Hs).
 
 write_statsfile(I, Class, Name, O, T) ->
-	Fn = filename:flatten([O, "-", Class, "-", Name, ".", T]),
+	Fn = filename:flatten([O, "-", Class, "-", to_string(Name), ".", T]),
 	{ok, F} = file:open(Fn, [write]),
 	fwini(F, T),
 	write_stats(I, Class, Name, F, T),
 	fwend(F, T),
 	file:close(F).
+
+to_string(B) when is_binary(B) ->
+    binary_to_list(B);
+to_string(S) ->
+    S.
 
 write_stats(I, server, _Name, F, T) ->
 	fwh(F, "Server statistics", 1, T),

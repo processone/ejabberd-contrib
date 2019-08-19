@@ -1,5 +1,6 @@
 	mod_webpresence - Presence on the Web
 
+	Requires: ejabberd 19.08 or higher
 	Authors: Igor Goryachev, Badlop, runcom
 	http://www.ejabberd.im/mod_webpresence
 
@@ -69,20 +70,12 @@ pixmaps_path:
     Remember to put the correct path to the pixmaps directory,
     and make sure the user than runs ejabberd has read access to that directory.
     Default value: "./pixmaps"
-port:
-    This informational option is used only when sending a message to the user.
-    If you set a different port in the 'listen' section, set this option too.
-    Default value: 5280
-path:
-    This informational option is used only when sending a message to the user.
-    If you set a different path in the 'listen' section, set this option too.
-    Default value: "presence"
 baseurl:
     This informational option is used only when sending a message to the user
     and when building the JavaScript code.
     It is the base part of the URL of the webpresence HTTP content.
     You can use the keyword @HOST@.
-    If the option is not specified, it takes as default value: http://host:port/path/
+    If the option is not specified, it takes as default value: http://host:52080/presence/
 
 
 	AUTOMATIC ENABLE
@@ -144,8 +137,6 @@ modules:
     host: "webstatus.@HOST@"
     access: local
     pixmaps_path: "/path/to/pixmaps"
-    port: 80
-    path: "status"
     baseurl: "http://www.example.org/status/"
 
 

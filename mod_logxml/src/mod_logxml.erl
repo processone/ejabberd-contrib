@@ -26,13 +26,16 @@
 start(Host, Opts) ->
     Logdir = gen_mod:get_opt(logdir, Opts),
 
-    Rd = gen_mod:get_opt(rotate_days, Opts),
+    Rd = case gen_mod:get_opt(rotate_days, Opts) of
+	     0 -> no;
+	     Rd1 -> Rd1
+	 end,
     Rf = case gen_mod:get_opt(rotate_megs, Opts) of
-	     no -> no;
+	     0 -> no;
 	     Rf1 -> Rf1*1024*1024
 	 end,
     Rp = case gen_mod:get_opt(rotate_kpackets, Opts) of
-	     no -> no;
+	     0 -> no;
 	     Rp1 -> Rp1*1000
 	 end,
     RotateO = {Rd, Rf, Rp},
@@ -111,7 +114,7 @@ filter(FilterO, E) ->
 	FilterO,
     {Orientation, From, To, Packet} = E,
     Stanza = element(1, Packet),
-    Hosts_all = ejabberd_config:get_global_option(hosts, fun(A) -> A end),
+    Hosts_all = ejabberd_config:get_option(hosts),
     {Host_local, Host_remote} = case Orientation of
 				    send -> {From#jid.lserver, To#jid.lserver};
 				    recv -> {To#jid.lserver, From#jid.lserver}
@@ -267,29 +270,23 @@ calc_div(_A, _B) ->
     0.5. %% This ensures that no rotation is performed
 
 mod_opt_type(stanza) ->
-    fun (L) when is_list(L) -> [] = L -- [iq, message, presence, other], L end;
+    econf:list(econf:enum([iq, message, presence, other]));
 mod_opt_type(direction) ->
-    fun (L) when is_list(L) -> [] = L -- [internal, vhosts, external], L end;
+    econf:list(econf:enum([internal, vhosts, external]));
 mod_opt_type(orientation) ->
-    fun (L) when is_list(L) -> [] = L -- [send, recv], L end;
+    econf:list(econf:enum([send, recv]));
 mod_opt_type(logdir) ->
-    fun iolist_to_binary/1;
+    econf:directory();
 mod_opt_type(show_ip) ->
-    fun (A) when is_boolean(A) -> A end;
+    econf:bool();
 mod_opt_type(rotate_days) ->
-    fun (I) when is_integer(I), I > 0 -> I;
-        (no) -> no
-    end;
+    econf:non_neg_int();
 mod_opt_type(rotate_megs) ->
-    fun (I) when is_integer(I), I > 0 -> I;
-        (no) -> no
-    end;
+    econf:non_neg_int();
 mod_opt_type(rotate_kpackets) ->
-    fun (I) when is_integer(I), I > 0 -> I;
-        (no) -> no
-    end;
+    econf:non_neg_int();
 mod_opt_type(check_rotate_kpackets) ->
-    fun (I) when is_integer(I), I > 0 -> I end.
+    econf:non_neg_int().
 
 mod_options(_Host) ->
     [{stanza, [iq, message, presence, other]},

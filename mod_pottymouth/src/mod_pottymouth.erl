@@ -60,9 +60,9 @@ filterMessageText2(Lang, MessageText) ->
   string:join(filterWords(MessageTerms), " ").
 
 start(_Host, Opts) ->
-  Blacklists = gen_mod:get_opt(blacklists, Opts, fun(A) -> A end, []),
+  Blacklists = gen_mod:get_opt(blacklists, Opts),
   lists:map(fun bloom_gen_server:start/1, Blacklists),
-  CharMaps = gen_mod:get_opt(charmaps, Opts, fun(A) -> A end, []),
+  CharMaps = gen_mod:get_opt(charmaps, Opts),
   lists:map(fun normalize_leet_gen_server:start/1, CharMaps),
   ejabberd_hooks:add(filter_packet, global, ?MODULE, on_filter_packet, 0),
   ok.

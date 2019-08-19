@@ -11,12 +11,13 @@
 
 -behaviour(gen_mod).
 
--export([web_menu_node/3, web_page_node/5,
-	 start/2, stop/1]).
+-export([start/2, stop/1, depends/2, mod_options/1]).
+-export([web_menu_node/3, web_page_node/5]).
 
 -include("xmpp.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
+-include("translate.hrl").
 
 %%-------------------
 %% gen_mod functions
@@ -32,19 +33,25 @@ stop(_Host) ->
     ejabberd_hooks:delete(webadmin_page_node, ?MODULE, web_page_node, 50),
     ok.
 
+depends(_Host, _Opts) ->
+    [].
+
+mod_options(_Host) ->
+    [].
+
 %%-------------------
 %% Web Admin Menu
 %%-------------------
 
 web_menu_node(Acc, _Node, Lang) ->
-    Acc ++ [{<<"shcommands">>, ?T(<<"Shell Commands">>)}].
+    Acc ++ [{<<"shcommands">>, translate:translate(Lang, ?T("Shell Commands"))}].
 
 %%-------------------
 %% Web Admin Page
 %%-------------------
 
 web_page_node(_, Node, [<<"shcommands">>], Query, Lang) ->
-    Res = [?XC(<<"h1">>, <<"Shell Commands">>) | get_content(Node, Query, Lang)],
+    Res = [?XC(<<"h1">>, translate:translate(Lang, ?T("Shell Commands"))) | get_content(Node, Query, Lang)],
     {stop, Res};
 web_page_node(Acc, _, _, _, _) -> Acc.
 
@@ -53,14 +60,15 @@ web_page_node(Acc, _, _, _, _) -> Acc.
 %%-------------------
 
 get_content(Node, Query, Lang) ->
-    Instruct = ?T("Type a command in a textbox and click Execute."),
+    Instruct = translate:translate(Lang, ?T("Type a command in a textbox and click Execute.")),
     {{CommandCtl, CommandErl, CommandShell}, Res} = case catch parse_and_execute(Query, Node) of
 							{'EXIT', _} -> {{"", "", ""}, Instruct};
 							Result_tuple -> Result_tuple
 						    end,
     TitleHTML = [
-		 ?XC(<<"p">>, ?T(<<"Type a command in a textbox and click Execute.  Use only commands which immediately return a result.">>)),
-		 ?XC(<<"p">>, ?T(<<"WARNING: Use this only if you know what you are doing.">>))
+		 ?XC(<<"p">>, translate:translate(Lang, ?T("Type a command in a textbox and click Execute."))),
+		 ?XC(<<"p">>, translate:translate(Lang, ?T("Use only commands which immediately return a result."))),
+		 ?XC(<<"p">>, translate:translate(Lang, ?T("WARNING: Use this only if you know what you are doing.")))
 		],
     CommandHTML =
 	[?XAE(<<"form">>, [{<<"method">>, <<"post">>}],
@@ -70,21 +78,21 @@ get_content(Node, Query, Lang) ->
 			      [?X(<<"td">>),
 			       ?XCT(<<"td">>, <<"ejabberd_ctl">>),
 			       ?XE(<<"td">>, [?INPUTS(<<"text">>, <<"commandctl">>, list_to_binary(CommandCtl), <<"70">>),
-					  ?INPUTT(<<"submit">>, <<"executectl">>, <<"Execute">>)])
+					  ?INPUTT(<<"submit">>, <<"executectl">>, translate:translate(Lang, ?T("Execute")))])
 			      ]
 			     ),
 			  ?XE(<<"tr">>,
 			      [?X(<<"td">>),
 			       ?XCT(<<"td">>, <<"erlang shell">>),
 			       ?XE(<<"td">>, [?INPUTS(<<"text">>, <<"commanderl">>, list_to_binary(CommandErl), <<"70">>),
-					  ?INPUTT(<<"submit">>, <<"executeerl">>, <<"Execute">>)])
+					  ?INPUTT(<<"submit">>, <<"executeerl">>, translate:translate(Lang, ?T("Execute")))])
 			      ]
 			     ),
 			  ?XE(<<"tr">>,
 			      [?X(<<"td">>),
 			       ?XCT(<<"td">>, <<"system shell">>),
 			       ?XE(<<"td">>, [?INPUTS(<<"text">>, <<"commandshe">>, list_to_binary(CommandShell), <<"70">>),
-					  ?INPUTT(<<"submit">>, <<"executeshe">>, <<"Execute">>)])
+					  ?INPUTT(<<"submit">>, <<"executeshe">>, translate:translate(Lang, ?T("Execute")))])
 			      ]
 			     )
 			 ]
@@ -93,7 +101,7 @@ get_content(Node, Query, Lang) ->
     ResHTML =
 	[?XAC(<<"textarea">>, [{<<"wrap">>, <<"off">>}, {<<"style">>, <<"font-family:monospace;">>},
 			   {<<"name">>, <<"result">>}, {<<"rows">>, <<"30">>}, {<<"cols">>, <<"80">>}],
-	      list_to_binary(Res))
+	      Res)
 	],
     TitleHTML ++ CommandHTML ++ ResHTML.
 

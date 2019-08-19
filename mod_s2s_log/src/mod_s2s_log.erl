@@ -51,7 +51,7 @@
 start(Host, Opts) ->
     case whereis(?PROCNAME) of
 	undefined ->
-	    Filename = gen_mod:get_opt(filename, Opts, ?DEFAULT_FILENAME),
+	    Filename = gen_mod:get_opt(filename, Opts),
 	    case filelib:ensure_dir(Filename) of
 		ok ->
 		    register(?PROCNAME,

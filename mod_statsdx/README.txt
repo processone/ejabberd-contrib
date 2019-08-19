@@ -1,6 +1,7 @@
 
 	mod_statsdx - Calculates and gathers statistics actively
 
+        Requires: ejabberd 19.08 or higher
         Homepage: http://www.ejabberd.im/mod_statsdx
         Author: Badlop
 

@@ -3,7 +3,7 @@
 
 	Homepage: http://www.ejabberd.im/mod_logxml
 	Author: Badlop
-	Module for ejabberd git master
+	Requires: ejabberd 19.08 or higher
 
 
 	DESCRIPTION
@@ -38,15 +38,15 @@ show_ip:
     Default value: false
 rotate_days: 
     Rotate logs every X days
-    Put 'no' to disable this limit.
+    Put 0 to disable this limit.
     Default value: 1
 rotate_megs: 
     Rotate when the logfile size is higher than this, in megabytes.
-    Put 'no' to disable this limit.
+    Put 0 to disable this limit.
     Default value: 10
 rotate_kpackets: 
     Rotate every *1000 XMPP packets logged
-    Put 'no' to disable this limit.
+    Put 0 to disable this limit.
     Default value: 10
 check_rotate_kpackets: 
     Check rotation every *1000 packets
@@ -72,7 +72,7 @@ modules:
      show_ip: false
      rotate_days: 1
      rotate_megs: 100
-     rotate_kpackets: no
+     rotate_kpackets: 0
      check_rotate_kpackets: 1
 
 

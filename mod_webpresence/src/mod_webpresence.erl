@@ -33,6 +33,7 @@
 
 -include("xmpp.hrl").
 -include("logger.hrl").
+-include("translate.hrl").
 -include("ejabberd_web_admin.hrl").
 -include("ejabberd_http.hrl").
 
@@ -53,11 +54,7 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 start(Host, Opts) ->
-    Default_dir = case code:priv_dir(ejabberd) of
-		      {error, _} -> ?PIXMAPS_DIR;
-		      Path -> filename:join([Path, ?PIXMAPS_DIR])
-		  end,
-    Dir = gen_mod:get_opt(pixmaps_path, Opts, fun(D) -> D end, Default_dir),
+    Dir = gen_mod:get_opt(pixmaps_path, Opts),
     catch ets:new(pixmaps_dirs, [named_table, public]),
     ets:insert(pixmaps_dirs, {directory, Dir}),
     case gen_mod:start_child(?MODULE, Host, Opts) of
@@ -75,19 +72,23 @@ stop(Host) ->
     gen_mod:stop_child(?MODULE, Host),
     ok.
 
--spec mod_opt_type(atom()) -> fun((term()) -> term()).
-mod_opt_type(host) -> fun iolist_to_binary/1;
-mod_opt_type(access) -> fun acl:access_rules_validator/1;
-mod_opt_type(pixmaps_path) -> fun iolist_to_binary/1;
+mod_opt_type(host) ->
+    econf:host();
+mod_opt_type(access) ->
+    econf:acl();
+mod_opt_type(pixmaps_path) ->
+    econf:directory();
 mod_opt_type(port) ->
-    fun(I) when is_integer(I), I>0, I<65536 -> I end;
-mod_opt_type(path) -> fun iolist_to_binary/1;
-mod_opt_type(baseurl) -> fun iolist_to_binary/1.
+    econf:pos_int();
+mod_opt_type(path) ->
+    econf:binary();
+mod_opt_type(baseurl) ->
+    econf:binary().
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(Host) ->
-    [{host, <<"webpresence.@HOST@">>},
-     {access, none},
+    [{host, <<"webpresence.", Host/binary>>},
+     {access, local},
      {pixmaps_path, ?PIXMAPS_DIR},
      {port, 5280},
      {path, <<"presence">>},
@@ -114,12 +115,9 @@ init([Host, Opts]) ->
 			 {attributes, record_info(fields, webpresence)}]),
     mnesia:add_table_index(webpresence, ridurl),
     update_table(),
-    MyHost = gen_mod:get_opt_host(Host, Opts, <<"webpresence.@HOST@">>),
-    Access = gen_mod:get_opt(access, Opts, fun(O) -> O end, local),
-    Port = gen_mod:get_opt(port, Opts, fun(O) -> O end, 5280),
-    Path = gen_mod:get_opt(path, Opts, fun(O) -> O end, <<"presence">>),
-    BaseURL1 = gen_mod:get_opt(baseurl, Opts, fun(O) -> O end,
-                               iolist_to_binary(io_lib:format(<<"http://~s:~p/~s/">>, [Host, Port, Path]))),
+    MyHost = gen_mod:get_opt(host, Opts),
+    Access = gen_mod:get_opt(access, Opts),
+    BaseURL1 = gen_mod:get_opt(baseurl, Opts),
     BaseURL2 = ejabberd_regexp:greplace(BaseURL1, <<"@HOST@">>, Host),
     register_iq_handlers(MyHost),
     ejabberd_router:register_route(MyHost, Host),
@@ -304,7 +302,7 @@ process_disco_items(#iq{lang = Lang} = IQ) ->
            name = <<"field">>,
            attrs = [
                     {<<"type">>, Type},
-                    {<<"label">>, ?T(Label)},
+                    {<<"label">>, translate:translate(Lang, ?T(Label))},
                     {<<"var">>, Var}
                    ],
            children = Vals
@@ -445,7 +443,7 @@ send_message_registered(WP, To, Host, BaseURL, Lang) ->
 		false -> <<"">>;
 		true -> ?BC([
                         <<"  text\n"
-			  "  text/res/<">>, ?T(<<"Resource">>), <<">\n">>
+			  "  text/res/<">>, translate:translate(Lang, ?T("Resource")), <<">\n">>
                                          ])
 	    end,
     Oimage = case WP#webpresence.icon of
@@ -455,9 +453,9 @@ send_message_registered(WP, To, Host, BaseURL, Lang) ->
 		     <<"  image\n"
 		       "  image/example.php\n"
 		       "  image/mypresence.png\n"
-		       "  image/res/<">>, ?T(<<"Resource">>), <<">\n"
-		       "  image/theme/<">>, ?T(<<"Icon Theme">>), <<">\n"
-		       "  image/theme/<">>, ?T(<<"Icon Theme">>), <<">/res/<">>, ?T(<<"Resource">>), <<">\n">>
+		       "  image/res/<">>, translate:translate(Lang, ?T("Resource")), <<">\n"
+		       "  image/theme/<">>, translate:translate(Lang, ?T("Icon Theme")), <<">\n"
+		       "  image/theme/<">>, translate:translate(Lang, ?T("Icon Theme")), <<">/res/<">>, translate:translate(Lang, ?T("Resource")), <<">\n">>
                                       ])
 	     end,
     Oxml = case WP#webpresence.xml of
@@ -484,24 +482,24 @@ send_message_registered(WP, To, Host, BaseURL, Lang) ->
 						  RIDT = ?BC([<<"rid/">>, RID]),
 						  {?BC([<<"  ">>, RIDT, <<"\n">>]),
 						   ?BC([<<"  ">>, BaseURL, RIDT, <<"/">>, Allowed_type, <<"/\n">>]),
-						   ?BC([?T(<<"If you forget your RandomID, register again to receive this message.">>), <<"\n">>,
-						   ?T(<<"To get a new RandomID, disable the option and register again.">>), <<"\n">>])
+						   ?BC([translate:translate(Lang, ?T("If you forget your RandomID, register again to receive this message.")), <<"\n">>,
+						   translate:translate(Lang, ?T("To get a new RandomID, disable the option and register again.")), <<"\n">>])
 						  }
 					  end,
-    Subject = ?BC([?T(<<"Web Presence">>), <<": ">>, ?T(<<"registered">>)]),
-    Body = ?BC([?T(<<"You have registered:">>), <<" ">>, JIDS, <<"\n\n">>,
-	?T(<<"Use URLs like:">>), <<"\n">>,
+    Subject = ?BC([translate:translate(Lang, ?T("Web Presence")), <<": ">>, translate:translate(Lang, ?T("registered"))]),
+    Body = ?BC([translate:translate(Lang, ?T("You have registered:")), <<" ">>, JIDS, <<"\n\n">>,
+	translate:translate(Lang, ?T("Use URLs like:")), <<"\n">>,
 	<<"  ">>, BaseURL, <<"USERID/OUTPUT/\n">>,
 	<<"\n">>,
 	<<"USERID:\n">>, USERID_jid, USERID_rid, <<"\n">>,
 	<<"OUTPUT:\n">>, Oimage, Oxml, Ojs, Otext, Oavatar, <<"\n">>,
-	?T(<<"Example:">>), <<"\n">>, Example_jid, Example_rid, <<"\n">>,
+	translate:translate(Lang, ?T("Example:")), <<"\n">>, Example_jid, Example_rid, <<"\n">>,
 	Text_rid]),
     send_headline(Host, To, Subject, Body).
 
 send_message_unregistered(To, Host, Lang) ->
-    Subject = ?BC([?T(<<"Web Presence">>), <<": ">>, ?T(<<"unregistered">>)]),
-    Body = ?BC([?T(<<"You have unregistered.">>), <<"\n\n">>]),
+    Subject = ?BC([translate:translate(Lang, ?T("Web Presence")), <<": ">>, translate:translate(Lang, ?T("unregistered"))]),
+    Body = ?BC([translate:translate(Lang, ?T("You have unregistered.")), <<"\n\n">>]),
     send_headline(Host, To, Subject, Body).
 
 send_headline(Host, To, Subject, Body) ->
@@ -704,12 +702,12 @@ make_js(WP, Prs, Show_us, Lang, Q) ->
                 end,
     ?BC([US_string, <<"var jabber_resources=[\n">>, R_string, <<"];">>, CB_string]).
 
-long_show(<<"available">>, Lang) -> ?T(<<"available">>);
-long_show(<<"chat">>, Lang) -> ?T(<<"free for chat">>);
-long_show(<<"away">>, Lang) -> ?T(<<"away">>);
-long_show(<<"xa">>, Lang) -> ?T(<<"extended away">>);
-long_show(<<"dnd">>, Lang) -> ?T(<<"do not disturb">>);
-long_show(_, Lang) -> ?T(<<"unavailable">>).
+long_show(<<"available">>, Lang) -> translate:translate(Lang, ?T("available"));
+long_show(<<"chat">>, Lang) -> translate:translate(Lang, ?T("free for chat"));
+long_show(<<"away">>, Lang) -> translate:translate(Lang, ?T("away"));
+long_show(<<"xa">>, Lang) -> translate:translate(Lang, ?T("extended away"));
+long_show(<<"dnd">>, Lang) -> translate:translate(Lang, ?T("do not disturb"));
+long_show(_, Lang) -> translate:translate(Lang, ?T("unavailable")).
 
 intund2string(undefined) -> intund2string(0);
 intund2string(Int) when is_integer(Int) -> list_to_binary(integer_to_list(Int)).
@@ -887,20 +885,20 @@ process(LocalPath, Request) ->
 
 process2([], #request{lang = Lang1}) ->
     Lang = parse_lang(Lang1),
-    Title = [?XC(<<"title">>, ?T(<<"Web Presence">>))],
-    Desc = [?XC(<<"p">>, ?BC([ ?T(<<"To publish your presence using this system you need a Jabber account in this Jabber server.">>), <<" ">>,
-		?T(<<"Login with a Jabber client, open the Service Discovery and register in Web Presence.">>),
-		?T(<<"You will receive a message with further instructions.">>)]))],
-    Link_themes = [?AC(<<"themes">>, ?T(<<"Icon Theme">>))],
-    Body = [?XC(<<"h1">>, ?T(<<"Web Presence">>))] ++ Desc ++ Link_themes,
+    Title = [?XC(<<"title">>, translate:translate(Lang, ?T("Web Presence")))],
+    Desc = [?XC(<<"p">>, ?BC([ translate:translate(Lang, ?T("To publish your presence using this system you need a Jabber account in this Jabber server.")), <<" ">>,
+		translate:translate(Lang, ?T("Login with a Jabber client, open the Service Discovery and register in Web Presence.")),
+		translate:translate(Lang, ?T("You will receive a message with further instructions."))]))],
+    Link_themes = [?AC(<<"themes">>, translate:translate(Lang, ?T("Icon Theme")))],
+    Body = [?XC(<<"h1">>, translate:translate(Lang, ?T("Web Presence")))] ++ Desc ++ Link_themes,
     make_xhtml(Title, Body);
 
 process2([<<"themes">>], #request{lang = Lang1}) ->
     Lang = parse_lang(Lang1),
-    Title = [?XC(<<"title">>, ?BC([?T(<<"Web Presence">>), <<" - ">>, ?T("Icon Theme")]))],
+    Title = [?XC(<<"title">>, ?BC([translate:translate(Lang, ?T("Web Presence")), <<" - ">>, translate:translate(Lang, ?T("Icon Theme"))]))],
     Themes = available_themes(list),
     Icon_themes = themes_to_xhtml(Themes),
-    Body = [?XC(<<"h1">>, ?T(<<"Icon Theme">>))] ++ Icon_themes,
+    Body = [?XC(<<"h1">>, translate:translate(Lang, ?T("Icon Theme")))] ++ Icon_themes,
     make_xhtml(Title, Body);
 
 process2([<<"image">>, Theme, Show], #request{} = _Request) ->
@@ -958,7 +956,7 @@ serve_web_presence(TypeURL, User, Server, Tail, #request{lang = Lang1, q = Q}) -
 %%%% ---------------------
 
 web_menu_host(Acc, _Host, Lang) ->
-    [{<<"webpresence">>, ?T(<<"Web Presence">>)} | Acc].
+    [{<<"webpresence">>, translate:translate(Lang, ?T("Web Presence"))} | Acc].
 
 web_page_host(_, _Host,
 	      #request{path = [<<"webpresence">>],

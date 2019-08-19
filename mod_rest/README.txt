@@ -1,6 +1,7 @@
 
 	mod_rest - HTTP interface to POST stanzas into ejabberd
 
+	Requires: ejabberd 19.08 or higher
 	Author: Nolan Eakins <sneakin@semanticgap.com>
 	Copyright (C) 2008 Nolan Eakins
 
@@ -40,8 +41,6 @@ With that configuration, you can send HTTP POST requests to the URL:
 Configurable options:
 
   allowed_ips: IP addresses that can use the rest service.
-  Allowed values: 'all' or a list of Erlang strings.
-  Default value: all
   Notice that the IP address is checked after the connection is established.
   If you want to restrict the IP address that listens connections, and
   only allow a certain IP to be able to connect to the port, then the
@@ -49,18 +48,13 @@ Configurable options:
   listening IP address in the ejabberd listeners (see the ejabberd Guide).
 
   allowed_destinations: Allowed destination Jabber ID addresses in the stanza.
-  Allowed values: 'all' or a list of strings.
-  Default value: all
 
   allowed_stanza_types: Allowed stanza types of the posted stanza.
-  Allowed values: 'all' or a list of strings.
-  Default value: all
 
   access_commands: Access restrictions to execute ejabberd commands.
   This option is similar to the option ejabberdctl_access_commands that 
   is documented in the ejabberd Guide.
   There is more information about AccessCommands in the ejabberd Guide.
-  Default value: []
 
 Complex example configuration:
 
@@ -88,7 +82,7 @@ modules:
       - "presence"
       - "iq"
     access_commands:
-      restaccess:
+      - restaccess:
         - registered_users
         - connected_users
 
