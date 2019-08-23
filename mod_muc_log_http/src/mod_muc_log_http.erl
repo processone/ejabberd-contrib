@@ -50,7 +50,8 @@ serve(LocalPathBin, #request{host = Host} = Request) ->
 		{error, eisdir} ->
 			FileNameIndex = FileName ++ "/index.html",
 			case file:read_file_info(FileNameIndex) of
-				{ok, _FileInfo} -> serve(LocalPath ++ ["index.html"], Request);
+				{ok, _FileInfo} ->
+				    serve(LocalPathBin ++ [<<"index.html">>], Request);
 				{error, _Error} -> show_dir_listing(FileName, LocalPath)
 			end;
 		{error, Error} ->

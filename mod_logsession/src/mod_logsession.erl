@@ -153,6 +153,4 @@ make_message(Host, {failed_auth, Username, {IPTuple, IPPort}, Reason}) ->
     io_lib:format("Failed authentication for ~s@~s from ~s port ~p: ~s",
 	[Username, Host, IPString, IPPort, Reason]);
 make_message(_Host, {forbidden, JID}) ->
-    io_lib:format("Forbidden session for ~s",
-	[jlib:jid_to_string(JID)]).
-
+    io_lib:format("Forbidden session for ~s", [jid:encode(JID)]).

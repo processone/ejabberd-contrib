@@ -1149,8 +1149,7 @@ web_page_main(_, #request{path=[<<"statsdx">>, <<"top">>, Topic, Topnumber], q =
 	       ])
 	  ],
     {stop, Res};
-web_page_main(_, #request{path=[<<"statsdx">> | FilterURL], q = Q, lang = Lang} = _Request) ->
-    Filter = parse_url_filter(FilterURL),
+web_page_main(_, #request{path=[<<"statsdx">> | Filter], q = Q, lang = Lang} = _Request) ->
     Sort_query = get_sort_query(Q),
     FilterS = io_lib:format("~p", [Filter]),
     Res = [?XC(<<"h1">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>),
@@ -1196,8 +1195,8 @@ get_sort_query(Q) ->
 	_ -> {normal, 1}
     end.
 get_sort_query2(Q) ->
-    {value, {_, String}} = lists:keysearch("sort", 1, Q),
-    Integer = list_to_integer(String),
+    {value, {_, Binary}} = lists:keysearch(<<"sort">>, 1, Q),
+    Integer = binary_to_integer(Binary),
     case Integer >= 0 of
 	true -> {ok, {normal, Integer}};
 	false -> {ok, {reverse, abs(Integer)}}
@@ -1225,16 +1224,6 @@ make_sessions_table_tr(Lang) ->
 	  1,
 	  Titles),
     Titles_TR.
-
-%% @spec (Filter::string()) -> [{Class::string(), Type::string()}]
-parse_url_filter(FilterURL) ->
-    [List] = string:tokens(FilterURL, "/"),
-    parse_url_filter(List, []).
-parse_url_filter([Class, Type | List], Res) ->
-    parse_url_filter(List, Res ++ [{Class, Type}]);
-parse_url_filter(_, Res) ->
-    Res.
-
 
 web_page_node(_, Node, [<<"statsdx">>], _Query, Lang) ->
     TransactionsCommited =
@@ -1491,9 +1480,8 @@ web_page_host(_, Host, #request{path=[<<"statsdx">>, <<"top">>, Topic, Topnumber
 	       ])
 	  ],
     {stop, Res};
-web_page_host(_, Host, #request{path=[<<"statsdx">> | FilterURL], q = Q,
+web_page_host(_, Host, #request{path=[<<"statsdx">> | Filter], q = Q,
 				lang = Lang} = _Request) ->
-    Filter = parse_url_filter(FilterURL),
     Sort_query = get_sort_query(Q),
     Res = [?XC(<<"h1">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>),
 	   ?XC(<<"h2">>, list_to_binary("Sessions with: "++io_lib:format("~p", [Filter]))),
@@ -1590,15 +1578,15 @@ get_sessions_filtered(Filter, server) ->
 	      end
       end,
       [],
-      ejabberd_config:get_myhosts());
+      ejabberd_config:get_option(hosts));
 get_sessions_filtered(Filter, Host) ->
     Match = case Filter of
-		[{<<"client">>, Client}] -> {{session, '$1'}, misc:binary_to_atom(Client), '$2', '$3', '$4', '$5', '$6', '$7'};
-		[{<<"os">>, OS}] -> {{session, '$1'}, '$2', misc:binary_to_atom(OS), '$3', '$4', '$5', '$6', '$7'};
-		[{<<"conntype">>, ConnType}] -> {{session, '$1'}, '$2', '$3', '$4', misc:binary_to_atom(ConnType), '$5', '$6', '$7'};
-		[{<<"languages">>, Lang}] -> {{session, '$1'}, '$2', '$3', binary_to_list(Lang), '$4', '$5', '$6', '$7'};
-		[{<<"client">>, Client}, {<<"os">>, OS}] -> {{session, '$1'}, misc:binary_to_atom(Client), misc:binary_to_atom(OS), '$3', '$4', '$5', '$6', '$7'};
-		[{<<"client">>, Client}, {<<"conntype">>, ConnType}] -> {{session, '$1'}, misc:binary_to_atom(Client), '$2', '$3', misc:binary_to_atom(ConnType), '$5', '$6', '$7'};
+		[<<"client">>, Client] -> {{session, '$1'}, misc:binary_to_atom(Client), '$2', '$3', '$4', '$5', '$6', '$7'};
+		[<<"os">>, OS] -> {{session, '$1'}, '$2', misc:binary_to_atom(OS), '$3', '$4', '$5', '$6', '$7'};
+		[<<"conntype">>, ConnType] -> {{session, '$1'}, '$2', '$3', '$4', misc:binary_to_atom(ConnType), '$5', '$6', '$7'};
+		[<<"languages">>, Lang] -> {{session, '$1'}, '$2', '$3', binary_to_list(Lang), '$4', '$5', '$6', '$7'};
+		[<<"client">>, Client, <<"os">>, OS] -> {{session, '$1'}, misc:binary_to_atom(Client), misc:binary_to_atom(OS), '$3', '$4', '$5', '$6', '$7'};
+		[<<"client">>, Client, <<"conntype">>, ConnType] -> {{session, '$1'}, misc:binary_to_atom(Client), '$2', '$3', misc:binary_to_atom(ConnType), '$5', '$6', '$7'};
 		_ -> {{session, '$1'}, '$2', '$3', '$4', '$5'}
 	    end,
     ets:match_object(table_name(Host), Match).

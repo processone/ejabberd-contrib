@@ -50,8 +50,7 @@ depends(_Host, _Opts) ->
 
 process([], #request{method = 'POST', data = Data, host = Host, ip = ClientIp}) ->
     try
-	{ClientAddress, _PortNumber} = ClientIp,
-	check_member_option(Host, ClientAddress, allowed_ips),
+	check_member_option(Host, ClientIp, allowed_ips),
 	maybe_post_request(Data, Host, ClientIp)
     catch
 	error:{badmatch, _} = Error ->
@@ -136,9 +135,9 @@ check_member_option(Host, Element, Option) ->
 	       AllowedValues -> lists:member(Element, AllowedValues)
 	   end.
 
-ip_matches(ClientIp, AllowedValues) ->
+ip_matches({Address, Port}, AllowedValues) ->
    lists:any(fun({Net, Mask}) ->
-	      acl:match_acl(useless_host, {ip,{Net,Mask}}, #{ip => {ClientIp,useless_port}})
+	      acl:match_acl(global, {ip,{Net,Mask}}, #{ip => Address})
 	  end,
 	  AllowedValues).
 
@@ -146,10 +145,8 @@ post_request(Pkt) ->
     From = xmpp:get_from(Pkt),
     LServer = From#jid.lserver,
     ejabberd_hooks:run_fold(user_send_packet, LServer, {Pkt, #{jid => From}}, []),
-    case ejabberd_router:route(Pkt) of
-	ok -> {200, [], <<"Ok">>};
-        _ -> {500, [], <<"Error">>}
-    end.
+    ejabberd_router:route(Pkt),
+    {200, [], <<"Ok">>}.
 
 %% Split a line into args. Args are splitted by blankspaces. Args can be enclosed in "".
 %%

@@ -97,10 +97,10 @@ log_packet_receive({Packet, C2SState}) ->
 log_packet(From, To, #message{type = Type} = Packet, Host) ->
     case Type of
 	groupchat -> %% mod_muc_log already does it
-	    ?DEBUG("dropping groupchat: ~s", [fxml:element_to_binary(Packet)]),
+	    ?DEBUG("dropping groupchat: ~s", [fxml:element_to_binary(xmpp:encode(Packet))]),
 	    ok;
 	error -> %% we don't log errors
-	    ?DEBUG("dropping error: ~s", [fxml:element_to_binary(Packet)]),
+	    ?DEBUG("dropping error: ~s", [fxml:element_to_binary(xmpp:encode(Packet))]),
 	    ok;
 	_ ->
 	    write_packet(From, To, Packet, Host)
@@ -116,15 +116,15 @@ write_packet(From, To, Packet, Host) ->
 	   end,
     Format = Config#config.format,
     {Subject, Body} = {case Packet#message.subject of
-			   false ->
-			       "";
+			   [] ->
+			       <<>>;
 			   SubjEl ->
 			       escape(Format, xmpp:get_text(SubjEl))
 		       end,
 		       escape(Format, xmpp:get_text(Packet#message.body))},
     case Subject == <<>> andalso Body == <<>> of
         true -> %% don't log empty messages
-            ?DEBUG("not logging empty message from ~s",[jlib:jid_to_string(From)]),
+            ?DEBUG("not logging empty message from ~s",[jid:encode(From)]),
             ok;
         false ->
 	    Path = Config#config.path,
@@ -153,7 +153,7 @@ write_packet(From, To, Packet, Host) ->
 		end,
 	    ?DEBUG("FilenameTemplate ~p~n",[FilenameTemplate]),
 	    Filename = make_filename(FilenameTemplate, [Y, M, D]),
-	    ?DEBUG("logging message from ~s into ~s~n",[jlib:jid_to_string(From), Filename]),
+	    ?DEBUG("logging message from ~s into ~s~n",[jid:encode(From), Filename]),
 	    File = case file:read_file_info(Filename) of
 		       {ok, _} ->
 			   open_logfile(Filename);
@@ -163,7 +163,7 @@ write_packet(From, To, Packet, Host) ->
 			   io:format(NewFile, Header, []),
 			   NewFile
 		   end,
-	    MessageText = case Subject == [] of
+	    MessageText = case Subject == <<>> of
 		       true ->
 			   Body;
 		       false ->
@@ -209,10 +209,7 @@ escape(html, <<>>, Acc) ->
     Acc.
 
 escape(html, Text) -> escape(html,Text,<<>>);
-escape(text, Text) ->
-    Text;
-escape(_, "") ->
-    "".
+escape(text, Text) -> Text.
 
 % return the number of occurence of Word in String
 count(String, Word) ->

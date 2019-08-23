@@ -242,7 +242,6 @@ do_route1(_Host, _From, _To, #iq{} = IQ, _BaseURL) ->
 do_route1(_Host, _From, _To, Packet, _BaseURL) ->
     case xmpp:get_type(Packet) of
 	error -> ok;
-	result -> ok;
 	_ ->
 	    Err = xmpp:err_item_not_found(),
 	    ejabberd_router:route_error(Packet, Err)
@@ -397,10 +396,6 @@ iq_set_register_info(ServerHost, Host, From, Nick,
                      Lang) ->
     case iq_set_register_info2(ServerHost, Host, From, Nick, Lang) of
       {atomic, ok} -> {result, undefined};
-      {atomic, false} ->
-          ErrText = <<"That nickname is registered by another "
-                      "person">>,
-          {error, xmpp:err_conflict(ErrText, Lang)};
       _ ->
           Txt = <<"Database failure">>,
           {error, xmpp:err_internal_server_error(Txt, Lang)}
@@ -919,7 +914,7 @@ process2([User, Server | Tail], Request) ->
 
 serve_web_presence(TypeURL, User, Server, Tail, #request{lang = Lang1, q = Q}) ->
     LServer = jid:nameprep(Server),
-    true = lists:member(Server, ejabberd_config:get_myhosts()),
+    true = lists:member(Server, ejabberd_config:get_option(hosts)),
     LUser = jid:nodeprep(User),
     WP = get_wp(LUser, LServer),
     case TypeURL of
