@@ -89,7 +89,7 @@ get_room_pid(Name, Host) ->
 	end.
 
 get_room_config(Room_pid) ->
-	{ok, C} = gen_fsm:sync_send_all_state_event(Room_pid, get_config),
+	{ok, C} = p1_fsm:sync_send_all_state_event(Room_pid, get_config),
 	C.
 
 
@@ -99,7 +99,7 @@ get_room_config(Room_pid) ->
 
 show_dir_listing(DirName, LocalPath) ->
 	Header = io_lib:format("Name                                               Last modified             Size Description~n", []),
-	Address = io_lib:format("<address>ejabberd/~s Server</address>", [ejabberd_config:get_version()]),
+	Address = io_lib:format("<address>ejabberd/~s Server</address>", [ejabberd_config:version()]),
 
 	{ok, Listing} = file:list_dir(DirName),
 	Listing2 = lists:sort(Listing),

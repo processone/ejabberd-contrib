@@ -142,7 +142,7 @@ parse1_command(<<"executeshe">>, {_, _, Command}, Node) ->
 
 execute(Type, Node, C) ->
     GL = group_leader(),
-    Filename = "temp" ++ io_lib:format("~p", [random:uniform()*10000]),
+    Filename = <<"temp", (p1_rand:get_string())/binary>>,
     {ok, File} = file:open(Filename, [write]),
     group_leader(File, self()),
     Res = case Type of

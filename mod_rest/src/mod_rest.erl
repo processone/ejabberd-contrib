@@ -135,7 +135,7 @@ check_member_option(Host, Element, Option) ->
 	       AllowedValues -> lists:member(Element, AllowedValues)
 	   end.
 
-ip_matches({Address, Port}, AllowedValues) ->
+ip_matches({Address, _Port}, AllowedValues) ->
    lists:any(fun({Net, Mask}) ->
 	      acl:match_acl(global, {ip,{Net,Mask}}, #{ip => Address})
 	  end,

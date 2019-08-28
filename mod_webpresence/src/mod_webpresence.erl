@@ -498,25 +498,12 @@ send_message_unregistered(To, Host, Lang) ->
     send_headline(Host, To, Subject, Body).
 
 send_headline(Host, To, Subject, Body) ->
-    ejabberd_router:route(
-      jid:make(<<"">>, Host, <<"">>),
-      To,
-      #xmlel{
-         name = <<"message">>,
-         attrs = [{<<"type">>, <<"headline">>}],
-         children = [
-                     #xmlel{
-                        name = <<"subject">>,
-                        attrs = [],
-                        children = [{xmlcdata, Subject}]
-                       },
-                     #xmlel{
-                        name = <<"body">>,
-                        attrs = [],
-                        children = [{xmlcdata, Body}]
-                       }
-                    ]
-        }).
+    Packet = #message{type = headline,
+	from = jid:make(Host),
+	to = To,
+	body = xmpp:mk_text(Body),
+	subject = xmpp:mk_text(Subject)},
+    ejabberd_router:route(Packet).
 
 unregister_webpresence(From, Host, Lang) ->
     remove_user(From#jid.luser, From#jid.lserver),
@@ -805,9 +792,9 @@ show_presence({avatar, WP, LUser, LServer}) ->
     IQ = #iq{type = get, from = JID, to = JID},
     IQr = Module:Function(IQ),
     [VCard] = IQr#iq.sub_els,
-    Mime = fxml:get_path_s(VCard, [{elem, <<"PHOTO">>}, {elem, <<"TYPE">>}, cdata]),
-    BinVal = fxml:get_path_s(VCard, [{elem, <<"PHOTO">>}, {elem, <<"BINVAL">>}, cdata]),
-    Photo = misc:decode_base64(BinVal),
+    VCard2 = xmpp:decode(VCard),
+    Mime = (VCard2#vcard_temp.photo)#vcard_photo.type,
+    Photo = (VCard2#vcard_temp.photo)#vcard_photo.binval,
     {200, [{"Content-Type", Mime}], Photo};
 
 show_presence({image_example, Theme, Show}) ->
