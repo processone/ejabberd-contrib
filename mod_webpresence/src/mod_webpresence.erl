@@ -945,8 +945,8 @@ web_page_host(_, _Host,
 		       lang = Lang} = _Request) ->
     Res = [?XCT(<<"h1">>, <<"Web Presence">>),
 	   ?XE(<<"ul">>, [
-		      ?LI([?ACT(<<"stats">>, <<"Statistics">>)]),
-		      ?LI([?ACT(<<"users">>, <<"Registered Users">>)])])],
+		      ?LI([?ACT(<<"stats/">>, <<"Statistics">>)]),
+		      ?LI([?ACT(<<"users/">>, <<"Registered Users">>)])])],
     {stop, Res};
 
 web_page_host(_, Host,
@@ -979,7 +979,7 @@ make_users_table(Records, Lang) ->
     TList = lists:map(
 	      fun([User, RidUrl, JIDUrl, XML, Avatar, JS, Text, Icon]) ->
 		      ?XE(<<"tr">>,
-			  [?XE(<<"td">>, [?AC(?BC([<<"../user/">>, User, <<"/">>]), User)]),
+			  [?XE(<<"td">>, [?AC(?BC([<<"../../user/">>, User, <<"/">>]), User)]),
 			   ?XC(<<"td">>, iolist_to_binary(atom_to_list(JIDUrl))),
 			   ?XC(<<"td">>, ridurl_out(RidUrl)),
 			   ?XC(<<"td">>, Icon),

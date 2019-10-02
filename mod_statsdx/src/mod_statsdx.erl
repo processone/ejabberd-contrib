@@ -1040,9 +1040,9 @@ web_page_main(_, #request{path=[<<"statsdx">>], lang = Lang} = _Request) ->
 			       ?XE(<<"tr">>,
 				  [?XE(<<"td">>, [?CT(<<"Top rosters">>)]),
 				   ?XE(<<"td">>, [
-				    ?ACT(<<"top/roster/30">>, <<"30">>), ?C(<<", ">>),
-				    ?ACT(<<"top/roster/100">>, <<"100">>), ?C(<<", ">>),
-				    ?ACT(<<"top/roster/500">>, <<"500">>) ])]
+				    ?ACT(<<"top/roster/30/">>, <<"30">>), ?C(<<", ">>),
+				    ?ACT(<<"top/roster/100/">>, <<"100">>), ?C(<<", ">>),
+				    ?ACT(<<"top/roster/500/">>, <<"500">>) ])]
 				 )
 			      ])
 		]),
@@ -1054,18 +1054,18 @@ web_page_main(_, #request{path=[<<"statsdx">>], lang = Lang} = _Request) ->
 			       ?XE(<<"tr">>,
 				  [?XE(<<"td">>, [?CT(<<"Top offline message queues">>) ]),
 				   ?XE(<<"td">>, [
-				    ?ACT(<<"top/offlinemsg/30">>, <<"30">>), ?C(<<", ">>),
-				    ?ACT(<<"top/offlinemsg/100">>, <<"100">>), ?C(<<", ">>),
-				    ?ACT(<<"top/offlinemsg/500">>, <<"500">>) ])]
+				    ?ACT(<<"top/offlinemsg/30/">>, <<"30">>), ?C(<<", ">>),
+				    ?ACT(<<"top/offlinemsg/100/">>, <<"100">>), ?C(<<", ">>),
+				    ?ACT(<<"top/offlinemsg/500/">>, <<"500">>) ])]
 				 ),
 			       do_stat(global, Lang, "vcards"),
 			       ?XE(<<"tr">>,
 				  [?XE(<<"td">>, [?CT(<<"Top vCard sizes">>) ]),
 				   ?XE(<<"td">>, [
-				    ?ACT(<<"top/vcard/5">>, <<"5">>), ?C(<<", ">>),
-				    ?ACT(<<"top/vcard/30">>, <<"30">>), ?C(<<", ">>),
-				    ?ACT(<<"top/vcard/100">>, <<"100">>), ?C(<<", ">>),
-				    ?ACT(<<"top/vcard/500">>, <<"500">>) ])]
+				    ?ACT(<<"top/vcard/5/">>, <<"5">>), ?C(<<", ">>),
+				    ?ACT(<<"top/vcard/30/">>, <<"30">>), ?C(<<", ">>),
+				    ?ACT(<<"top/vcard/100/">>, <<"100">>), ?C(<<", ">>),
+				    ?ACT(<<"top/vcard/500/">>, <<"500">>) ])]
 				 )
 			      ])
 		]),
@@ -1171,7 +1171,11 @@ do_top_table(_Node, Lang, Topic, TopnumberBin, Host) ->
 	    User = binary_to_list(UserB),
 	    Server = binary_to_list(ServerB),
 	    UserJID = User++"@"++Server,
-	    UserJIDUrl = "/admin/server/" ++ Server ++ "/user/" ++ User ++ "/",
+	    Level = case Host of
+		server -> 4;
+		_ -> 6
+	    end,
+	    UserJIDUrl = lists:duplicate(Level, "../") ++ "server/" ++ Server ++ "/user/" ++ User ++ "/",
 			ValueString = integer_to_list(Value),
 	    ValueEl = case Topic of
 		<<"offlinemsg">> -> {url, UserJIDUrl++"queue/", ValueString};
@@ -1349,9 +1353,9 @@ web_page_host(_, Host,
 			       ?XE(<<"tr">>,
 				  [?XE(<<"td">>, [?C(<<"Top rosters">>) ]),
 				   ?XE(<<"td">>, [
-				    ?ACT(<<"top/roster/30">>, <<"30">>), ?C(<<", ">>),
-				    ?ACT(<<"top/roster/100">>, <<"100">>), ?C(<<", ">>),
-				    ?ACT(<<"top/roster/500">>, <<"500">>) ])]
+				    ?ACT(<<"top/roster/30/">>, <<"30">>), ?C(<<", ">>),
+				    ?ACT(<<"top/roster/100/">>, <<"100">>), ?C(<<", ">>),
+				    ?ACT(<<"top/roster/500/">>, <<"500">>) ])]
 				 )
 			      ])
 		]),
@@ -1364,17 +1368,17 @@ web_page_host(_, Host,
 			       ?XE(<<"tr">>,
 				  [?XE(<<"td">>, [?C(<<"Top offline message queues">>)]),
 				   ?XE(<<"td">>, [
-				    ?ACT(<<"top/offlinemsg/30">>, <<"30">>), ?C(<<", ">>),
-				    ?ACT(<<"top/offlinemsg/100">>, <<"100">>), ?C(<<", ">>),
-				    ?ACT(<<"top/offlinemsg/500">>, <<"500">>) ])]
+				    ?ACT(<<"top/offlinemsg/30/">>, <<"30">>), ?C(<<", ">>),
+				    ?ACT(<<"top/offlinemsg/100/">>, <<"100">>), ?C(<<", ">>),
+				    ?ACT(<<"top/offlinemsg/500/">>, <<"500">>) ])]
 				 ),
 			       ?XE(<<"tr">>,
 				  [?XE(<<"td">>, [?C(<<"Top vCard sizes">>) ]),
 				   ?XE(<<"td">>, [
-				    ?ACT(<<"top/vcard/5">>, <<"5">>), ?C(<<", ">>),
-				    ?ACT(<<"top/vcard/30">>, <<"30">>), ?C(<<", ">>),
-				    ?ACT(<<"top/vcard/100">>, <<"100">>), ?C(<<", ">>),
-				    ?ACT(<<"top/vcard/500">>, <<"500">>) ])]
+				    ?ACT(<<"top/vcard/5/">>, <<"5">>), ?C(<<", ">>),
+				    ?ACT(<<"top/vcard/30/">>, <<"30">>), ?C(<<", ">>),
+				    ?ACT(<<"top/vcard/100/">>, <<"100">>), ?C(<<", ">>),
+				    ?ACT(<<"top/vcard/500/">>, <<"500">>) ])]
 				 )
 			      ])
 		]),
@@ -1526,7 +1530,7 @@ make_url(StatLink, L) ->
 		   [L1, L2] = string:tokens(L, "/"),
 		   [Stat1, L1, Stat2, L2]
 	   end,
-    string:join(List, "/").
+    string:join(List, "/")++["/"].
 
 do_stat_table(global, Lang, Stat, Host) ->
     Os = mod_statsdx:get_statistic(global, [Stat, Host]),
@@ -1545,7 +1549,11 @@ do_sessions_table(_Node, _Lang, Filter, {Sort_direction, Sort_column}, Host) ->
 	      Lang = list_to_binary(LangS),
 	      User = binary_to_list(JID#jid.luser),
 	      Server = binary_to_list(JID#jid.lserver),
-	      UserURL = "/admin/server/" ++ Server ++ "/user/" ++ User ++ "/",
+	      Level = case Host of
+		server -> 1 + length(Filter);
+		_ -> 3 + length(Filter)
+	      end,
+	      UserURL = lists:duplicate(Level, "../") ++ "server/" ++ Server ++ "/user/" ++ User ++ "/",
 	      ?XE(<<"tr">>, [
 			 ?XE(<<"td">>, [?AC(list_to_binary(UserURL), jid:encode(JID))]),
 			 ?XCTB("td", atom_to_list(Client_id)),
