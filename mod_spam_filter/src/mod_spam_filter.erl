@@ -104,31 +104,23 @@ reload(Host, NewOpts, OldOpts) ->
 depends(_Host, _Opts) ->
     [].
 
--spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
+-spec mod_opt_type(atom()) -> econf:validator().
 mod_opt_type(spam_dump_file) ->
-    fun(none) -> none;
-       (File) -> iolist_to_binary(File)
-    end;
+    econf:either(
+      econf:enum([none]),
+      econf:binary());
 mod_opt_type(spam_jids_file) ->
-    fun(none) -> none;
-       (File) ->
-	    {ok, Fd} = file:open(File, [read, raw]),
-	    ok = file:close(Fd),
-	    iolist_to_binary(File)
-    end;
+    econf:either(
+      econf:enum([none]),
+      econf:file());
 mod_opt_type(spam_urls_file) ->
-    fun(none) -> none;
-       (File) ->
-	    {ok, Fd} = file:open(File, [read, raw]),
-	    ok = file:close(Fd),
-	    iolist_to_binary(File)
-    end;
+    econf:either(
+      econf:enum([none]),
+      econf:file());
 mod_opt_type(access_spam) ->
-    fun acl:access_rules_validator/1;
+    econf:acl();
 mod_opt_type(cache_size) ->
-    fun(I) when is_integer(I), I > 0 -> I;
-       (infinity) -> unlimited
-    end.
+    econf:pos_int(unlimited).
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
@@ -144,9 +136,9 @@ mod_options(_Host) ->
 -spec init(list()) -> {ok, state()} | {stop, term()}.
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    DumpFile = expand_host(proplists:get_value(spam_dump_file, Opts), Host),
-    JIDsFile = proplists:get_value(spam_jids_file, Opts),
-    URLsFile = proplists:get_value(spam_urls_file, Opts),
+    DumpFile = expand_host(gen_mod:get_opt(spam_dump_file, Opts), Host),
+    JIDsFile = gen_mod:get_opt(spam_jids_file, Opts),
+    URLsFile = gen_mod:get_opt(spam_urls_file, Opts),
     try read_files(JIDsFile, URLsFile) of
 	{JIDsSet, URLsSet} ->
 	    ejabberd_hooks:add(s2s_in_handle_info, Host, ?MODULE,
@@ -177,7 +169,7 @@ init([Host, Opts]) ->
 			jid_set = JIDsSet,
 			url_set = URLsSet,
 			dump_fd = DumpFd,
-			max_cache_size = proplists:get_value(cache_size, Opts)}}
+			max_cache_size = gen_mod:get_opt(cache_size, Opts)}}
     catch {Op, File, Reason} when Op == open;
 				  Op == read ->
 	    ?CRITICAL_MSG("Cannot ~s ~s: ~s", [Op, File, format_error(Reason)]),
@@ -227,16 +219,16 @@ handle_cast({dump, XML}, #state{dump_fd = Fd} = State) ->
     end,
     {noreply, State};
 handle_cast({reload, NewOpts, OldOpts}, #state{host = Host} = State) ->
-    State1 = case {proplists:get_value(spam_dump_file, OldOpts),
-		   proplists:get_value(spam_dump_file, NewOpts)} of
+    State1 = case {gen_mod:get_opt(spam_dump_file, OldOpts),
+		   gen_mod:get_opt(spam_dump_file, NewOpts)} of
 		 {OldDumpFile, NewDumpFile} when NewDumpFile /= OldDumpFile ->
 		     close_dump_file(expand_host(OldDumpFile, Host), State),
 		     open_dump_file(expand_host(NewDumpFile, Host), State);
 		 {_OldDumpFile, _NewDumpFile} ->
 		     State
 	     end,
-    State2 = case {proplists:get_value(cache_size, OldOpts),
-		   proplists:get_value(cache_size, NewOpts)} of
+    State2 = case {gen_mod:get_opt(cache_size, OldOpts),
+		   gen_mod:get_opt(cache_size, NewOpts)} of
 		 {OldMax, NewMax} when NewMax < OldMax ->
 		     shrink_cache(State1#state{max_cache_size = NewMax});
 		 {OldMax, NewMax} when NewMax > OldMax ->
@@ -244,8 +236,8 @@ handle_cast({reload, NewOpts, OldOpts}, #state{host = Host} = State) ->
 		 {_OldMax, _NewMax} ->
 		     State1
 	     end,
-    JIDsFile = proplists:get_value(spam_jids_file, NewOpts),
-    URLsFile = proplists:get_value(spam_urls_file, NewOpts),
+    JIDsFile = gen_mod:get_opt(spam_jids_file, NewOpts),
+    URLsFile = gen_mod:get_opt(spam_urls_file, NewOpts),
     {_Result, State3} = reload_files(JIDsFile, URLsFile, State2),
     {noreply, State3};
 handle_cast(reopen_log, State) ->
