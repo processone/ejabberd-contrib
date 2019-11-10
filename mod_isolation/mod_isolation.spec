@@ -1,0 +1,5 @@
+author: "Evgeny Khramtsov <ekhramtsov at process-one.net>"
+category: "policy"
+summary: "Prevent routing of packets between virtual hosts"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"

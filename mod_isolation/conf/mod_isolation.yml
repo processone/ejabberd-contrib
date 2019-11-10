@@ -1,0 +1,5 @@
+modules:
+  mod_isolation: {}
+
+### If you want to block whole s2s as well:
+# s2s_access: none
