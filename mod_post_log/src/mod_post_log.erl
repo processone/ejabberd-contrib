@@ -16,6 +16,7 @@
          stop/1,
 	 depends/2,
 	 mod_opt_type/1,
+	 mod_options/1,
          log_user_send/1,
 	 log_user_send/4,
          post_result/1]).
@@ -50,10 +51,18 @@ mod_opt_type(from_header) -> fun iolist_to_binary/1;
 mod_opt_type(to_header) -> fun iolist_to_binary/1;
 mod_opt_type(headers) -> fun(L) when is_list(L) -> L end;
 mod_opt_type(content_type) -> fun iolist_to_binary/1;
-mod_opt_type(req_options) -> fun(L) when is_list(L) -> L end;
-mod_opt_type(_) ->
-    [url, ts_header, from_header, to_header, headers,
-     content_type, req_options].
+mod_opt_type(http_options) -> fun(L) when is_list(L) -> L end;
+mod_opt_type(req_options) -> fun(L) when is_list(L) -> L end.
+
+mod_options(_Host) ->
+    [{url, undefined},
+     {ts_header, "X-Message-Timestamp"},
+     {from_header, "X-Message-From"},
+     {to_header, "X-Message-To"},
+     {headers, []},
+     {content_type, "text/xml"},
+     {http_options, []},
+     {req_options, []}].
 
 %% TODO: remove log_user_send/4 after 17.02 is released
 log_user_send(Packet, C2SState, From, To) ->
@@ -82,16 +91,16 @@ post_xml(#jid{lserver = LServer} = From, To, Xml) ->
     Body = Xml,
 
     Url = get_opt(LServer, url),
-    TsHeader = get_opt(LServer, ts_header, "X-Message-Timestamp"),
-    FromHeader = get_opt(LServer, from_header, "X-Message-From"),
-    ToHeader = get_opt(LServer, to_header, "X-Message-To"),
+    TsHeader = get_opt(LServer, ts_header),
+    FromHeader = get_opt(LServer, from_header),
+    ToHeader = get_opt(LServer, to_header),
     Headers = [ {TsHeader,   Ts},
                 {FromHeader, format_jid(From)},
                 {ToHeader,   format_jid(To)}
-                | get_opt(LServer, headers, []) ],
-    ContentType = get_opt(LServer, content_type, "text/xml"),
-    HttpOptions = get_opt(LServer, http_options, []),
-    ReqOptions = get_opt(LServer, req_options, []),
+                | get_opt(LServer, headers) ],
+    ContentType = get_opt(LServer, content_type),
+    HttpOptions = get_opt(LServer, http_options),
+    ReqOptions = get_opt(LServer, req_options),
 
     {ok, _ReqId} = httpc:request(post,
                                  {Url, Headers, ContentType, Body},
@@ -118,10 +127,7 @@ post_result({_ReqId, Result}) ->
     end.
 
 get_opt(LServer, Opt) ->
-    get_opt(LServer, Opt, undefined).
-
-get_opt(LServer, Opt, Default) ->
-    gen_mod:get_module_opt(LServer, ?MODULE, Opt, Default).
+    gen_mod:get_module_opt(LServer, ?MODULE, Opt).
 
 report_error(ReportArgs) ->
     ok = error_logger:error_report([ mod_post_log_cannot_post | ReportArgs ]).
