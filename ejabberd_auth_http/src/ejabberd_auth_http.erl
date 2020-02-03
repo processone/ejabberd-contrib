@@ -10,8 +10,6 @@
 
 -behaviour(ejabberd_auth).
 
--behaviour(ejabberd_config).
-
 %% External exports
 -export([start/1,
          set_password/3,
@@ -27,7 +25,6 @@
          store_type/1,
          login/2,
          get_password/3,
-         opt_type/1,
          stop/1]).
 
 -include("scram.hrl").
@@ -36,23 +33,6 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-
-opt_type(auth_opts) ->
-    fun(L) ->
-            lists:map(
-              fun({host, V}) when is_binary(V) ->
-                      {host, V};
-                 ({connection_pool_size, V}) when is_integer(V) ->
-                      {connection_pool_size, V};
-                 ({connection_opts, V}) when is_list(V) ->
-                      {connection_opts, V};
-                 ({basic_auth, V}) when is_binary(V) ->
-                      {basic_auth, V};
-                 ({path_prefix, V}) when is_binary(V) ->
-                      {path_prefix, V}
-              end, L)
-    end;
-opt_type(_) -> [auth_opts].
 
 -spec start(binary()) -> ok.
 start(Host) ->
