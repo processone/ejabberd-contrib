@@ -36,7 +36,7 @@
 
 -spec start(binary()) -> ok.
 start(Host) ->
-    AuthOpts = ejabberd_config:get_option({auth_opts, Host}, fun(V) -> V end),
+    AuthOpts = ejabberd_config:get_option({auth_opts, Host}),
     {_, AuthHost} = lists:keyfind(host, 1, AuthOpts),
     PoolSize = proplists:get_value(connection_pool_size, AuthOpts, 10),
     Opts = proplists:get_value(connection_opts, AuthOpts, []),
@@ -46,29 +46,33 @@ start(Host) ->
     ChildSpec = {Proc, {cuesport, start_link,
 			[pool_name(Host), PoolSize, ChildMods, ChildMFA]},
 		 transient, 2000, supervisor, [cuesport | ChildMods]},
-    supervisor:start_child(ejabberd_backend_sup, ChildSpec).
+    supervisor:start_child(ejabberd_backend_sup, ChildSpec),
+    ok.
 
 -spec plain_password_required(binary()) -> false.
-plain_password_required(Server) ->
-    store_type(Server) == scram.
+plain_password_required(_Server) ->
+    false.
 
 -spec store_type(binary()) -> external.
 store_type(_) ->
     external.
 
--spec check_password(ejabberd:luser(), binary(), ejabberd:lserver(), binary()) -> boolean().
+-spec check_password(binary(), binary(), binary(), binary()) -> {ets_cache:tag(), boolean()}.
 check_password(LUser, _AuthzId, LServer, Password) ->
     case scram2:enabled(LServer) of
         false ->
             case make_req(get, <<"check_password">>, LUser, LServer, Password) of
-                {ok, <<"true">>} -> true;
-                _ -> false
+                {ok, <<"true">>} -> {cache, true};
+                _ -> {nocache, false}
             end;
         true ->
-            {ok, true} =:= verify_scram_password(LUser, LServer, Password)
+	    case verify_scram_password(LUser, LServer, Password) of
+		{ok, true} -> {cache, true};
+		_ -> {nocache, false}
+	    end
     end.
 
--spec check_password(ejabberd:luser(), binary(), ejabberd:lserver(), binary(), binary(), fun()) -> boolean().
+-spec check_password(binary(), binary(), binary(), binary(), binary(), fun()) -> boolean().
 check_password(LUser, _AuthzId, LServer, Password, Digest, DigestGen) ->
     case make_req(get, <<"get_password">>, LUser, LServer, <<"">>) of
         {error, _} ->
@@ -102,7 +106,7 @@ check_digest(Digest, DigestGen, Password, Passwd) ->
     end.
 
 
--spec set_password(ejabberd:luser(), ejabberd:lserver(), binary()) -> ok | {error, term()}.
+-spec set_password(binary(), binary(), binary()) -> {ets_cache:tag(), {ok, binary()} | {error, not_allowed}}.
 set_password(LUser, LServer, Password) ->
     PasswordFinal = case scram2:enabled(LServer) of
                         true -> scram2:serialize(scram2:password_to_scram(
@@ -110,11 +114,11 @@ set_password(LUser, LServer, Password) ->
                         false -> Password
                     end,
     case make_req(post, <<"set_password">>, LUser, LServer, PasswordFinal) of
-        {error, _} = Err -> Err;
-        _ -> ok
+        {error, _Error} -> {nocache, {error, not_allowed}};
+        {ok, _} -> {cache, {ok, Password}}
     end.
 
--spec try_register(ejabberd:luser(), ejabberd:lserver(), binary()) -> ok | {error, atom()}.
+-spec try_register(binary(), binary(), binary()) -> {ets_cache:tag(), {ok, binary()} | {error, exists | not_allowed}}.
 try_register(LUser, LServer, Password) ->
     PasswordFinal = case scram2:enabled(LServer) of
                         true -> scram2:serialize(scram2:password_to_scram(
@@ -122,34 +126,31 @@ try_register(LUser, LServer, Password) ->
                         false -> Password
                     end,
     case make_req(post, <<"register">>, LUser, LServer, PasswordFinal) of
-        {ok, created} -> ok;
-        {error, conflict} -> {error, exists};
-        Error -> Error
+        {ok, created} -> {cache, {ok, Password}};
+        {error, conflict} -> {nocache, {error, exists}};
+        _Error -> {nocache, {error, not_allowed}}
     end.
 
--spec get_password(ejabberd:luser(), ejabberd:lserver()) -> error.
+-spec get_password(binary(), binary()) -> {cache, error}.
 get_password(_, _) ->
-    error.
+    {cache, error}.
 
--spec get_password_s(ejabberd:luser(), ejabberd:lserver()) -> binary().
+-spec get_password_s(binary(), binary()) -> {cache, error}.
 get_password_s(User, Server) ->
-    case get_password(User, Server) of
-        Pass when is_binary(Pass) -> Pass;
-        _ -> <<>>
-    end.
+    {cache, error}.
 
--spec user_exists(ejabberd:luser(), ejabberd:lserver()) -> boolean().
+-spec user_exists(binary(), binary()) -> {ets_cache:tag(), boolean()}.
 user_exists(LUser, LServer) ->
     case make_req(get, <<"user_exists">>, LUser, LServer, <<"">>) of
-        {ok, <<"true">>} -> true;
-        _ -> false
+        {ok, <<"true">>} -> {cache, true};
+        _ -> {nocache, false}
     end.
 
--spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok | not_exists | not_allowed | bad_request.
+-spec remove_user(binary(), binary()) -> ok | {error, db_failure | not_allowed}.
 remove_user(LUser, LServer) ->
     remove_user_req(LUser, LServer, <<"">>, <<"remove_user">>).
 
--spec remove_user(ejabberd:luser(), ejabberd:lserver(), binary()) -> ok | not_exists | not_allowed | bad_request.
+-spec remove_user(binary(), binary(), binary()) -> ok | {error, db_failure | not_allowed}.
 remove_user(LUser, LServer, Password) ->
     case scram2:enabled(LServer) of
         false ->
@@ -157,21 +158,21 @@ remove_user(LUser, LServer, Password) ->
         true ->
             case verify_scram_password(LUser, LServer, Password) of
                 {ok, false} ->
-                    not_allowed;
+                    {error, not_allowed};
                 {ok, true} ->
                     remove_user_req(LUser, LServer, <<"">>, <<"remove_user">>);
                 {error, Error} ->
-                    Error
+                    {error, db_failure}
             end
     end.
 
 -spec remove_user_req(binary(), binary(), binary(), binary()) ->
-    ok | not_exists | not_allowed | bad_request.
+    ok | {error, not_allowed | db_failure}.
 remove_user_req(LUser, LServer, Password, Method) ->
     case make_req(post, Method, LUser, LServer, Password) of
-        {error, not_allowed} -> not_allowed;
-        {error, not_found} -> not_exists;
-        {error, _} -> bad_request;
+        {error, not_allowed} -> {error, not_allowed};
+        {error, not_found} -> {error, db_failure};
+        {error, _} -> {error, db_failure};
         _ -> ok
     end.
 
@@ -184,7 +185,7 @@ remove_user_req(LUser, LServer, Password, Method) ->
 make_req(_, _, LUser, LServer, _) when LUser == error orelse LServer == error ->
     {error, {prep_failed, LUser, LServer}};
 make_req(Method, Path, LUser, LServer, Password) -> 
-    AuthOpts = ejabberd_config:get_option({auth_opts, LServer}, fun(V) -> V end),
+    AuthOpts = ejabberd_config:get_option({auth_opts, LServer}),
     BasicAuth = case lists:keyfind(basic_auth, 1, AuthOpts) of
                     {_, BasicAuth0} -> BasicAuth0;
                     _ -> ""
