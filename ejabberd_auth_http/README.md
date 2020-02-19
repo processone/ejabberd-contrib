@@ -16,6 +16,8 @@ central user database, which is shared with other services. It fits
 perfectly when client application uses custom authentication token and
 ejabberd has to validate it externally.
 
+This module requires ejabberd 20.02 or higher.
+
 ## Configuration
 
 ### How to enable
