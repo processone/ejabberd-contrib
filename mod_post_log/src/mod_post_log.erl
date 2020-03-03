@@ -42,15 +42,12 @@ stop(Host) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(url) ->
-    fun(Val) when is_binary(Val) -> binary_to_list(Val);
-       (Val) -> Val
-    end;
-mod_opt_type(ts_header) -> fun iolist_to_binary/1;
-mod_opt_type(from_header) -> fun iolist_to_binary/1;
-mod_opt_type(to_header) -> fun iolist_to_binary/1;
+mod_opt_type(url) -> fun binary_to_list/1;
+mod_opt_type(ts_header) -> fun binary_to_list/1;
+mod_opt_type(from_header) -> fun binary_to_list/1;
+mod_opt_type(to_header) -> fun binary_to_list/1;
 mod_opt_type(headers) -> fun(L) when is_list(L) -> L end;
-mod_opt_type(content_type) -> fun iolist_to_binary/1;
+mod_opt_type(content_type) -> fun binary_to_list/1;
 mod_opt_type(http_options) -> fun(L) when is_list(L) -> L end;
 mod_opt_type(req_options) -> fun(L) when is_list(L) -> L end.
 
@@ -81,7 +78,7 @@ log_message(#message{from = From, to = To, body = Body} = Msg) ->
 	<<"">> ->
 	    ok;
 	_ ->
-	    XML = fxml:element_to_binary(xmpp:encode(Msg)),
+	    XML = binary_to_list(fxml:element_to_binary(xmpp:encode(Msg))),
             post_xml(From, To, XML)
     end.
 
