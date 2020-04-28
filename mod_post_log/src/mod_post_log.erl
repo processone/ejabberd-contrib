@@ -42,7 +42,10 @@ stop(Host) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(url) -> fun binary_to_list/1;
+mod_opt_type(url) ->
+    fun(Val) when is_binary(Val) -> binary_to_list(Val);
+       (Val) -> Val
+    end;
 mod_opt_type(ts_header) -> fun binary_to_list/1;
 mod_opt_type(from_header) -> fun binary_to_list/1;
 mod_opt_type(to_header) -> fun binary_to_list/1;
@@ -53,11 +56,11 @@ mod_opt_type(req_options) -> fun(L) when is_list(L) -> L end.
 
 mod_options(_Host) ->
     [{url, undefined},
-     {ts_header, "X-Message-Timestamp"},
-     {from_header, "X-Message-From"},
-     {to_header, "X-Message-To"},
+     {ts_header, <<"X-Message-Timestamp">>},
+     {from_header, <<"X-Message-From">>},
+     {to_header, <<"X-Message-To">>},
      {headers, []},
-     {content_type, "text/xml"},
+     {content_type, <<"text/xml">>},
      {http_options, []},
      {req_options, []}].
 
