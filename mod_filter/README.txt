@@ -9,6 +9,33 @@
 This module allows the admin to specify packet filtering rules using ACL and ACCESS.
 
 
+
+	EJABBERD PATCH
+	==============
+
+Since ejabberd 19.08, it is necessary to apply a small patch to ejabberd
+source code in order to use complex access_rules configurations, like the
+ones shown in examples 1, 2, 3, 4...
+
+So, apply this patch your ejabberd source code.
+As you can see, it only adds a line.
+Then recompile ejabberd, reinstall and restart it:
+
+diff --git a/src/acl.erl b/src/acl.erl
+index d13c05601..c2a72fd9f 100644
+--- a/src/acl.erl
++++ b/src/acl.erl
+@@ -310,6 +310,7 @@ access_rules_validator() ->
+       econf:non_empty(
+ 	econf:options(
+ 	  #{allow => access_validator(),
++	    '_' => access_validator(),
+ 	    deny => access_validator()},
+ 	  []))).
+ 
+-- 
+
+
 	CONFIGURATION
 	=============
 
