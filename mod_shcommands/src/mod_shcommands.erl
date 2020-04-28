@@ -12,9 +12,11 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, depends/2, mod_options/1]).
+-export([execute_system/1, execute_erlang/1]).
 -export([web_menu_node/3, web_page_node/5]).
 
 -include("xmpp.hrl").
+-include("ejabberd_commands.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 -include("translate.hrl").
@@ -26,18 +28,56 @@
 start(_Host, _Opts) ->
     ejabberd_hooks:add(webadmin_menu_node, ?MODULE, web_menu_node, 50),
     ejabberd_hooks:add(webadmin_page_node, ?MODULE, web_page_node, 50),
+    ejabberd_commands:register_commands(get_commands_spec()),
     ok.
 
-stop(_Host) ->
+stop(Host) ->
     ejabberd_hooks:delete(webadmin_menu_node, ?MODULE, web_menu_node, 50),
     ejabberd_hooks:delete(webadmin_page_node, ?MODULE, web_page_node, 50),
-    ok.
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:unregister_commands(get_commands_spec());
+        true ->
+            ok
+    end.
 
 depends(_Host, _Opts) ->
     [].
 
 mod_options(_Host) ->
     [].
+
+%%-------------------
+%% Commands
+%%-------------------
+
+get_commands_spec() ->
+    [#ejabberd_commands{name = execute_system, tags = [system],
+			desc = "Execute a system shell command",
+			policy = admin,
+			module = ?MODULE, function = execute_system,
+                        args_desc = ["Command to execute in the system shell"],
+                        args_example = ["uptime"],
+                        result_example = "12:02:10 up  1:34,  7 users,  load average: 0,58, 0,56, 0,61",
+			args = [{command, string}],
+			result = {res, string}},
+     #ejabberd_commands{name = execute_erlang, tags = [system, erlang],
+			desc = "Execute an erlang shell command",
+			policy = admin,
+			module = ?MODULE, function = execute_erlang,
+			args = [{command, string}],
+                        args_desc = ["Command to execute in the Erlang shell"],
+                        args_example = ["erlang:system_info(system_version)."],
+                        result_example = "Erlang/OTP 22 [erts-10.7] [64-bit] [smp:2:2]\n",
+			result = {res, string}} ].
+
+execute_system(Command) ->
+    {E, _} = parse1_command(<<"executeshe">>, {none, none, Command}, node()),
+    lists:flatten(E).
+
+execute_erlang(Command) ->
+    {E, _} = parse1_command(<<"executeerl">>, {none, Command, none}, node()),
+    lists:flatten(io_lib:format("~p", [E])).
 
 %%-------------------
 %% Web Admin Menu
@@ -114,7 +154,7 @@ parse_and_execute(Query, Node) ->
     Commands = {get_val(<<"commandctl">>, Query),
 		get_val(<<"commanderl">>, Query),
 		get_val(<<"commandshe">>, Query)},
-    R = parse1_command(Exec, Commands, Node),
+    {_, R} = parse1_command(Exec, Commands, Node),
     {Commands, R}.
 
 get_val(Val, Query) ->
@@ -124,20 +164,20 @@ get_val(Val, Query) ->
 parse1_command(<<"executectl">>, {Command, _, _}, Node) ->
     Command2 = string:tokens(Command, " "),
     {_E, Efile} = execute(ctl, Node, Command2),
-    io_lib:format("ejabberdctl ~p ~s~n~s", [Node, Command, Efile]);
+    {Efile, io_lib:format("ejabberdctl ~p ~s~n~s", [Node, Command, Efile])};
 
 parse1_command(<<"executeerl">>, {_, Command, _}, Node) ->
     {ok, A2, _} = erl_scan:string(Command),
     {ok, A3} = erl_parse:parse_exprs(A2),
     {E, Efile} = execute(erl, Node, A3),
-    io_lib:format("(~p)1> ~s~s~n~p", [Node, Command, Efile, E]);
+    {E, io_lib:format("(~p)1> ~s~s~n~p", [Node, Command, Efile, E])};
 
 parse1_command(<<"executeshe">>, {_, _, Command}, Node) ->
     E = rpc:call(Node, os, cmd, [Command]),
     C1 = lists:map(
 	   fun(C) -> string:strip(os:cmd(C), right, $\n) end,
 	   ["whoami", "hostname -s", "pwd"]),
-    io_lib:format("~s@~s:~s$ ~s~n~s", C1 ++ [Command, E]).
+    {E, io_lib:format("~s@~s:~s$ ~s~n~s", C1 ++ [Command, E])}.
 
 
 execute(Type, Node, C) ->
