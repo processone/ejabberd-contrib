@@ -204,3 +204,7 @@ An Auth token is provided as a password.
 * **Service implements:** all methods
 * **ejabberd config:** `auth_password_format`: `scram` (recommended) or `plain`, `mod_register` enabled
 * **Client side:** May use any available auth method
+
+## Troubleshooting
+
+If the service supports multiple passwords per user you need to disable authentication caching with `auth_use_cache: false`. See [https://github.com/processone/ejabberd-contrib/issues/288](https://github.com/processone/ejabberd-contrib/issues/288).
