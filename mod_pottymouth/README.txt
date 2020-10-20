@@ -19,15 +19,9 @@ This is how I got it to work... YMMV.
 1. Make sure ejabberd is running
 2. Get the updated ejabberd-contrib sources:
    ejabberdctl modules_update_specs
-3. Then get manually the dependencies, as the scripts can't do it:
-   cd ~/.ejabberd-modules/sources/ejabberd-contrib/mod_pottymouth/deps/etbloom/
-   chmod +x rebar
-   ./rebar get-deps
-   ./rebar compile
-   cp -R deps/bitarray/ebin ../../
-   cp -R deps/bitarray/priv ../../
-   cp -R deps/proper/ebin ../../
-4. Finally, when you install the module, its dependencies will be installed as well:
+3. Execute this script to get and build the dependencies:
+   ~/.ejabberd-modules/sources/ejabberd-contrib/mod_pottymouth/make-deps.sh
+4. When you install the module, its dependencies will be installed as well:
    ejabberdctl module_install mod_pottymouth
 
 Configuration file is ~/.ejabberd-modules/mod_pottymouth/conf/mod_pottymouth.yml
