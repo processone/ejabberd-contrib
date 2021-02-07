@@ -15,7 +15,7 @@
 	 send_packet/1, receive_packet/1,
 	 mod_opt_type/1, mod_options/1, depends/2]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(PROCNAME, ejabberd_mod_logxml).
 

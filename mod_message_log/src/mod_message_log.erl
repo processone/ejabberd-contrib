@@ -50,7 +50,7 @@
 	 log_packet_offline/1,
 	 reopen_log/0]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(DEFAULT_FILENAME, <<"message.log">>).
 -define(FILE_MODES, [append, raw]).

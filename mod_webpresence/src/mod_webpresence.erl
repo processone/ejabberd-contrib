@@ -31,7 +31,7 @@
 %% API
 -export([start_link/0]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
 -include("ejabberd_web_admin.hrl").

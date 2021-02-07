@@ -20,7 +20,7 @@
 -endif.
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(PROCNAME, ?MODULE).
 -define(DEFAULT_PATH, ".").

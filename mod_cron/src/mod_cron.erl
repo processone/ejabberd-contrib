@@ -23,7 +23,7 @@
 -include("ejabberd_web_admin.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -record(task, {taskid, timerref, host, task}).
 

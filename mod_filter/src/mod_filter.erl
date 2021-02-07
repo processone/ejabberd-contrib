@@ -13,7 +13,7 @@
 -export([start/2, stop/1, depends/2, mod_options/1, filter_packet/1]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 start(_Host, _Opts) ->
     ejabberd_hooks:add(filter_packet, global, ?MODULE, filter_packet, 100).

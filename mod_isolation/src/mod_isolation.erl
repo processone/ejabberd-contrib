@@ -23,7 +23,7 @@
 %% hooks
 -export([filter_packet/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 %%%===================================================================
 %%% API

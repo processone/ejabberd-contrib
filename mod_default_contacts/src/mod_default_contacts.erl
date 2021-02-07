@@ -34,7 +34,7 @@
 -export([register_user/2]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 %%--------------------------------------------------------------------
 %% gen_mod callbacks.

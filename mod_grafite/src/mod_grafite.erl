@@ -13,7 +13,7 @@
 -behaviour(gen_mod).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(HOOKS, [offline_message_hook,
                 sm_register_connection_hook, sm_remove_connection_hook,

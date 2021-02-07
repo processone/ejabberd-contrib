@@ -34,7 +34,7 @@
 -export([user_receive_packet/1, user_send_packet/1]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(NS_AXOLOTL, "eu.siacs.conversations.axolotl").
 -define(DEVICELIST_NODE, ?NS_AXOLOTL ".devicelist").

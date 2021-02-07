@@ -35,7 +35,7 @@
 	 failed_auth/3,
 	 forbidden/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_commands.hrl").
 
 -define(PROCNAME, ejabberd_logsession).

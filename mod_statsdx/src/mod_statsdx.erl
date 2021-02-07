@@ -30,7 +30,7 @@
 	 user_login/1, user_logout/4]).
 
 -include("ejabberd_commands.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("mod_roster.hrl").
 -include("ejabberd_http.hrl").

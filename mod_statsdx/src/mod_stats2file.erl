@@ -15,7 +15,7 @@
 -export([start/2, stop/1, depends/2, mod_opt_type/1, mod_options/1]).
 -export([loop/5]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_roster.hrl").
 
 -define(PROCNAME, ejabberd_mod_stats2file).

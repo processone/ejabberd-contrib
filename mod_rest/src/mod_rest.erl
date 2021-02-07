@@ -36,7 +36,7 @@
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_ctl.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 start(_Host, _Opts) ->
     ?DEBUG("Starting: ~p ~p", [_Host, _Opts]),

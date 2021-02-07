@@ -14,7 +14,7 @@
 
 -export([process/2]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_http.hrl").
 -include("mod_muc_room.hrl").
 -include("logger.hrl").

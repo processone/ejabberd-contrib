@@ -57,7 +57,7 @@
 
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(COMMAND_TIMEOUT, timer:seconds(30)).
 

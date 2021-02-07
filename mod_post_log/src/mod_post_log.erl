@@ -21,7 +21,7 @@
 	 log_user_send/4,
          post_result/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 start(Host, _Opts) ->
     ok = case inets:start() of

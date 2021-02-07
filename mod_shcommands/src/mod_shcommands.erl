@@ -15,7 +15,7 @@
 -export([execute_system/1, execute_erlang/1]).
 -export([web_menu_node/3, web_page_node/5]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_commands.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
