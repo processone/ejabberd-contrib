@@ -15,7 +15,7 @@ Add the module to your ejabberd.yml, in the modules section:
 modules:
   ...
   mod_post_log:
-    url: http://foo.bar.com/messages
+    url: "http://foo.bar.com/messages"
   ...
 ```
 
