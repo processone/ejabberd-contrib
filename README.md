@@ -64,3 +64,7 @@ The following organization has been set up for the development:
 
 - Module developers should note in the `README.txt` file whether the
   module has requirements or known incompatibilities with other modules.
+
+- If your module project contains several erlang modules, you should export a
+  function pre_uninstall/0 in the main one listing the other ones.
+  See mod_statsdx as an example.
