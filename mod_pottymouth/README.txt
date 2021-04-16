@@ -6,24 +6,6 @@ sizes. Using a large list (say, 87M terms) will slow down the initial server
 boot time (to about 15 minutes respectively), but once loaded lookups are very
 speedy.
 
-Prerequisite bitarray lib:
-
-mod_pottymouth uses a modified version of the 'etbloom' library that uses 
-'bitarray' to replace 'hipe_bifs'. Ejabberd doesn't handle installing 
-dependences of dependecies quite so well (etbloom being a dep of mod_pottymouth 
-and bitarray being a dep of etbloom), so bitarray needs to be installed manually 
-before installation of mod_pottymouth.
-
-This is how I got it to work... YMMV.
-
-1. Make sure ejabberd is running
-2. Get the updated ejabberd-contrib sources:
-   ejabberdctl modules_update_specs
-3. Execute this script to get and build the dependencies:
-   ~/.ejabberd-modules/sources/ejabberd-contrib/mod_pottymouth/make-deps.sh
-4. When you install the module, its dependencies will be installed as well:
-   ejabberdctl module_install mod_pottymouth
-
 Configuration file is ~/.ejabberd-modules/mod_pottymouth/conf/mod_pottymouth.yml
 
 modules:
@@ -73,8 +55,3 @@ Blacklist helper
 Thinking of a bunch of swear words and all the permutations can be tough. We made
 a helper script to take a bare wordlist and generate permutations given a
 dictionary of substitution characters: https://github.com/madglory/permute_wordlist
-
-Tip of the hat:
-
-This mod makes use of the excellent 'etbloom' module:
-https://github.com/erlangtoolbox/etbloom
