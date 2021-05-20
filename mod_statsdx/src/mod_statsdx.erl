@@ -29,6 +29,7 @@
          user_send_packet_traffic/1, user_receive_packet_traffic/1,
 	 %%user_logout_sm/3,
 	 user_login/1, user_logout/4]).
+	 request_iqversion/3,
 
 -include("ejabberd_commands.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -764,7 +765,8 @@ ms_to_time(T) ->
 user_login(#{user := User, lserver := Host, resource := Resource} = State) ->
     ets:update_counter(table_name(server), {user_login, server}, 1),
     ets:update_counter(table_name(Host), {user_login, Host}, 1),
-    request_iqversion(User, Host, Resource),
+    timer:apply_after(timer:seconds(5), ?MODULE,
+                      request_iqversion, [User, Host, Resource]),
     State.
 
 
