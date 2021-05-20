@@ -28,8 +28,8 @@
 	 register_user/2, remove_user/2, user_send_packet/1,
          user_send_packet_traffic/1, user_receive_packet_traffic/1,
 	 %%user_logout_sm/3,
-	 user_login/1, user_logout/4]).
 	 request_iqversion/3,
+	 user_login/1, user_logout/2]).
 
 -include("ejabberd_commands.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -192,7 +192,7 @@ prepare_stats_host(Host, Hooks, CD) ->
 	    ejabberd_hooks:add(register_user, Host, ?MODULE, register_user, 90),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 90),
 	    ejabberd_hooks:add(c2s_session_opened, Host, ?MODULE, user_login, 90),
-	    ejabberd_hooks:add(unset_presence_hook, Host, ?MODULE, user_logout, 90),
+	    ejabberd_hooks:add(c2s_closed, Host, ?MODULE, user_logout, 50),
 	    %%ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
 	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 90);
 	traffic ->
@@ -201,7 +201,7 @@ prepare_stats_host(Host, Hooks, CD) ->
 	    ejabberd_hooks:add(register_user, Host, ?MODULE, register_user, 90),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 90),
 	    ejabberd_hooks:add(c2s_session_opened, Host, ?MODULE, user_login, 90),
-	    ejabberd_hooks:add(unset_presence_hook, Host, ?MODULE, user_logout, 90),
+	    ejabberd_hooks:add(c2s_closed, Host, ?MODULE, user_logout, 90),
 	    %%ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
 	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 90);
 	false ->
@@ -774,7 +774,7 @@ user_login(#{user := User, lserver := Host, resource := Resource} = State) ->
 %%    user_logout(JID#jid.luser, JID#jid.lserver, JID#jid.lresource, no_status).
 
 %% cuando un usuario desconecta, buscar en la tabla su JID/USR y quitarlo
-user_logout(User, Host, Resource, _Status) ->
+user_logout(#{user := User, lserver := Host, resource := Resource} = State, _Reason) ->
     TableHost = table_name(Host),
     TableServer = table_name(server),
     ets:update_counter(TableServer, {user_logout, server}, 1),
@@ -798,7 +798,8 @@ user_logout(User, Host, Resource, _Status) ->
 	    update_counter_create(TableServer, {lang, server, Lang}, -1);
 	[] ->
 	    ok
-    end.
+    end,
+    State.
 
 request_iqversion(User, Host, Resource) ->
     From = jid:make(<<"">>, Host, list_to_binary(atom_to_list(?MODULE))),
