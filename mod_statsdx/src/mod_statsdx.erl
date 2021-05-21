@@ -813,7 +813,7 @@ request_iqversion(User, Host, Resource) ->
              to = To,
              id = p1_rand:get_string(),
              sub_els = [Query]},
-    HandleResponse = fun(#iq{type = result} = IQr) ->
+    HandleResponse = fun(#iq{type = Type} = IQr) when (Type == result) or (Type == error) ->
 			       spawn(?MODULE, received_response,
 				     [To, From, IQr]);
 			  (R) ->
@@ -829,32 +829,51 @@ received_response(From, _To, El) ->
     catch
     	_:_ -> ok
     end.
-received_response(From, #iq{type = Type, lang = Lang1, sub_els = Elc}) ->
-    User = From#jid.luser,
-    Host = From#jid.lserver,
+
+received_response(From, #iq{type = error, lang = Lang1, sub_els = Elc} = Iq)
+  when [{xmlel,<<"error">>,
+         [{<<"type">>,<<"modify">>}],
+         [{xmlel,<<"not-acceptable">>,
+           [{<<"xmlns">>,<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}],
+           []}]}] == Elc ->
     Resource = From#jid.lresource,
+    {Client_id, OS_id} =
+        case binary:split(Resource, [<<"-">>, <<"_">>], [global]) of
+            [<<"xabber">>, <<"android">>, _] ->
+                {xabber, android};
+            [<<"Xabber">> | _] ->
+                {xabber, unknown};
+            _ ->
+                ?INFO_MSG("statsdx unknown client: ~n~p", [Iq]),
+                {unknown, unknown}
+        end,
+    received_response(From, Client_id, OS_id, Lang1,
+                      "unknown", "unknown", "unknown");
 
-    result = Type,
-    Lang = case Lang1 of
-	       <<"">> -> "unknown";
-	       L -> binary_to_list(L)
-	   end,
-    TableHost = table_name(Host),
-    TableServer = table_name(server),
-    update_counter_create(TableHost, {lang, Host, Lang}, 1),
-    update_counter_create(TableServer, {lang, server, Lang}, 1),
-
+received_response(From, #iq{type = result, lang = Lang1, sub_els = Elc}) ->
     [El] = fxml:remove_cdata(Elc),
     {xmlel, _, Attrs2, _Els2} = El,
     ?NS_VERSION = fxml:get_attr_s(<<"xmlns">>, Attrs2),
-
     Client = get_tag_cdata_subtag(El, <<"name">>),
     Version = get_tag_cdata_subtag(El, <<"version">>),
     OS = get_tag_cdata_subtag(El, <<"os">>),
     {Client_id, OS_id} = identify(Client, OS),
+    received_response(From, Client_id, OS_id, Lang1, Client, Version, OS);
 
+received_response(From, #iq{type = error, lang = Lang1} = Iq) ->
+    ?INFO_MSG("statsdx unknown client: ~n~p", [Iq]),
+    received_response(From, unknown, unknown, Lang1,
+                      "unknown", "unknown", "unknown").
+
+received_response(From, Client_id, OS_id, Lang1, Client, Version, OS) ->
+    User = From#jid.luser,
+    Host = From#jid.lserver,
+    Resource = From#jid.lresource,
     ConnType = get_connection_type(User, Host, Resource),
-
+    Lang = case Lang1 of
+	       <<"">> -> "unknown";
+	       L -> binary_to_list(L)
+	   end,
     TableHost = table_name(Host),
     TableServer = table_name(server),
     ets:update_counter(TableHost, {client, Host, Client_id}, 1),
@@ -863,13 +882,13 @@ received_response(From, #iq{type = Type, lang = Lang1, sub_els = Elc}) ->
     ets:update_counter(TableServer, {os, server, OS_id}, 1),
     ets:update_counter(TableHost, {conntype, Host, ConnType}, 1),
     ets:update_counter(TableServer, {conntype, server, ConnType}, 1),
+    update_counter_create(TableHost, {lang, Host, Lang}, 1),
+    update_counter_create(TableServer, {lang, server, Lang}, 1),
     update_counter_create(TableHost, {client_os, Host, Client_id, OS_id}, 1),
     update_counter_create(TableServer, {client_os, server, Client_id, OS_id}, 1),
     update_counter_create(TableHost, {client_conntype, Host, Client_id, ConnType}, 1),
     update_counter_create(TableServer, {client_conntype, server, Client_id, ConnType}, 1),
-
-    JID = jid:make(User, Host, Resource),
-    ets:insert(TableHost, {{session, JID}, Client_id, OS_id, Lang, ConnType, Client, Version, OS}).
+    ets:insert(TableHost, {{session, From}, Client_id, OS_id, Lang, ConnType, Client, Version, OS}).
 
 get_connection_type(User, Host, Resource) ->
     UserInfo = ejabberd_sm:get_user_info(User, Host, Resource),
