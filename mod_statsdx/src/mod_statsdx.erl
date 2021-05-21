@@ -1543,7 +1543,9 @@ make_url(StatLink, L) ->
 do_stat_table(global, Lang, Stat, Host) ->
     Os = mod_statsdx:get_statistic(global, [Stat, Host]),
     lists:map(
-      fun({L, N}) ->
+      fun({_L, 0}) when Stat == "client" ->
+              ?C(<<"">>);
+         ({L, N}) ->
 	      do_table_element(Lang, L, Stat, io_lib:format("~p", [N]))
       end,
       lists:reverse(lists:keysort(2, Os))
