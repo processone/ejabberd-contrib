@@ -193,7 +193,7 @@ prepare_stats_host(Host, Hooks, CD) ->
 	    ejabberd_hooks:add(register_user, Host, ?MODULE, register_user, 90),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 90),
 	    ejabberd_hooks:add(c2s_session_opened, Host, ?MODULE, user_login, 90),
-	    ejabberd_hooks:add(c2s_closed, Host, ?MODULE, user_logout, 50),
+	    ejabberd_hooks:add(c2s_closed, Host, ?MODULE, user_logout, 90),
 	    %%ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
 	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 90);
 	traffic ->
@@ -222,7 +222,7 @@ finish_stats() ->
 
 finish_stats(Host) ->
     ejabberd_hooks:delete(c2s_session_opened, Host, ?MODULE, user_login, 90),
-    ejabberd_hooks:delete(unset_presence_hook, Host, ?MODULE, user_logout, 90),
+    ejabberd_hooks:delete(c2s_closed, Host, ?MODULE, user_logout, 90),
     %%ejabberd_hooks:delete(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, user_send_packet, 90),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, user_send_packet_traffic, 92),
@@ -986,8 +986,8 @@ list_elem(oss, full) ->
     ].
 
 identify(Client, OS) ->
-    Res = {try_match(string:lowercase(Client), list_elem(clients, full)),
-           try_match(string:lowercase(OS), list_elem(oss, full))},
+    Res = {try_match(string:to_lower(Client), list_elem(clients, full)),
+           try_match(string:to_lower(OS), list_elem(oss, full))},
     case Res of
 	{libgaim, mac} -> {adium, mac};
 	{adium, unknown} -> {adium, mac};
@@ -1623,18 +1623,18 @@ do_sessions_table(_Node, _Lang, Filter, {Sort_direction, Sort_column}, Host) ->
                       [<<"username">>, _] ->
                           {0, ?XCT(<<"td">>, jid:encode(JID))};
                       _ ->
-                          {1, ?XE(<<"td">>, [?AC(UserURL, jid:encode(JID))])}
+                          {1, ?XE(<<"td">>, [?AC(list_to_binary(UserURL), jid:encode(JID))])}
                   end,
-	      UpStr = lists:duplicate(length(Filter) + UpInt, "../"),
-	      ClientIdStr = atom_to_list(Client_id),
-	      OsIdStr = atom_to_list(OS_id),
-	      ConnTypeStr = atom_to_list(ConnType),
+	      UpStr = list_to_binary(lists:duplicate(length(Filter) + UpInt, "../")),
+	      ClientIdBin = misc:atom_to_binary(Client_id),
+	      OsIdBin = misc:atom_to_binary(OS_id),
+	      ConnTypeBin = misc:atom_to_binary(ConnType),
 	      ?XE(<<"tr">>, [
 			 UserEl,
-			 ?XE(<<"td">>, [?AC(UpStr++"statsdx/client/"++ClientIdStr, ClientIdStr)]),
-			 ?XE(<<"td">>, [?AC(UpStr++"statsdx/os/"++OsIdStr, OsIdStr)]),
-			 ?XE(<<"td">>, [?AC(UpStr++"statsdx/languages/"++LangS, LangS)]),
-			 ?XE(<<"td">>, [?AC(UpStr++"statsdx/conntype/"++ConnTypeStr, ConnTypeStr)]),
+			 ?XE(<<"td">>, [?AC(<<UpStr/binary, "statsdx/client/", ClientIdBin/binary>>, ClientIdBin)]),
+			 ?XE(<<"td">>, [?AC(<<UpStr/binary, "statsdx/os/", OsIdBin/binary>>, OsIdBin)]),
+			 ?XE(<<"td">>, [?AC(<<UpStr/binary, "statsdx/languages/", Lang/binary>>, Lang)]),
+			 ?XE(<<"td">>, [?AC(<<UpStr/binary, "statsdx/conntype/", ConnTypeBin/binary>>, ConnTypeBin)]),
 			 ?XCTB("td", Client),
 			 ?XCTB("td", Version),
 			 ?XCTB("td", OS)
