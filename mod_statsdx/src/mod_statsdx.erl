@@ -1509,9 +1509,9 @@ web_page_host(_, Host, #request{path=[<<"statsdx">> | Filter], q = Q,
     Res = [?XC(<<"h1">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>),
 	   ?XC(<<"h2">>, list_to_binary("Sessions with: "++io_lib:format("~p", [Filter]))),
 	   ?XAE(<<"table">>, [],
-		[?XE(<<"tbody">>,
-		     do_sessions_table(global, Lang, Filter, Sort_query, Host)
-		    )
+		[
+		 ?XE(<<"thead">>, [?XE(<<"tr">>, make_sessions_table_tr(Lang) )]),
+		 ?XE(<<"tbody">>, do_sessions_table(global, Lang, Filter, Sort_query, Host))
 		])
 	  ],
     {stop, Res};
