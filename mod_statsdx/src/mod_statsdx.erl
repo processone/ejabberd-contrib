@@ -24,6 +24,7 @@
 	 web_menu_main/2, web_page_main/2,
 	 web_menu_node/3, web_page_node/5,
 	 web_menu_host/3, web_page_host/3,
+	 web_user/4,
 	 %% Hooks
 	 register_user/2, remove_user/2, user_send_packet/1,
          user_send_packet_traffic/1, user_receive_packet_traffic/1,
@@ -207,6 +208,7 @@ prepare_stats_host(Host, Hooks, CD) ->
 	false ->
 	    ok
     end,
+    ejabberd_hooks:add(webadmin_user, Host, ?MODULE, web_user, 50),
     ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, web_page_host, 50).
 
@@ -227,6 +229,7 @@ finish_stats(Host) ->
     ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE, user_receive_packet_traffic, 92),
     ejabberd_hooks:delete(register_user, Host, ?MODULE, register_user, 90),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 90),
+    ejabberd_hooks:delete(webadmin_user, Host, ?MODULE, web_user, 50),
     ejabberd_hooks:delete(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:delete(webadmin_page_host, Host, ?MODULE, web_page_host, 50),
     Table = table_name(Host),
@@ -1040,6 +1043,19 @@ web_menu_node(Acc, _Node, Lang) ->
 web_menu_host(Acc, _Host, Lang) ->
     Acc ++ [{<<"statsdx">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>}].
 
+web_user(Acc, User, Host, Lang) ->
+    Filter = [<<"username">>, User],
+    Sort_query = {normal, 1},
+    Acc ++
+        [?XCT(<<"h3">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>),
+	 ?XE(<<"table">>,
+             [?XE(<<"thead">>,
+                  [?XE(<<"tr">>, make_sessions_table_tr(Lang, false) )]),
+              ?XE(<<"tbody">>,
+                  do_sessions_table(global, Lang, Filter, Sort_query, Host))
+             ])
+        ].
+
 %%%==================================
 %%%% Web Admin Page
 
@@ -1225,6 +1241,8 @@ get_sort_query2(Q) ->
 	false -> {ok, {reverse, abs(Integer)}}
     end.
 make_sessions_table_tr(Lang) ->
+    make_sessions_table_tr(Lang, true).
+make_sessions_table_tr(Lang, Sorting) ->
     Titles = [<<"Jabber ID">>,
 	      <<"Client ID">>,
 	      <<"OS ID">>,
@@ -1237,11 +1255,15 @@ make_sessions_table_tr(Lang) ->
 	lists:mapfoldl(
 	  fun(Title, Num_column) ->
 		  NCS = list_to_binary(integer_to_list(Num_column)),
-		  TD = ?XE(<<"td">>, [?CT(Title),
-				  ?BR,
-				  ?ACT(<<"?sort=", NCS/binary>>, <<"<">>),
-				  ?C(<<" ">>),
-				  ?ACT(<<"?sort=-", NCS/binary>>, <<">">>)]),
+                  SortingEls =
+                      case Sorting of
+                          false -> [];
+                          true -> [?BR,
+                                   ?ACT(<<"?sort=", NCS/binary>>, <<"<">>),
+                                   ?C(<<" ">>),
+                                   ?ACT(<<"?sort=-", NCS/binary>>, <<">">>)]
+                      end,
+		  TD = ?XE(<<"td">>, [?CT(Title)] ++ SortingEls),
 		  {TD, Num_column+1}
 	  end,
 	  1,
@@ -1575,16 +1597,23 @@ do_sessions_table(_Node, _Lang, Filter, {Sort_direction, Sort_column}, Host) ->
 		_ -> 3 + length(Filter)
 	      end,
 	      UserURL = lists:duplicate(Level, "../") ++ "server/" ++ Server ++ "/user/" ++ User ++ "/",
-	      UpStr = lists:duplicate(length(Filter), "../"),
+              {UpInt, UserEl} =
+                  case Filter of
+                      [<<"username">>, _] ->
+                          {0, ?XCT(<<"td">>, jid:encode(JID))};
+                      _ ->
+                          {1, ?XE(<<"td">>, [?AC(UserURL, jid:encode(JID))])}
+                  end,
+	      UpStr = lists:duplicate(length(Filter) + UpInt, "../"),
 	      ClientIdStr = atom_to_list(Client_id),
 	      OsIdStr = atom_to_list(OS_id),
 	      ConnTypeStr = atom_to_list(ConnType),
 	      ?XE(<<"tr">>, [
-			 ?XE(<<"td">>, [?AC(UserURL, jid:encode(JID))]),
-			 ?XE(<<"td">>, [?AC(UpStr++"client/"++ClientIdStr, ClientIdStr)]),
-			 ?XE(<<"td">>, [?AC(UpStr++"os/"++OsIdStr, OsIdStr)]),
-			 ?XE(<<"td">>, [?AC(UpStr++"languages/"++LangS, LangS)]),
-			 ?XE(<<"td">>, [?AC(UpStr++"conntype/"++ConnTypeStr, ConnTypeStr)]),
+			 UserEl,
+			 ?XE(<<"td">>, [?AC(UpStr++"statsdx/client/"++ClientIdStr, ClientIdStr)]),
+			 ?XE(<<"td">>, [?AC(UpStr++"statsdx/os/"++OsIdStr, OsIdStr)]),
+			 ?XE(<<"td">>, [?AC(UpStr++"statsdx/languages/"++LangS, LangS)]),
+			 ?XE(<<"td">>, [?AC(UpStr++"statsdx/conntype/"++ConnTypeStr, ConnTypeStr)]),
 			 ?XCTB("td", Client),
 			 ?XCTB("td", Version),
 			 ?XCTB("td", OS)
@@ -1614,6 +1643,7 @@ get_sessions_filtered(Filter, server) ->
       ejabberd_config:get_option(hosts));
 get_sessions_filtered(Filter, Host) ->
     Match = case Filter of
+		[<<"username">>, Username] -> {{session, {jid, Username, Host, '$1', Username, Host, '$1'}}, '$2', '$3', '$4', '$5', '$6', '$7', '$8'};
 		[<<"client">>, Client] -> {{session, '$1'}, misc:binary_to_atom(Client), '$2', '$3', '$4', '$5', '$6', '$7'};
 		[<<"os">>, OS] -> {{session, '$1'}, '$2', misc:binary_to_atom(OS), '$3', '$4', '$5', '$6', '$7'};
 		[<<"conntype">>, ConnType] -> {{session, '$1'}, '$2', '$3', '$4', misc:binary_to_atom(ConnType), '$5', '$6', '$7'};
