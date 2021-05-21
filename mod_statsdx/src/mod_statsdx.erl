@@ -1575,12 +1575,16 @@ do_sessions_table(_Node, _Lang, Filter, {Sort_direction, Sort_column}, Host) ->
 		_ -> 3 + length(Filter)
 	      end,
 	      UserURL = lists:duplicate(Level, "../") ++ "server/" ++ Server ++ "/user/" ++ User ++ "/",
+	      UpStr = lists:duplicate(length(Filter), "../"),
+	      ClientIdStr = atom_to_list(Client_id),
+	      OsIdStr = atom_to_list(OS_id),
+	      ConnTypeStr = atom_to_list(ConnType),
 	      ?XE(<<"tr">>, [
-			 ?XE(<<"td">>, [?AC(list_to_binary(UserURL), jid:encode(JID))]),
-			 ?XCTB("td", atom_to_list(Client_id)),
-			 ?XCTB("td", atom_to_list(OS_id)),
-			 ?XCTB("td", LangS),
-			 ?XCTB("td", atom_to_list(ConnType)),
+			 ?XE(<<"td">>, [?AC(UserURL, jid:encode(JID))]),
+			 ?XE(<<"td">>, [?AC(UpStr++"client/"++ClientIdStr, ClientIdStr)]),
+			 ?XE(<<"td">>, [?AC(UpStr++"os/"++OsIdStr, OsIdStr)]),
+			 ?XE(<<"td">>, [?AC(UpStr++"languages/"++LangS, LangS)]),
+			 ?XE(<<"td">>, [?AC(UpStr++"conntype/"++ConnTypeStr, ConnTypeStr)]),
 			 ?XCTB("td", Client),
 			 ?XCTB("td", Version),
 			 ?XCTB("td", OS)
