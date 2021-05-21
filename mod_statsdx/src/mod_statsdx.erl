@@ -939,14 +939,14 @@ list_elem(conntypes, full) ->
     ];
 list_elem(oss, full) ->
     [
-     {"Linux", linux},
-     {"Win", windows},
-     {"Gentoo", linux},
-     {"Mac", mac},
      {"BSD", bsd},
-     {"SunOS", linux},
      {"Debian", linux},
+     {"Gentoo", linux},
+     {"Linux", linux},
+     {"Mac", mac},
+     {"SunOS", linux},
      {"Ubuntu", linux},
+     {"Win", windows},
      {"unknown", unknown}
     ].
 
