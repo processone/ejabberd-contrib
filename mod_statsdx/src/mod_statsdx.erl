@@ -896,8 +896,10 @@ list_elem(clients, full) ->
     [
      {"adium", adium},
      {"aqq", aqq},
+     {"atalk", atalk},
      {"bitlbee", bitlbee},
      {"blabber.im", blabber_im},
+     {"bruno", bruno},
      {"centerim", centerim},
      {"coccinella", coccinella},
      {"conversations", conversations},
@@ -931,6 +933,7 @@ list_elem(clients, full) ->
      {"trillian", trillian},
      {"vacuum-im", vacuum_im},
      {"wtw", wtw},
+     {"xabber", xabber},
      {"xmpp messenger", xmpp_messenger},
      {"xmppjabberclient", xmpp_jabber_client},
      {"yaxim", yaxim},
@@ -948,25 +951,24 @@ list_elem(conntypes, full) ->
     ];
 list_elem(oss, full) ->
     [
-     {"Android", android},
-     {"BSD", bsd},
-     {"Debian", linux},
-     {"Gentoo", linux},
-     {"KDE", linux},
-     {"Linux", linux},
+     {"android", android},
+     {"bsd", bsd},
+     {"debian", linux},
+     {"gentoo", linux},
+     {"kde", linux},
+     {"linux", linux},
      {"mac", mac},
-     {"Mac", mac},
-     {"Mageia", linux},
-     {"openSUSE", linux},
-     {"SunOS", linux},
-     {"Ubuntu", linux},
-     {"Win", windows},
+     {"mageia", linux},
+     {"opensuse", linux},
+     {"sunos", linux},
+     {"ubuntu", linux},
+     {"win", windows},
      {"unknown", unknown}
     ].
 
 identify(Client, OS) ->
     Res = {try_match(string:lowercase(Client), list_elem(clients, full)),
-           try_match(OS, list_elem(oss, full))},
+           try_match(string:lowercase(OS), list_elem(oss, full))},
     case Res of
 	{libgaim, mac} -> {adium, mac};
 	{adium, unknown} -> {adium, mac};
