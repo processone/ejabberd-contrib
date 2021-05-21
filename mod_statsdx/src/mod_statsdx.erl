@@ -1219,7 +1219,7 @@ get_sort_query(Q) ->
     end.
 get_sort_query2(Q) ->
     {value, {_, Binary}} = lists:keysearch(<<"sort">>, 1, Q),
-    Integer = binary_to_integer(Binary),
+    Integer = binary_to_integer(lists:nth(1, binary:split(Binary, <<"/">>))),
     case Integer >= 0 of
 	true -> {ok, {normal, Integer}};
 	false -> {ok, {reverse, abs(Integer)}}
