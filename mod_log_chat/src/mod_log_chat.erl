@@ -10,7 +10,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, depends/2, mod_opt_type/1, mod_options/1]).
+-export([start/2, stop/1, depends/2, mod_opt_type/1, mod_options/1, mod_doc/0]).
 -export([init/1,
 	 log_packet_send/1,
 	 log_packet_receive/1]).
@@ -288,3 +288,5 @@ mod_options(_Host) ->
     [{host_config, []},
      {path, ?DEFAULT_PATH},
      {format, ?DEFAULT_FORMAT}].
+
+mod_doc() -> #{}.

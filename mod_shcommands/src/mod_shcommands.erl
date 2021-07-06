@@ -11,7 +11,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, depends/2, mod_options/1]).
+-export([start/2, stop/1, depends/2, mod_options/1, mod_doc/0]).
 -export([execute_system/1, execute_erlang/1]).
 -export([web_menu_node/3, web_page_node/5]).
 
@@ -46,6 +46,8 @@ depends(_Host, _Opts) ->
 
 mod_options(_Host) ->
     [].
+
+mod_doc() -> #{}.
 
 %%-------------------
 %% Commands

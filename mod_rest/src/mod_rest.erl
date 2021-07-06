@@ -31,7 +31,7 @@
 	 depends/2,
 	 split_line/1,
 	 process/2,
-	 mod_opt_type/1, mod_options/1]).
+	 mod_opt_type/1, mod_options/1, mod_doc/0]).
 
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
@@ -187,3 +187,5 @@ mod_options(_Host) ->
      {allowed_destinations, []},
      {allowed_stanza_types, []},
      {access_commands, []}].
+
+mod_doc() -> #{}.

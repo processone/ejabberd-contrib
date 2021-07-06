@@ -11,7 +11,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, depends/2, mod_options/1, mod_opt_type/1]).
+-export([start/2, stop/1, depends/2, mod_options/1, mod_opt_type/1, mod_doc/0]).
 -export([cron_list/1, cron_del/1,
 	 run_task/3,
 	 web_menu_host/3, web_page_host/3,
@@ -56,6 +56,9 @@ mod_opt_type(tasks) ->
 
 mod_options(_Host) ->
     [{tasks, []}].
+
+mod_doc() ->
+    #{}.
 
 %% ---------------------
 %% Task management

@@ -10,6 +10,7 @@
   stop/1,
   on_filter_packet/1,
   mod_opt_type/1,
+  mod_doc/0,
   depends/2,
   reload/3,
   mod_options/1
@@ -105,3 +106,4 @@ depends(_Host, _Opts) -> [].
 reload(_Host, _NewOpts, _OldOpts) -> ok.
 mod_options(_) ->
   [{blacklists, []},{charmaps, []}].
+mod_doc() -> #{}.

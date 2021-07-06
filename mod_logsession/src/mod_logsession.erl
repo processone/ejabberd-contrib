@@ -29,7 +29,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, depends/2, mod_options/1, mod_opt_type/1]).
+-export([start/2, stop/1, depends/2, mod_options/1, mod_opt_type/1, mod_doc/0]).
 -export([loop/3,
 	 reopen_log/1,
 	 failed_auth/3,
@@ -73,6 +73,8 @@ mod_opt_type(sessionlog) ->
 
 mod_options(_Host) ->
     [{sessionlog, "/tmp/ejabberd_logsession_@HOST@.log"}].
+
+mod_doc() -> #{}.
 
 %%%----------------------------------------------------------------------
 %%% REQUEST HANDLERS

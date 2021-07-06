@@ -17,6 +17,7 @@
 	 depends/2,
 	 mod_opt_type/1,
 	 mod_options/1,
+	 mod_doc/0,
          log_user_send/1,
 	 log_user_send/4,
          post_result/1]).
@@ -60,6 +61,8 @@ mod_options(_Host) ->
      {content_type, "text/xml"},
      {http_options, []},
      {req_options, []}].
+
+mod_doc() -> #{}.
 
 %% TODO: remove log_user_send/4 after 17.02 is released
 log_user_send(Packet, C2SState, From, To) ->

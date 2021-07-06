@@ -19,7 +19,7 @@
 -behaviour(gen_mod).
 
 %% gen_mod callbacks
--export([start/2, stop/1, reload/3, mod_options/1, depends/2]).
+-export([start/2, stop/1, reload/3, mod_options/1, depends/2, mod_doc/0]).
 %% hooks
 -export([filter_packet/1]).
 
@@ -47,6 +47,8 @@ mod_options(_) ->
 
 depends(_Host, _Opts) ->
     [].
+
+mod_doc() -> #{}.
 
 %%%===================================================================
 %%% Internal functions

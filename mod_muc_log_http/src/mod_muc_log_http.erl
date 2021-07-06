@@ -10,7 +10,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, depends/2, mod_options/1]).
+-export([start/2, stop/1, depends/2, mod_options/1, mod_doc/0]).
 
 -export([process/2]).
 
@@ -235,3 +235,5 @@ depends(_Host, _Opts) ->
 
 mod_options(_Host) ->
     [].
+
+mod_doc() -> #{}.

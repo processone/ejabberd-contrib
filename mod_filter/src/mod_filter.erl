@@ -10,7 +10,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, depends/2, mod_options/1, filter_packet/1]).
+-export([start/2, stop/1, depends/2, mod_options/1, filter_packet/1, mod_doc/0]).
 
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -103,3 +103,5 @@ depends(_Host, _Opts) ->
     [].
 
 mod_options(_) -> [].
+
+mod_doc() -> #{}.

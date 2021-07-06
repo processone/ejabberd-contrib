@@ -28,7 +28,8 @@
 -behavior(gen_mod).
 
 %% gen_mod callbacks.
--export([start/2, stop/1, reload/3, mod_opt_type/1, depends/2, mod_options/1]).
+-export([start/2, stop/1, reload/3, mod_opt_type/1, depends/2, mod_options/1,
+        mod_doc/0]).
 
 %% ejabberd_hooks callbacks.
 -export([register_user/2]).
@@ -71,6 +72,9 @@ mod_options(_Host) ->
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->
     [{mod_roster, hard}].
+
+mod_doc() ->
+    #{}.
 
 %%--------------------------------------------------------------------
 %% ejabberd_hooks callbacks.

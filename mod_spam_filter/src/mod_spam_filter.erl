@@ -34,6 +34,7 @@
 	 stop/1,
 	 reload/3,
 	 depends/2,
+	 mod_doc/0,
 	 mod_opt_type/1,
 	 mod_options/1]).
 
@@ -129,6 +130,8 @@ mod_options(_Host) ->
      {spam_urls_file, none},
      {access_spam, none},
      {cache_size, 10000}].
+
+mod_doc() -> #{}.
 
 %%--------------------------------------------------------------------
 %% gen_server callbacks.

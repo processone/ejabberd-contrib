@@ -24,7 +24,7 @@
 -define(GLOBAL_HOOKS, [component_connected, component_disconnected]).
 
 -export([start/2, stop/1, mod_opt_type/1,
-   depends/2, udp_loop_start/1, push/2]).
+   depends/2, mod_doc/0, udp_loop_start/1, push/2]).
 
 -export([offline_message_hook/3,
          sm_register_connection_hook/3, sm_remove_connection_hook/3,
@@ -65,6 +65,8 @@ stop(Host) ->
 
 depends(_Host, _Opts) ->
     [].
+
+mod_doc() -> #{}.
 
 %%====================================================================
 %% Hooks handlers

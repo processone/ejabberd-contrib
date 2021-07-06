@@ -32,6 +32,7 @@
          init/1,
 	 stop/1,
 	 depends/2,
+	 mod_doc/0,
 	 mod_opt_type/1,
 	 mod_options/1]).
 %% Hooks:
@@ -118,6 +119,8 @@ mod_opt_type(filename) ->
 
 mod_options(_Host) ->
     [{filename, ?DEFAULT_FILENAME}].
+
+mod_doc() -> #{}.
 
 %% ---
 %% Internal functions
