@@ -264,7 +264,7 @@ make_dir_rec(Dir) ->
 get_gregorian_day() -> calendar:date_to_gregorian_days(date()).
 
 get_now_iso() ->
-    xmpp_util:encode_timestamp(now()).
+    xmpp_util:encode_timestamp(erlang:timestamp()).
 
 calc_div(A, B) when is_integer(A) and is_integer(B) and (B /= 0) ->
     A/B;
