@@ -12,7 +12,7 @@
 -behaviour(gen_mod).
 
 
--export([start/2, stop/1, depends/2, mod_opt_type/1, mod_options/1]).
+-export([start/2, stop/1, depends/2, mod_opt_type/1, mod_options/1, mod_doc/0]).
 -export([loop/5]).
 
 -include_lib("xmpp/include/xmpp.hrl").
@@ -81,6 +81,8 @@ mod_options(_Host) ->
      {split, false},
      {basefilename, "/tmp/ejasta"},
      {hosts, ejabberd_config:get_option(hosts)}].
+
+mod_doc() -> #{}.
 
 %% -------------------
 %% write_stat*
