@@ -21,10 +21,8 @@ To use an ejabberd module coming from this repository:
   `CONTRIB_MODULES_PATH` setting in `ejabberdctl.cfg`.
 
 - Edit the configuration file provided in the `conf` directory of the
-  installed module and update it to your needs. Then apply the changes to
-  your main ejabberd configuration. In a future release, ejabberd will
-  automatically add this file to its runtime configuration without
-  changes.
+  installed module and update it to your needs. Or, if you prefer so,
+  configure it in your main ejabberd configuration file.
 
 - Run `ejabberdctl module_uninstall <module>` to remove a module from
   ejabberd.

@@ -17,21 +17,10 @@ Each vhost is logged in a different file.
 Note: to log the failed authentication attempts, you need to patch ejabberd.
 
 
-	INSTALL
-	-------
-
-1 Copy this file to ejabberd/src/mod_logsession.erl
-2 Recompile ejabberd
-3 Add to ejabberd.yml, 'modules' section the basic configuration:
-    mod_logsession: {}
-4 With this configuration, the log files are:
-    /tmp/ejabberd_logsession_@HOST@.log
-
-
 	CONFIGURABLE PARAMETERS
 	-----------------------
 
-sessionlog: 
+sessionlog:
   Define the name of log files.
   The keyword @HOST@ will be substituted with the name of each vhost.
   Default value: "/tmp/ejabberd_logsession_@HOST@.log"

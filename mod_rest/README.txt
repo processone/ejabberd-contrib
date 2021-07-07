@@ -18,7 +18,6 @@ This module can also be used as a frontend to execute ejabberd commands.
 	CONFIGURATION
 	=============
 
-To use this module, follow the general build instructions.
 You can modify the default module configuration file like this:
 
 To enable the module:
