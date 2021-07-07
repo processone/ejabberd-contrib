@@ -1,0 +1,157 @@
+name: CI
+
+on:
+  push:
+    paths-ignore:
+    - '**.md'
+    - '**.spec'
+    - '**.txt'
+    - '*/conf/*.yml'
+  pull_request:
+    paths-ignore:
+    - '**.md'
+    - '**.spec'
+    - '**.txt'
+    - '*/conf/*.yml'
+
+jobs:
+
+  tests:
+    name: Tests
+    strategy:
+      fail-fast: false
+      matrix:
+        otp: ['20.3', '21.3', '24.3', '25']
+        rebar: ['rebar3']
+        include:
+        - otp: '20.3'
+          os: ubuntu-20.04
+        - otp: '21.3'
+          os: ubuntu-20.04
+        - otp: '24.3'
+          os: ubuntu-20.04
+        - otp: '25'
+          os: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    container:
+      image: erlang:${{ matrix.otp }}
+
+    steps:
+
+    - name: Checkout ejabberd
+      uses: actions/checkout@v2
+      with:
+        repository: processone/ejabberd
+
+    - name: Checkout ejabberd-contrib
+      uses: actions/checkout@v2
+      with:
+        path: .ejabberd-modules/sources/ejabberd-contrib
+
+    - name: Prepare libraries
+      run: |
+        apt-get -qq update
+        apt-get -y purge libgd3 nginx
+        apt-get -qq install libexpat1-dev libgd-dev libpam0g-dev \
+                                 libsqlite3-dev libwebp-dev libyaml-dev
+
+    - name: Prepare rebar
+      id: rebar
+      run: |
+        echo '{xref_ignores, [{eldap_filter_yecc, return_error, 2},
+                              {fusco_lib, split_credentials, 1},
+                              {http_uri, decode, 1}
+                             ]}.' >>rebar.config
+        echo '{xref_checks, [deprecated_function_calls, deprecated_functions,
+              locals_not_used, undefined_function_calls, undefined_functions]}.
+              % Disabled: exports_not_used,' >>rebar.config
+        echo '{dialyzer, [{get_warnings, true}, {plt_extra_apps, [cache_tab,
+              eimp, epam, esip, ezlib, fast_tls, fast_xml, fast_yaml,
+              mqtree, p1_acme, p1_mysql, p1_oauth2, p1_pgsql, p1_utils, pkix,
+              sqlite3, stringprep, stun, xmpp, yconf]} ]}.' >>rebar.config
+        echo '{ct_extra_params, "-verbosity 20"}.' >>rebar.config
+
+    - name: Cache rebar
+      uses: actions/cache@v3
+      with:
+        path: |
+          deps/
+          dialyzer/
+          ebin/
+          ~/.cache/rebar3/
+        key: ${{matrix.otp}}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
+
+    - name: Compile
+      run: |
+        ./autogen.sh
+        ./configure --with-rebar=`which rebar3` \
+                    --prefix=/tmp/ejabberd \
+                    --enable-all \
+                    --disable-elixir \
+                    --disable-mssql \
+                    --disable-odbc
+        make update
+        make
+
+    - name: Start ejabberd
+      run: |
+        echo "CONTRIB_MODULES_PATH=`pwd`/.ejabberd-modules" >> ejabberdctl.cfg.example
+        CTL=_build/dev/rel/ejabberd/bin/ejabberdctl
+        make dev
+        $CTL start
+        $CTL started
+
+    - name: Enable mod_muc_log
+      run: |
+        echo '  mod_muc_log: {}' >>.ejabberd-modules/sources/ejabberd-contrib/mod_muc_log_http/conf/mod_muc_log_http.yml
+
+    - name: Get list of available modules
+      run: |
+        CTL=_build/dev/rel/ejabberd/bin/ejabberdctl
+        $CTL modules_available | awk '{print $1}' >modules_available.txt
+
+    - name: Install modules
+      run: |
+        CTL=_build/dev/rel/ejabberd/bin/ejabberdctl
+        for i in `cat modules_available.txt` ; do
+            echo "Installing $i"
+            $CTL module_install $i
+        done
+
+    - name: Copy modules
+      run: |
+        CTL=_build/dev/rel/ejabberd/bin/ejabberdctl
+        for i in `cat modules_available.txt` ; do
+            echo "Copying from $i"
+            find .ejabberd-modules/sources/ejabberd-contrib/ -wholename "*/ejabberd-contrib/$i/src/*.erl" -exec 'cp' '{}' 'src/' ';'
+            find .ejabberd-modules/sources/ejabberd-contrib/ -wholename "*/ejabberd-contrib/$i/deps/*/ebin/*.beam" -exec 'cp' '{}' '_build/default/lib/ejabberd/ebin/' ';'
+            find .ejabberd-modules/sources/ejabberd-contrib/ -wholename "*/ejabberd-contrib/$i/deps/*/include/*.hrl" -exec 'cp' '{}' 'include/' ';'
+        done
+
+    - name: Uninstall modules
+      run: |
+        CTL=_build/dev/rel/ejabberd/bin/ejabberdctl
+        for i in `cat modules_available.txt` ; do
+            echo "Uninstalling $i"
+            $CTL module_uninstall $i
+        done
+
+#    This doesn't work right now, because epmd is in another path
+#    - run: ./ejabberdctl stop && ./ejabberdctl stopped
+
+    - run: make
+    - run: make hooks
+    - run: make options
+    - run: make xref
+#    - run: make dialyzer # Too many errors... first fix them, then enable this
+
+    - name: View logs dir
+      if: always()
+      run: ls -la _build/dev/rel/ejabberd/logs
+    - name: View ejabberd.log
+      if: always()
+      run: cat _build/dev/rel/ejabberd/logs/ejabberd.log
+    - name: View error.log
+      if: always()
+      run: cat _build/dev/rel/ejabberd/logs/error.log
+
