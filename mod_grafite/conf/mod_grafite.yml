@@ -1,5 +1,4 @@
-modules:
-  mod_grafite:
-    statsdhost: "carbonr.xmpp.com.br"
-    statsdport: 8125
-    
+#modules:
+#  mod_grafite:
+#    statsdhost: "carbonr.xmpp.com.br"
+#    statsdport: 8125

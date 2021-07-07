@@ -1,10 +1,10 @@
 # edit this file to fit your needs
 
 # log all vhosts chats in /var/log/ejabberd/chat directory in html
-modules:
-  mod_log_chat:
-    path: "/var/log/ejabberd/chat"
-    format: html
+#modules:
+#  mod_log_chat:
+#    path: "/var/log/ejabberd/chat"
+#    format: html
 
 
 # log only vh1.myjabberserver.net vhost in /var/log/ejabberd/vh1.myjabberserver.net directory

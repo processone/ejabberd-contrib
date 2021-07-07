@@ -1,8 +1,8 @@
-modules:
-    mod_pottymouth:
-        blacklists:
-            default: /etc/ejabberd/modules/mod_pottymouth/blacklist_en.txt
-            en: /etc/ejabberd/modules/mod_pottymouth/blacklist_en.txt
-        charmaps:
-            default: /etc/ejabberd/modules/mod_pottymouth/charmap_en.txt
-            en: /etc/ejabberd/modules/mod_pottymouth/charmap_en.txt
+#modules:
+#    mod_pottymouth:
+#        blacklists:
+#            default: /etc/ejabberd/modules/mod_pottymouth/blacklist_en.txt
+#            en: /etc/ejabberd/modules/mod_pottymouth/blacklist_en.txt
+#        charmaps:
+#            default: /etc/ejabberd/modules/mod_pottymouth/charmap_en.txt
+#            en: /etc/ejabberd/modules/mod_pottymouth/charmap_en.txt
