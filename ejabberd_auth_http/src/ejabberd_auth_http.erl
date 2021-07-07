@@ -27,7 +27,7 @@
          get_password/3,
          stop/1]).
 
--include("scram.hrl").
+-include_lib("xmpp/include/scram.hrl").
 -include("logger.hrl").
 
 %%%----------------------------------------------------------------------

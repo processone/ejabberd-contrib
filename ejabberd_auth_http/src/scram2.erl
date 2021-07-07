@@ -28,7 +28,7 @@
 
 -author('stephen.roettger@googlemail.com').
 
--include("scram.hrl").
+-include_lib("xmpp/include/scram.hrl").
 -include("logger.hrl").
 
 %% External exports
