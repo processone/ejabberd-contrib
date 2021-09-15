@@ -3,7 +3,7 @@
 # log all vhosts chats in /var/log/ejabberd/chat directory in html
 #modules:
 #  mod_log_chat:
-#    path: "/var/log/ejabberd/chat"
+#    path: /var/log/ejabberd/chat
 #    format: html
 
 
@@ -13,8 +13,8 @@
 #  mod_log_chat:
 #    host_config:
 #      - "vh1.myjabberserver.net":
-#          - path: "/var/log/ejabberd/vh1.myjabberserver.net"
+#          - path: /var/log/ejabberd/vh1.myjabberserver.net
 #          - format: html
 #      - "vh2.myjabberserver.net":
-#          - path: "/var/log/ejabberd/vh2.myjabberserver.net"
+#          - path: /var/log/ejabberd/vh2.myjabberserver.net
 #          - format: text

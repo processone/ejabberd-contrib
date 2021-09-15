@@ -280,7 +280,7 @@ depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(host_config) -> econf:list(econf:any());
-mod_opt_type(path) -> fun iolist_to_binary/1;
+mod_opt_type(path) -> econf:directory(write);
 mod_opt_type(format) ->
     fun (A) when is_atom(A) -> A end.
 
