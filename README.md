@@ -4,6 +4,7 @@ ejabberd-contrib
 This is a collaborative development area for ejabberd module developers
 and users.
 
+Those modules are not officially supported by ProcessOne.
 
 For users
 ---------
