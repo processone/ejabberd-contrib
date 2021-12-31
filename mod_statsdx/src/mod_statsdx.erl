@@ -195,7 +195,7 @@ prepare_stats_host(Host, Hooks, CD) ->
 	    ejabberd_hooks:add(register_user, Host, ?MODULE, register_user, 90),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 90),
 	    ejabberd_hooks:add(c2s_session_opened, Host, ?MODULE, user_login, 90),
-	    ejabberd_hooks:add(c2s_closed, Host, ?MODULE, user_logout, 90),
+	    ejabberd_hooks:add(c2s_closed, Host, ?MODULE, user_logout, 40),
 	    %%ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
 	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 90);
 	traffic ->
@@ -204,7 +204,7 @@ prepare_stats_host(Host, Hooks, CD) ->
 	    ejabberd_hooks:add(register_user, Host, ?MODULE, register_user, 90),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 90),
 	    ejabberd_hooks:add(c2s_session_opened, Host, ?MODULE, user_login, 90),
-	    ejabberd_hooks:add(c2s_closed, Host, ?MODULE, user_logout, 90),
+	    ejabberd_hooks:add(c2s_closed, Host, ?MODULE, user_logout, 40),
 	    %%ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
 	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 90);
 	false ->
@@ -224,7 +224,7 @@ finish_stats() ->
 
 finish_stats(Host) ->
     ejabberd_hooks:delete(c2s_session_opened, Host, ?MODULE, user_login, 90),
-    ejabberd_hooks:delete(c2s_closed, Host, ?MODULE, user_logout, 90),
+    ejabberd_hooks:delete(c2s_closed, Host, ?MODULE, user_logout, 40),
     %%ejabberd_hooks:delete(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, user_send_packet, 90),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, user_send_packet_traffic, 92),
