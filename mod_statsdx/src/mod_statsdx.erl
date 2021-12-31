@@ -29,7 +29,7 @@
 	 register_user/2, remove_user/2, user_send_packet/1,
          user_send_packet_traffic/1, user_receive_packet_traffic/1,
 	 %%user_logout_sm/3,
-	 request_iqversion/3,
+	 request_iqversion/4,
 	 user_login/1, user_logout/2]).
 
 -include("ejabberd_commands.hrl").
@@ -767,11 +767,11 @@ ms_to_time(T) ->
 
 
 %% Cuando un usuario conecta, pedirle iq:version a nombre de Host/mod_stats2file
-user_login(#{user := User, lserver := Host, resource := Resource} = State) ->
+user_login(#{user := User, lserver := Host, resource := Resource, ip := IpPort} = State) ->
     ets:update_counter(table_name(server), {user_login, server}, 1),
     ets:update_counter(table_name(Host), {user_login, Host}, 1),
     timer:apply_after(timer:seconds(5), ?MODULE,
-                      request_iqversion, [User, Host, Resource]),
+                      request_iqversion, [User, Host, Resource, IpPort]),
     State.
 
 
@@ -806,6 +806,11 @@ user_logout(#{user := User, lserver := Host, resource := Resource} = State, _Rea
     end,
     State.
 
+request_iqversion(User, Host, Resource, IpPort) ->
+    case ejabberd_sm:get_user_ip(User, Host, Resource) of
+        IpPort -> request_iqversion(User, Host, Resource);
+        _ -> ok
+    end.
 request_iqversion(User, Host, Resource) ->
     From = jid:make(<<"">>, Host, list_to_binary(atom_to_list(?MODULE))),
     To = jid:make(User, Host, Resource),
