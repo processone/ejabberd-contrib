@@ -27,11 +27,12 @@ modules:
 	TASK SYNTAX
 	===========
 
-Each task is described with five elements:
+Tasks are described with those elements:
 * Time is an integer.
 * Units indicates the time unit you use. It can be: seconds, minutes, hours, days.
 * Module and * Function are the exact call you want to schedule.
-* Arguments is an array.  Strings will be converted to binaries.
+* Arguments is an array. By default strings will be converted to binaries.
+* args_type can be set to string, if the function expects strings instead of binaries
 * timer_type is one of 'fixed' or 'interval'.  Fixed timers occur at a fixed time
   after the [minute|hour|day] e.g. every hour on the 5th minute (1:05PM, 2:05PM etc)
   interval timers occur every interval (starting on an even unit) e.g. every 10 minutes
@@ -64,6 +65,14 @@ modules:
           - "localhost"
           - "somepass"
         timer_type: interval
+      - time: 24
+        units: hours
+        module: mnesia
+        function: backup
+        timer_type: interval
+        args_type: string
+        arguments:
+          - "/var/log/ejabberd/mnesia.backup"
 
 
 	EJABBERD COMMANDS

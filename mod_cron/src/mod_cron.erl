@@ -139,8 +139,9 @@ update_timer_ref(TaskId, NewTimerRef) ->
 
 %% Method to add new task
 add_task(Host, Task) ->
-    [TimeNum, TimeUnit, Mod, Fun, Args, InTimerType] =
-	[proplists:get_value(Key, Task) || Key <- [time, units, module, function, arguments, timer_type]],
+    [TimeNum, TimeUnit, Mod, Fun, ArgsType, Args1, InTimerType] =
+	[proplists:get_value(Key, Task) || Key <- [time, units, module, function,
+                                                   args_type, arguments, timer_type]],
     TimerType = case InTimerType of
                     <<"fixed">> ->
                         fixed;
@@ -152,6 +153,11 @@ add_task(Host, Task) ->
 
     %% Get new task identifier
     TaskId = get_new_taskid(),
+
+    Args = case ArgsType of
+               string -> [binary_to_list(Arg) || Arg <- Args1];
+               _ -> Args1
+           end,
 
     TimerRef = case TimerType of
                    interval ->
