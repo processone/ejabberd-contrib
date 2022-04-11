@@ -139,9 +139,10 @@ update_timer_ref(TaskId, NewTimerRef) ->
 
 %% Method to add new task
 add_task(Host, Task) ->
-    [TimeNum, TimeUnit, Mod, Fun, ArgsType, Args1, InTimerType] =
+    [TimeNum, TimeUnit, Mod1, Fun1, ArgsType, Args1, InTimerType, Command, Ctl] =
 	[proplists:get_value(Key, Task) || Key <- [time, units, module, function,
-                                                   args_type, arguments, timer_type]],
+                                                   args_type, arguments, timer_type,
+                                                   command, ctl]],
     TimerType = case InTimerType of
                     <<"fixed">> ->
                         fixed;
@@ -154,10 +155,9 @@ add_task(Host, Task) ->
     %% Get new task identifier
     TaskId = get_new_taskid(),
 
-    Args = case ArgsType of
-               string -> [binary_to_list(Arg) || Arg <- Args1];
-               _ -> Args1
-           end,
+    Args2 = parse_args_type(ArgsType, Args1),
+
+    {Mod, Fun, Args} = prepare_mfa(Mod1, Fun1, Args2, Command, Ctl),
 
     TimerRef = case TimerType of
                    interval ->
@@ -181,6 +181,32 @@ get_new_taskid() ->
 	'$end_of_table' -> 0;
 	Id -> Id + 1
     end.
+
+parse_args_type(string, Args) ->
+    lists:map(fun(Arg) when is_binary(Arg) -> binary_to_list(Arg);
+                 (Arg) -> Arg
+              end,
+              Args);
+parse_args_type(_, Args) ->
+    Args.
+
+parse_args_ctl(Ctl, Args2) ->
+    [[atom_to_list(Ctl) | Args2]].
+
+parse_args_command(Command, Args2) ->
+    CI = #{caller_module => ?MODULE},
+    [Command, Args2, CI].
+
+prepare_mfa(undefined, undefined, Args2, Command, undefined)
+  when Command /= undefined ->
+    {ejabberd_commands, execute_command2,
+     parse_args_command(Command, Args2)};
+prepare_mfa(undefined, undefined, Args2, undefined, Ctl)
+  when Ctl /= undefined ->
+    {ejabberd_ctl, process,
+     parse_args_ctl(Ctl, parse_args_type(string, Args2))};
+prepare_mfa(Mod1, Fun1, Args2, undefined, undefined) ->
+    {Mod1, Fun1, Args2}.
 
 %% Method to run existing task
 run_task(Mod, Fun, Args) ->
