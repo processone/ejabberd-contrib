@@ -1,90 +1,193 @@
+mod_cron - Execute scheduled tasks
+==================================
 
-	mod_cron - Execute scheduled commands
-
-	Requires: ejabberd 19.08 or higher
-	http://www.ejabberd.im/mod_cron
-	Author: Badlop
+* Requires: ejabberd 19.08 or higher
+* http://www.ejabberd.im/mod_cron
+* Author: Badlop
 
 
-This module allows advanced ejabberd administrators to schedule commands for
+This module allows advanced ejabberd administrators to schedule tasks for
 periodic and automatic execution. This module is a similar concept than the
-*nix's cron program. Obviously, the admin must know in advance which module,
-function and arguments to use, so this module is not intended for starting
-administrators.
+*nix's cron program.
 
-Each time a scheduled task finish its execution, a message is printed in the
+Each time a scheduled task finishes its execution, a message is printed in the
 ejabberd log file.
 
 
-	BASIC CONFIGURATION
-	===================
+Basic Configuration
+-------------------
 
-Add the module to your ejabberd.yml, on the modules section:
+Add the module to your `ejabberd.yml`, on the `modules` section:
+```yaml
 modules:
   mod_cron: {}
+```
 
+Then, using the `tasks` option, you can add a list of tasks.
+For each task there are options to define _when_ to run it,
+and options to define _what_ to run.
 
-	TASK SYNTAX
-	===========
+When
+----
 
-Tasks are described with those elements:
-* Time is an integer.
-* Units indicates the time unit you use. It can be: seconds, minutes, hours, days.
-* Module and * Function are the exact call you want to schedule.
-* Arguments is an array. By default strings will be converted to binaries.
-* args_type can be set to string, if the function expects strings instead of binaries
-* timer_type is one of 'fixed' or 'interval'.  Fixed timers occur at a fixed time
-  after the [minute|hour|day] e.g. every hour on the 5th minute (1:05PM, 2:05PM etc)
-  interval timers occur every interval (starting on an even unit) e.g. every 10 minutes
-  starting at 1PM, 1:10PM, 1:20PM etc.  
+Those options determine when a task is ran:
 
-  Fixed timers are the equivalent of unix cron's comma syntax e.g. "2 * * *" and interval
-  timers are the / syntax e.g. "*/5 * * *".
+* `time: integer()`
 
-  Default timer_type is interval.
+* `units: seconds | minutes | hours | days`
 
-	EXAMPLE TASKS
-	=============
+  Indicates the time unit to use.
 
-Example configuration with some tasks:
+* `timer_type: interval | fixed`
+
+  Default value is `interval`.
+  Fixed timers occur at a fixed time
+  after the [minute|hour|day] e.g. every hour on the 5th minute (1:05PM, 2:05PM etc).
+  Interval timers occur every interval (starting on an even unit) e.g. every 10 minutes
+  starting at 1PM, 1:10PM, 1:20PM etc.
+  Fixed timers are the equivalent of unix cron's comma syntax e.g. `"2 * * *"`
+  and interval timers are the `/` syntax e.g. `"*/5 * * *"`.
+
+What
+----
+
+You can define a task to run some ejabberd API (either in command or in ctl syntax),
+or any arbitrary erlang function.
+
+### Command
+
+Use the option `command` and provide `arguments` in the correct format:
+
+```yaml
+command: delete_old_mam_messages
+arguments:
+  - "all"
+  - 0
+```
+
+This requires a recent ejabberd version that includes
+[this commit](https://github.com/processone/ejabberd/commit/10481ed895016893ee9dc3fe23cd937fdc46ded6),
+and `api_permissions` configured to allow mod_cron, for example:
+
+```yaml
+api_permissions:
+  "console commands":
+    from:
+      - ejabberd_ctl
+      - mod_cron
+    who: all
+    what: "*"
+```
+
+### Ctl
+
+Use the option `ctl` and provide all `arguments` with quotes:
+
+```yaml
+ctl: delete_old_mam_messages
+arguments:
+  - "all"
+  - "0"
+```
+
+### Erlang Function
+
+Use `module`, `function`, and provide `arguments` in the correct format:
+
+```yaml
+module: ejabberd_auth
+function: try_register
+arguments:
+  - "user1"
+  - "localhost"
+  - "somepass"
+```
+
+Please note the arguments in string format will be converted to binaries.
+If the function expects strings, you can add the option `args_type: string`:
+
+```yaml
+module: mnesia
+function: backup
+args_type: string
+arguments:
+  - "/var/log/ejabberd/mnesia.backup"
+```
+
+Example Tasks
+-------------
+
+Those example tasks show how to specify arguments in the basic erlang formats:
+```yaml
 modules:
   mod_cron:
     tasks:
-      - time: 3
-        units: hours
-        module: mnesia
-        function: info
-        arguments: {}
-        timer_type: fixed
-      - time: 10
+      - time: 30
         units: seconds
-        module: ejabberd_auth
-        function: try_register
-        arguments: 
-          - "user1"
-          - "localhost"
-          - "somepass"
-        timer_type: interval
-      - time: 24
-        units: hours
-        module: mnesia
-        function: backup
-        timer_type: interval
+        module: erlang
+        function: is_integer
+        arguments:
+          - 123456
+      - time: 31
+        units: seconds
+        module: erlang
+        function: is_float
+        arguments:
+          - 123.456
+      - time: 32
+        units: seconds
+        module: erlang
+        function: is_atom
+        arguments:
+          - 'this_is_atom'
+      - time: 33
+        units: seconds
+        module: erlang
+        function: is_atom
+        arguments:
+          - this_is_atom_too
+      - time: 34
+        units: seconds
+        module: erlang
+        function: is_binary
+        arguments:
+          - "Keep this as a binary"
+      - time: 35
+        units: seconds
+        module: erlang
+        function: is_list
         args_type: string
         arguments:
-          - "/var/log/ejabberd/mnesia.backup"
+          - "Convert this as a string"
+```
 
+It is even possible to pass an argument that is a list of elements, see:
+```yaml
+modules:
+  mod_cron:
+    tasks:
+      - time: 36
+        units: seconds
+        module: io
+        function: format
+        args_type: string
+        arguments:
+          - "log message, integer: ~p, float: ~p, atom: ~p, binary: ~p~n~n"
+          - - 12345678
+            - 123.456
+            - atom_this_is
+            - "this is a binary"
+```
 
-	EJABBERD COMMANDS
-	=================
+ejabberd Commands
+-----------------
 
 This module provides two new commands that can be executed using ejabberdctl:
 * cron_list: list scheduled tasks
 * cron_del taskid: delete this task from the schedule
 
-
-	WEB ADMIN
-	=========
+Web Admin
+---------
 
 This module provides a page in the Host section of the Web Admin.
 Currently that page only allows to view the tasks scheduled for that host.
