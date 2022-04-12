@@ -182,6 +182,8 @@ get_new_taskid() ->
 	Id -> Id + 1
     end.
 
+parse_args_type(_, undefined) ->
+    [];
 parse_args_type(string, Args) ->
     lists:map(fun(Arg) when is_binary(Arg) -> binary_to_list(Arg);
                  (Arg) -> Arg
