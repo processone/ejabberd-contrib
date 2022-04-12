@@ -179,6 +179,25 @@ modules:
             - "this is a binary"
 ```
 
+If you don't need to provide arguments at all,
+you can remove `arguments`, or provide it with an empty list:
+```yaml
+modules:
+  mod_cron:
+    tasks:
+      - time: 10
+        units: seconds
+        command: connected_users
+      - time: 15
+        units: seconds
+        ctl: delete_expired_pubsub_items
+      - time: 20
+        units: seconds
+        module: mod_pubsub
+        function: delete_expired_items
+        arguments: []
+```
+
 ejabberd Commands
 -----------------
 
