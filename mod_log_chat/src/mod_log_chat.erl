@@ -15,10 +15,6 @@
 	 log_packet_send/1,
 	 log_packet_receive/1]).
 
--ifndef(LAGER).
--define(LAGER, 1).
--endif.
-
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 
