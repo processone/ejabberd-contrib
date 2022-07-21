@@ -10,7 +10,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, depends/2, mod_options/1, mod_doc/0]).
+-export([start/2, stop/1, depends/2, mod_options/1, mod_doc/0, mod_status/0]).
 
 -export([process/2]).
 
@@ -237,3 +237,36 @@ mod_options(_Host) ->
     [].
 
 mod_doc() -> #{}.
+
+mod_status() ->
+    Host = ejabberd_config:get_myname(),
+    Url = case find_handler_port_path(any, ?MODULE) of
+        [] -> undefined;
+        [{ThisTls, Port, Path} | _] ->
+            Protocol = case ThisTls of
+                           false -> <<"http">>;
+                           true -> <<"https">>
+                       end,
+            <<Protocol/binary,
+              "://",
+              Host/binary,
+              ":",
+              (integer_to_binary(Port))/binary,
+              "/",
+              (str:join(Path, <<"/">>))/binary,
+              "/">>
+    end,
+    io_lib:format("Serving MUC logs in: ~s", [binary_to_list(Url)]).
+
+find_handler_port_path(Tls, Module) ->
+    lists:filtermap(
+      fun({{Port, _, _},
+           ejabberd_http,
+           #{tls := ThisTls, request_handlers := Handlers}})
+            when (Tls == any) or (Tls == ThisTls) ->
+              case lists:keyfind(Module, 2, Handlers) of
+                  false -> false;
+                  {Path, Module} -> {true, {ThisTls, Port, Path}}
+              end;
+         (_) -> false
+      end, ets:tab2list(ejabberd_listener)).

@@ -35,6 +35,7 @@
 	 mod_opt_type/1,
 	 mod_options/1,
 	 depends/2,
+	 mod_status/0,
          mod_doc/0]).
 
 %% gen_server callbacks.
@@ -108,6 +109,11 @@ depends(_Host, _Opts) ->
 
 mod_doc() -> #{}.
 
+mod_status() ->
+    Proc = gen_mod:get_module_proc(global, ?MODULE),
+    {filename, Filename} = gen_server:call(Proc, get_filename, timer:seconds(15)),
+    io_lib:format("Logging to: ~s", [Filename]).
+
 %% -------------------------------------------------------------------
 %% gen_server callbacks.
 %% -------------------------------------------------------------------
@@ -125,6 +131,8 @@ init([_Host, Opts]) ->
     {ok, #state{filename = Filename, iodevice = IoDevice}}.
 
 -spec handle_call(_, {pid(), _}, state()) -> {noreply, state()}.
+handle_call(get_filename, From, State) ->
+    {reply, {filename, State#state.filename}, State};
 handle_call(_Request, _From, State) ->
     {noreply, State}.
 

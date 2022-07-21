@@ -34,6 +34,7 @@
 	 depends/2,
 	 mod_doc/0,
 	 mod_opt_type/1,
+	 mod_status/0,
 	 mod_options/1]).
 %% Hooks:
 -export([reopen_log/0,
@@ -79,6 +80,9 @@ loop(Config) ->
 	    file:close(Config#config.iodevice),
 	    {ok, IOD} = file:open(Config#config.filename, ?FILE_OPTS),
 	    loop(Config#config{iodevice = IOD});
+	{get_filename, Pid} ->
+	    Pid ! {filename, Config#config.filename},
+	    loop(Config);
 	stop ->
 	    file:close(Config#config.iodevice),
 	    exit(normal)
@@ -119,6 +123,11 @@ mod_options(_Host) ->
     [{filename, auto}].
 
 mod_doc() -> #{}.
+
+mod_status() ->
+    ?PROCNAME ! {get_filename, self()},
+    Filename = receive {filename, F} -> F end,
+    io_lib:format("Logging to: ~s", [binary_to_list(Filename)]).
 
 %% ---
 %% Internal functions

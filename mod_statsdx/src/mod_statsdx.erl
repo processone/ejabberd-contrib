@@ -13,7 +13,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, depends/2, mod_opt_type/1, mod_options/1, mod_doc/0]).
+-export([start/2, stop/1, depends/2, mod_opt_type/1, mod_options/1, mod_doc/0, mod_status/0]).
 -export([loop/1, get_statistic/2,
 	 pre_uninstall/0,
 	 received_response/3,
@@ -99,6 +99,9 @@ mod_options(_Host) ->
      {sessionlog, "/tmp/ejabberd_logsession_@HOST@.log"}].
 
 mod_doc() -> #{}.
+
+mod_status() ->
+    "Pages 'Statistics Dx' available in WebAdmin, your Virtual Hosts and your Nodes".
 
 %%%==================================
 %%%% Stats Server

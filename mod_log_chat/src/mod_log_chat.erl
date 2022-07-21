@@ -10,7 +10,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, depends/2, mod_opt_type/1, mod_options/1, mod_doc/0]).
+-export([start/2, stop/1, depends/2, mod_opt_type/1, mod_options/1, mod_doc/0, mod_status/0]).
 -export([init/1,
 	 log_packet_send/1,
 	 log_packet_receive/1]).
@@ -289,3 +289,14 @@ mod_options(_Host) ->
      {format, text}].
 
 mod_doc() -> #{}.
+
+mod_status() ->
+    Host = ejabberd_config:get_myname(),
+    gen_mod:get_module_proc(Host, ?PROCNAME) ! {call, self(), get_config},
+    Config = receive
+	       {config, Result} ->
+		   Result
+	   end,
+    Format = Config#config.format,
+    Path = Config#config.path,
+    io_lib:format("Logging with format '~p' to path: ~s", [Format, Path]).

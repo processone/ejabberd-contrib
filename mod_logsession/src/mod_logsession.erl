@@ -29,7 +29,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, depends/2, mod_options/1, mod_opt_type/1, mod_doc/0]).
+-export([start/2, stop/1, depends/2, mod_options/1, mod_opt_type/1, mod_doc/0, mod_status/0]).
 -export([loop/3,
 	 reopen_log/1,
 	 failed_auth/3,
@@ -80,6 +80,16 @@ mod_options(_Host) ->
 
 mod_doc() -> #{}.
 
+mod_status() ->
+    Host = ejabberd_config:get_myname(),
+    Pid = get_process_name(Host),
+    Pid ! {get_filename, self()},
+    Filename = receive
+	       {filename, F} ->
+		   F
+	   end,
+    io_lib:format("Logging ~p to: ~s", [binary_to_list(Host), Filename]).
+
 %%%----------------------------------------------------------------------
 %%% REQUEST HANDLERS
 %%%----------------------------------------------------------------------
@@ -116,6 +126,9 @@ loop(Filename, File, Host) ->
 	reopenlog ->
 	    File2 = reopen_file(File, Filename),
 	    loop(Filename, File2, Host);
+        {get_filename, Pid} ->
+	    Pid ! {filename, Filename},
+	    loop(Filename, File, Host);
 	stop ->
 	    close_file(File)
     end.
