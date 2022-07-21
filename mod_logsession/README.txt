@@ -21,9 +21,11 @@ Note: to log the failed authentication attempts, you need to patch ejabberd.
 	-----------------------
 
 sessionlog:
-  Define the name of log files.
-  The keyword @HOST@ will be substituted with the name of each vhost.
-  Default value: "/tmp/ejabberd_logsession_@HOST@.log"
+  Define the name of log files, or set to 'auto'.
+  The keyword @HOST@ is substituted with the name of the vhost.
+  If set to 'auto', it will store in the ejabberd log path
+  with the filename "session_@HOST@.log"
+  Default value: auto
 
 
 	EXAMPLE CONFIGURATION

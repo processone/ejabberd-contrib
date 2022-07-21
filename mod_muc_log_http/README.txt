@@ -24,10 +24,10 @@ on mod_muc_log.
 
 listen:
   -
-    port: 5280
+    port: 5282
     module: ejabberd_http
     request_handlers:
-      "/pub/muclogs": mod_muc_log_http
+      /muclogs: mod_muc_log_http
 
 modules:
   mod_muc_log:
@@ -39,4 +39,4 @@ modules:
 	=====
 
 With the example options, open your web browser at:
-http://server:5280/pub/muclogs/
+http://server:5282/muclogs/

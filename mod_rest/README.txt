@@ -28,11 +28,11 @@ modules:
 
 To enable the HTTP request handler in the listen section:
 listen:
-  - 
+  -
     port: 5285
     module: ejabberd_http
     request_handlers:
-       "/rest": mod_rest
+       /rest: mod_rest
 
 With that configuration, you can send HTTP POST requests to the URL:
   http://localhost:5285/rest

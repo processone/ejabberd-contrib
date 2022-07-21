@@ -28,3 +28,7 @@ of your ejabberd.yml file:
 
   mod_message_log:
     filename: "/path/to/ejabberd-message.log"
+
+If the filename option is set to 'auto', it will be set to
+the default ejabberd log path, with the file name "message.log".
+The filename option takes as default value 'auto'.

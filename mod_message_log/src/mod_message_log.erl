@@ -53,11 +53,10 @@
 
 -include_lib("xmpp/include/xmpp.hrl").
 
--define(DEFAULT_FILENAME, <<"message.log">>).
 -define(FILE_MODES, [append, raw]).
 
--record(state, {filename = ?DEFAULT_FILENAME :: binary(),
-		iodevice                     :: io:device()}).
+-record(state, {filename :: binary(),
+		iodevice :: io:device()}).
 
 -type direction() :: incoming | outgoing | offline.
 -type state() :: #state{}.
@@ -97,11 +96,11 @@ stop(Host) ->
 
 -spec mod_opt_type(atom()) -> fun((term()) -> term()).
 mod_opt_type(filename) ->
-    fun iolist_to_binary/1.
+    econf:either(auto, econf:file(write)).
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
-    [{filename, ?DEFAULT_FILENAME}].
+    [{filename, auto}].
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->
@@ -116,7 +115,12 @@ mod_doc() -> #{}.
 init([_Host, Opts]) ->
     process_flag(trap_exit, true),
     ejabberd_hooks:add(reopen_log_hook, ?MODULE, reopen_log, 42),
-    Filename = gen_mod:get_opt(filename, Opts),
+    Filename = case gen_mod:get_opt(filename, Opts) of
+                   auto ->
+                       filename:join(filename:dirname(ejabberd_logger:get_log_path()),
+                                     "message.log");
+                   FN -> FN
+               end,
     {ok, IoDevice} = file:open(Filename, ?FILE_MODES),
     {ok, #state{filename = Filename, iodevice = IoDevice}}.
 

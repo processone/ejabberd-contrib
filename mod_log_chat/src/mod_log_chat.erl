@@ -19,10 +19,8 @@
 -include_lib("xmpp/include/xmpp.hrl").
 
 -define(PROCNAME, ?MODULE).
--define(DEFAULT_PATH, ".").
--define(DEFAULT_FORMAT, text).
 
--record(config, {path=?DEFAULT_PATH, format=?DEFAULT_FORMAT}).
+-record(config, {path, format}).
 
 start(Host, Opts) ->
     ?DEBUG(" ~p  ~p~n", [Host, Opts]),
@@ -44,7 +42,12 @@ start_vhs(Host, [{_VHost, _Opts}| Tail]) ->
     ?DEBUG("start_vhs ~p  ~p~n", [Host, [{_VHost, _Opts}| Tail]]),
     start_vhs(Host, Tail).
 start_vh(Host, Opts) ->
-    Path = gen_mod:get_opt(path, Opts),
+    Path = case gen_mod:get_opt(path, Opts) of
+               auto ->
+                   filename:dirname(ejabberd_logger:get_log_path());
+               PP ->
+                   PP
+           end,
     Format = gen_mod:get_opt(format, Opts),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE, log_packet_send, 55),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, log_packet_receive, 55),
@@ -276,13 +279,13 @@ depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(host_config) -> econf:list(econf:any());
-mod_opt_type(path) -> econf:directory(write);
+mod_opt_type(path) -> econf:either(auto, econf:directory(write));
 mod_opt_type(format) ->
     fun (A) when is_atom(A) -> A end.
 
 mod_options(_Host) ->
     [{host_config, []},
-     {path, ?DEFAULT_PATH},
-     {format, ?DEFAULT_FORMAT}].
+     {path, auto},
+     {format, text}].
 
 mod_doc() -> #{}.

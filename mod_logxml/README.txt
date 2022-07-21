@@ -32,7 +32,8 @@ orientation:
     Default value: [send, revc]
 logdir: 
     Base filename, including absolute path
-    Default value: "/tmp/jabberlogs/"
+    If set to 'auto', it uses the ejabberd log path.
+    Default value: auto
 show_ip: 
     If the IP address of the local user should be logged to file.
     Default value: false

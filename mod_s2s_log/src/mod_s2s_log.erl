@@ -43,27 +43,25 @@
 -include("logger.hrl").
 
 -define(PROCNAME, ?MODULE).
--define(DEFAULT_FILENAME, <<"s2s.log">>).
 -define(FILE_OPTS, [append,raw]).
 
--record(config, {filename=?DEFAULT_FILENAME, iodevice}).
+-record(config, {filename, iodevice}).
 
 %% For now we only support one log file for all vhosts.
 start(Host, Opts) ->
     case whereis(?PROCNAME) of
 	undefined ->
-	    Filename = gen_mod:get_opt(filename, Opts),
-	    case filelib:ensure_dir(Filename) of
-		ok ->
+	    FilenameStr  = case gen_mod:get_opt(filename, Opts) of
+                 auto ->
+                    filename:join(filename:dirname(ejabberd_logger:get_log_path()),
+                                     "s2s.log");
+                           FN -> FN
+             end,
+            Filename = list_to_binary(FilenameStr),
 		    register(?PROCNAME,
 			     spawn(?MODULE, init, [#config{filename=Filename}])),
 		    ejabberd_hooks:add(reopen_log_hook, ?MODULE, reopen_log, 55),
 		    s2s_hooks(Host, add);
-		{error, Why} = Err ->
-		    ?ERROR_MSG("failed to create directories along the path ~s: ~s",
-			       [Filename, file:format_error(Why)]),
-		    Err
-	    end;
 	_ ->
 	    s2s_hooks(Host, add)
     end.
@@ -115,10 +113,10 @@ depends(_, _) ->
     [].
 
 mod_opt_type(filename) ->
-    fun iolist_to_binary/1.
+    econf:either(auto, econf:file(write)).
 
 mod_options(_Host) ->
-    [{filename, ?DEFAULT_FILENAME}].
+    [{filename, auto}].
 
 mod_doc() -> #{}.
 

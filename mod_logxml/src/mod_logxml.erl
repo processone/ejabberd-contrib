@@ -24,8 +24,10 @@
 %% -------------------
 
 start(Host, Opts) ->
-    Logdir = gen_mod:get_opt(logdir, Opts),
-
+    Logdir = case gen_mod:get_opt(logdir, Opts) of
+                  auto -> filename:dirname(ejabberd_logger:get_log_path());
+                 LD -> LD
+             end,
     Rd = case gen_mod:get_opt(rotate_days, Opts) of
 	     0 -> no;
 	     Rd1 -> Rd1
@@ -278,7 +280,7 @@ mod_opt_type(direction) ->
 mod_opt_type(orientation) ->
     econf:list(econf:enum([send, recv]));
 mod_opt_type(logdir) ->
-    econf:directory();
+    econf:either(auto, econf:directory(write));
 mod_opt_type(show_ip) ->
     econf:bool();
 mod_opt_type(rotate_days) ->
@@ -294,7 +296,7 @@ mod_options(_Host) ->
     [{stanza, [iq, message, presence, other]},
      {direction, [internal, vhosts, external]},
      {orientation, [send, recv]},
-     {logdir, "/tmp/jabberlogs/"},
+     {logdir, auto},
      {show_ip, false},
      {rotate_days, 1},
      {rotate_megs, 10},

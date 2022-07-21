@@ -49,9 +49,13 @@ start(Host, Opts) ->
     ejabberd_hooks:add(forbidden_session_hook, Host, ?MODULE, forbidden, 50),
     ejabberd_hooks:add(c2s_auth_result, Host, ?MODULE, failed_auth, 50),
     ejabberd_commands:register_commands(commands()),
-    Filename1 = gen_mod:get_opt(
-		  sessionlog, 
-		  Opts),
+    Filename1 = case gen_mod:get_opt(sessionlog, Opts) of
+                    auto ->
+                        filename:join(filename:dirname(ejabberd_logger:get_log_path()),
+                                      "session_@HOST@.log");
+                    SL ->
+                        SL
+                end,
     Filename = replace_host(Host, Filename1),
     File = open_file(Filename),
     register(get_process_name(Host), spawn(?MODULE, loop, [Filename, File, Host])),
@@ -69,10 +73,10 @@ depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(sessionlog) ->
-    econf:string().
+    econf:either(auto, econf:string()).
 
 mod_options(_Host) ->
-    [{sessionlog, "/tmp/ejabberd_logsession_@HOST@.log"}].
+    [{sessionlog, auto}].
 
 mod_doc() -> #{}.
 
