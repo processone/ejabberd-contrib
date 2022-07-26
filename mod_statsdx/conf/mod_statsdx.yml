@@ -1,3 +1,4 @@
-#modules:
-#  mod_statsdx:
+modules:
+  mod_statsdx:
+    hooks: false
 #    hooks: true

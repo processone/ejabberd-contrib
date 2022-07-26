@@ -1,3 +1,4 @@
-#modules:
-#  mod_logsession:
+modules:
+  mod_logsession:
+    sessionlog: auto
 #    sessionlog: "/var/log/ejabberd/session_@HOST@.log"

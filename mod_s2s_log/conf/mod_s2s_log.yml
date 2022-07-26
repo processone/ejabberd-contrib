@@ -1,3 +1,4 @@
-#modules:
-#  mod_s2s_log:
+modules:
+  mod_s2s_log:
+    filename: auto
 #    filename: "/var/log/ejabberd/s2s.log"

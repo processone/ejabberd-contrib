@@ -1,8 +1,9 @@
 # edit this file to fit your needs
 
 # log all vhosts chats in /var/log/ejabberd/chat directory in html
-#modules:
-#  mod_log_chat:
+modules:
+  mod_log_chat:
+    path: auto
 #    path: /var/log/ejabberd/chat
 #    format: html
 

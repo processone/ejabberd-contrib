@@ -1,3 +1,4 @@
-#modules:
-#  mod_message_log:
+modules:
+  mod_message_log:
+    filename: auto
 #    filename: "/var/log/ejabberd/message.log"
