@@ -51,7 +51,7 @@ sheet_body(PrevState) ->
                 Host,
                 length(ejabberd_sm:get_user_resources(Username, Host)),
                 length(mod_roster:get_roster(Username, Host)),
-                mod_offline:get_queue_length(Username, Host),
+                mod_offline:count_offline_messages(Username, Host),
                 get_last_activity(Username, Host)
             ]
         end

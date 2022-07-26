@@ -131,7 +131,7 @@ init([_Host, Opts]) ->
     {ok, #state{filename = Filename, iodevice = IoDevice}}.
 
 -spec handle_call(_, {pid(), _}, state()) -> {noreply, state()}.
-handle_call(get_filename, From, State) ->
+handle_call(get_filename, _From, State) ->
     {reply, {filename, State#state.filename}, State};
 handle_call(_Request, _From, State) ->
     {noreply, State}.

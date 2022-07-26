@@ -136,7 +136,7 @@ get_password(_, _) ->
     {cache, error}.
 
 -spec get_password_s(binary(), binary()) -> {cache, error}.
-get_password_s(User, Server) ->
+get_password_s(_User, _Server) ->
     {cache, error}.
 
 -spec user_exists(binary(), binary()) -> {ets_cache:tag(), boolean()}.
@@ -161,7 +161,7 @@ remove_user(LUser, LServer, Password) ->
                     {error, not_allowed};
                 {ok, true} ->
                     remove_user_req(LUser, LServer, <<"">>, <<"remove_user">>);
-                {error, Error} ->
+                {error, _Error} ->
                     {error, db_failure}
             end
     end.
@@ -195,9 +195,9 @@ make_req(Method, Path, LUser, LServer, Password) ->
                      false -> <<"/">>
                  end,
     BasicAuth64 = base64:encode(BasicAuth),
-    LUserE = list_to_binary(http_uri:encode(binary_to_list(LUser))),
-    LServerE = list_to_binary(http_uri:encode(binary_to_list(LServer))),
-    PasswordE = list_to_binary(http_uri:encode(binary_to_list(Password))),
+    LUserE = list_to_binary(misc:uri_parse(binary_to_list(LUser))),
+    LServerE = list_to_binary(misc:uri_parse(binary_to_list(LServer))),
+    PasswordE = list_to_binary(misc:uri_parse(binary_to_list(Password))),
     Query = <<"user=", LUserE/binary, "&server=", LServerE/binary, "&pass=", PasswordE/binary>>,
     Header = [{<<"Authorization">>, <<"Basic ", BasicAuth64/binary>>}],
     ContentType = {<<"Content-Type">>, <<"application/x-www-form-urlencoded">>},

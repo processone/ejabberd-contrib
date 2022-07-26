@@ -606,7 +606,7 @@ get_proc_name(Host) ->
 
 -spec get_spam_filter_hosts() -> [binary()].
 get_spam_filter_hosts() ->
-    [H || H <- ejabberd_config:get_myhosts(), gen_mod:is_loaded(H, ?MODULE)].
+    [H || H <- ejabberd_option:hosts(), gen_mod:is_loaded(H, ?MODULE)].
 
 -spec expand_host(binary() | none, binary()) -> binary() | none.
 expand_host(none, _Host) ->

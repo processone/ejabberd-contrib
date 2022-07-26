@@ -133,7 +133,7 @@ report_error(ReportArgs) ->
     ok = error_logger:error_report([ mod_post_log_cannot_post | ReportArgs ]).
 
 format_jid(JID) ->
-    binary_to_list(jid:to_string(JID)).
+    binary_to_list(jid:encode(JID)).
 
 %% Erlang now()-style timestamps are in UTC by definition, and we are
 %% assuming ISO 8601 dates should be printed in UTC as well, so no

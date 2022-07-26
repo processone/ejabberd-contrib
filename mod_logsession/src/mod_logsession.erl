@@ -64,6 +64,7 @@ start(Host, Opts) ->
 stop(Host) ->
     ejabberd_hooks:delete(reopen_log_hook, Host, ?MODULE, reopen_log, 50),
     ejabberd_hooks:delete(forbidden_session_hook, Host, ?MODULE, forbidden, 50),
+    ejabberd_hooks:delete(c2s_auth_result, Host, ?MODULE, failed_auth, 50),
     ejabberd_commands:unregister_commands(commands()),
     Proc = get_process_name(Host),
     exit(whereis(Proc), stop),

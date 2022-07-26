@@ -23,7 +23,7 @@
 
 -define(GLOBAL_HOOKS, [component_connected, component_disconnected]).
 
--export([start/2, stop/1, mod_opt_type/1,
+-export([start/2, stop/1, mod_opt_type/1, mod_options/1,
    depends/2, mod_doc/0, udp_loop_start/1, push/2]).
 
 -export([offline_message_hook/3,
@@ -50,9 +50,9 @@ start(Host, Opts) ->
      || Hook <- ?HOOKS],
     [ejabberd_hooks:add(Hook, ?MODULE, Hook, 18)
      || Hook <- ?GLOBAL_HOOKS],
-     StatsDH = gen_mod:get_opt(statsdhost, Opts, fun(X) -> X end, "localhost"),
+     StatsDH = gen_mod:get_opt(statsdhost, Opts),
      {ok, StatsDHost} = getaddrs(StatsDH),
-     StatsDPort = gen_mod:get_opt(statsdport, Opts, fun(X) -> X end, 8125),
+     StatsDPort = gen_mod:get_opt(statsdport, Opts),
      register(?PROCNAME, spawn(?MODULE, udp_loop_start, [#state{host = StatsDHost, port = StatsDPort}])),
     ok.
 
@@ -113,7 +113,7 @@ push(Host, Probe) ->
     whereis(?PROCNAME) ! {send, Payload}.
 
 encode_metrics(Host, Probe) ->
-    [_, NodeId] = str:tokens(jlib:atom_to_binary(node()), <<"@">>),
+    [_, NodeId] = str:tokens(misc:atom_to_binary(node()), <<"@">>),
     [Node | _] = str:tokens(NodeId, <<".">>),
     Data = case Probe of
     {Key, Val} ->
@@ -198,7 +198,13 @@ timestamp() ->
 %% mod Options
 %%====================================================================
 
-mod_opt_type(statsdhost) -> fun(X) -> X end;
-mod_opt_type(statsdport) -> fun(X) when is_integer(X) -> X end;
+mod_opt_type(statsdhost) ->
+    econf:string();
+mod_opt_type(statsdport) ->
+    econf:pos_int();
 mod_opt_type(_) ->
     [statsdhost, statsdport].
+
+mod_options(_Host) ->
+    [{statsdhost, "localhost"},
+     {statsdport, 8125}].

@@ -61,7 +61,7 @@
 
 -spec salted_password(binary(), binary(), non_neg_integer()) -> binary().
 salted_password(Password, Salt, IterationCount) ->
-    hi(jlib:resourceprep(Password), Salt, IterationCount).
+    hi(jid:resourceprep(Password), Salt, IterationCount).
 
 -spec client_key(binary()) -> binary().
 client_key(SaltedPassword) ->
@@ -106,7 +106,7 @@ hi_round(Password, UPrev, IterationCount) ->
 
 
 enabled(Host) ->
-    case ejabberd_config:get_option({auth_opts, Host}, fun(V) -> V end) of
+    case ejabberd_config:get_option({auth_opts, Host}) of
         undefined ->
             false;
         AuthOpts ->
@@ -116,7 +116,7 @@ enabled(Host) ->
 iterations() -> ?SCRAM_DEFAULT_ITERATION_COUNT.
 
 iterations(Host) ->
-    case ejabberd_config:get_option({auth_opts, Host}, fun(V) -> V end) of
+    case ejabberd_config:get_option({auth_opts, Host}) of
         undefined ->
             iterations();
         AuthOpts ->
@@ -179,7 +179,7 @@ scram_to_tuple(Scram) ->
 
 -spec check_digest(scram(), binary(), fun(), binary()) -> boolean().
 check_digest(#scram{storedkey = StoredKey}, Digest, DigestGen, Password) ->
-    Passwd = jlib:decode_base64(StoredKey),
+    Passwd = base64:decode(StoredKey),
     DigRes = if Digest /= <<"">> ->
 	      Digest == DigestGen(Passwd);
 	      true -> false
@@ -188,11 +188,5 @@ check_digest(#scram{storedkey = StoredKey}, Digest, DigestGen, Password) ->
        true -> (Passwd == Password) and (Password /= <<"">>)
     end.
 
-
--ifdef(no_crypto_hmac).
 crypto_hmac(sha, Key, Data) ->
-    crypto:sha_mac(Key, Data).
--else.
-crypto_hmac(sha, Key, Data) ->
-    crypto:hmac(sha, Key, Data).
--endif.
+    misc:crypto_hmac(sha, Key, Data).
