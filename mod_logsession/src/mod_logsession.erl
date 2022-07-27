@@ -31,7 +31,7 @@
 
 -export([start/2, stop/1, depends/2, mod_options/1, mod_opt_type/1, mod_doc/0, mod_status/0]).
 -export([loop/3,
-	 reopen_log/1,
+	 reopen_log/0,
 	 failed_auth/3,
 	 forbidden/1]).
 
@@ -95,8 +95,11 @@ mod_status() ->
 %%% REQUEST HANDLERS
 %%%----------------------------------------------------------------------
 
-reopen_log(Host) ->
-    get_process_name(Host) ! reopenlog.
+reopen_log() ->
+    lists:foreach(
+      fun(Host) ->
+              gen_server:cast(get_process_name(Host), reopenlog)
+      end, ejabberd_option:hosts()).
 
 forbidden(JID) ->
     Host = JID#jid.lserver,
@@ -110,9 +113,9 @@ failed_auth(#{lserver := Host, ip := IPPT} = State, {false, Reason}, U) ->
 
 commands() ->
     [#ejabberd_commands{name = reopen_seslog, tags = [logs, server],
-			desc = "Reopen mod_logsession log file",
+			desc = "Reopen mod_logsession log files",
 			module = ?MODULE, function = reopen_log,
-			args = [{host, string}],
+			args = [],
 			result = {res, rescode}}].
 
 %%%----------------------------------------------------------------------
