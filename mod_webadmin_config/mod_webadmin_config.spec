@@ -1,0 +1,5 @@
+author: "Badlop <badlop at process-one.net>"
+category: "admin"
+summary: "Show configuration in Web Admin"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"
