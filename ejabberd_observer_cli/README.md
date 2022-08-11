@@ -1,4 +1,5 @@
-# ejabberd observer_cli plugins
+ejabberd observer_cli plugins
+=============================
 
 [observer_cli][oc] is an erlang tool to
 visualize Erlang node statistics on the command line.

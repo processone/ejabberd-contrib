@@ -1,26 +1,25 @@
+mod_filter - Flexible Filtering by Server Policy
+================================================
 
-	mod_filter - Flexible Filtering by Server Policy
-
-	Author: Magnus Henoch <henoch@dtek.chalmers.se>
-	Copyright (C) 2005 Magnus Henoch
-
+* Author: Magnus Henoch <henoch@dtek.chalmers.se>
+* Copyright (C) 2005 Magnus Henoch
 
 
 This module allows the admin to specify packet filtering rules using ACL and ACCESS.
 
 
-
-	EJABBERD PATCH
-	==============
+ejabberd Patch
+--------------
 
 Since ejabberd 19.08, it is necessary to apply a small patch to ejabberd
-source code in order to use complex access_rules configurations, like the
+source code in order to use complex `access_rules` configurations, like the
 ones shown in examples 1, 2, 3, 4...
 
 So, apply this patch your ejabberd source code.
 As you can see, it only adds a line.
 Then recompile ejabberd, reinstall and restart it:
 
+```diff
 diff --git a/src/acl.erl b/src/acl.erl
 index d13c05601..c2a72fd9f 100644
 --- a/src/acl.erl
@@ -33,20 +32,24 @@ index d13c05601..c2a72fd9f 100644
  	    deny => access_validator()},
  	  []))).
  
--- 
+--
+```
 
 
-	CONFIGURATION
-	=============
+Configuration
+-------------
 
 To use this module, follow the general build instructions.
 You can modify the default module configuration file like this:
 
 To enable the module:
+```yaml
 modules:
   mod_filter: {}
+```
 
 And you must also add the default access rules:
+```yaml
 access_rules:
   mod_filter:
     - allow: all
@@ -56,15 +59,17 @@ access_rules:
     - allow: all
   mod_filter_iq:
     - allow: all
+```
 
 The configuration of rules is done using ejabberd's ACL and ACCESS,
 so you should also study the corresponding section on ejabberd guide.
 You can find here several examples that may help you to understand how it works.
 
 
-	EXAMPLE 1
-	=========
+Example 1
+---------
 
+```yaml
 access_rules:
   mod_filter_presence:
     - allow: all
@@ -85,15 +90,17 @@ access_rules:
   restrict_foreign:
     - allow: admin
     - deny: all
+```
 
 
-	EXAMPLE 2
-	=========
+Example 2
+---------
 
-On this example, the users of a private vhost (example3.org) can only chat with themselves,
+On this example, the users of a private vhost (`example3.org`) can only chat with themselves,
 so that particular vhost will have no connection to the exterior. The other vhosts on the
 server are completely unrestricted. The administrators are also unrestricted.
 
+```yaml
 ## This ejabberd server has three virtual hosts
 hosts:
   - "localhost"
@@ -131,15 +138,16 @@ access_rules:
     - allow: admin
     - deny: ex3server
     - allow: all
+```
 
 
-	EXAMPLE 4
-	=========
-
+Example 4
+---------
 
 This server has two virtual hosts, one with anonymous users. The anonymous users
 cannot send or receive presence stanzas from outside their vhost.
 
+```yaml
 hosts:
   - "localhost"
   - "anon.localhost.org"
@@ -167,4 +175,4 @@ access_rules:
     - allow: all
   mod_filter_iq:
     - allow: all
-
+```

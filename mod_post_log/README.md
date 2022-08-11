@@ -1,15 +1,16 @@
-# mod_post_log - Logs messages to an HTTP API
+mod_post_log - Logs messages to an HTTP API
+===========================================
 
-*Homepage*: https://github.com/processone/ejabberd-contrib/tree/master/mod_post_log
-*Author*: Tim Stewart, Mojo Lingo LLC
-*Requirements*: ejabberd 14.07 or later
+* Author: Tim Stewart, Mojo Lingo LLC
+* Requirements: ejabberd 14.07 or later
 
 This module implements logging of all messages sent (chat and groupchat) via an HTTP API.
 
 
-## CONFIGURATION
+Configuration
+-------------
 
-Add the module to your ejabberd.yml, in the modules section:
+Add the module to your `ejabberd.yml`, in the modules section:
 
 ```yaml
 modules:
@@ -19,7 +20,8 @@ modules:
   ...
 ```
 
-## API example
+API Example
+-----------
 
 ```
 POST /messages HTTP/1.0

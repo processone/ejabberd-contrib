@@ -8,7 +8,7 @@ mod_cron - Execute scheduled tasks
 
 This module allows advanced ejabberd administrators to schedule tasks for
 periodic and automatic execution. This module is a similar concept than the
-*nix's cron program.
+Unix's cron program.
 
 Each time a scheduled task finishes its execution, a message is printed in the
 ejabberd log file.
