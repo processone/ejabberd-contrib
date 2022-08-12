@@ -11,8 +11,8 @@ Description
 
 This module sniffs all the XMPP traffic send and received by ejabberd,
 both internally and externally transmitted. It logs the XMPP packets
-to a XML formatted file. It's posible to filter transmitted packets 
-by orientation, stanza and direction. It's possible to configure the 
+to a XML formatted file. It's posible to filter transmitted packets
+by orientation, stanza and direction. It's possible to configure the
 file rotation rules and intervals.
 
 This module reuses code from `mod_log_forensic`, `mod_stats2file`, `mod_muc_log`.
@@ -56,8 +56,6 @@ Configuration
 
 Example Configuration
 ---------------------
-
-In `ejabberd.yml`, in the modules section, add the module. For example:
 
 ```yaml
 modules:

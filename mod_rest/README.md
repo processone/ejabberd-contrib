@@ -17,6 +17,28 @@ This module can also be used as a frontend to execute ejabberd commands.
 Configuration
 -------------
 
+Configurable options:
+
+- `allowed_ips`: IP addresses that can use the rest service.
+  Notice that the IP address is checked after the connection is established.
+  If you want to restrict the IP address that listens connections, and
+  only allow a certain IP to be able to connect to the port, then the
+  option `allowed_ips` is not useful to you: you better define the
+  listening IP address in the ejabberd listeners (see the ejabberd Guide).
+
+- `allowed_destinations`: Allowed destination Jabber ID addresses in the stanza.
+
+- `allowed_stanza_types`: Allowed stanza types of the posted stanza.
+
+- `access_commands`: Access restrictions to execute ejabberd commands.
+  This option is similar to the option `ejabberdctl_access_commands` that 
+  is documented in the ejabberd Guide.
+  There is more information about AccessCommands in the ejabberd Guide.
+
+
+Example Configuration
+---------------------
+
 You can modify the default module configuration file like this:
 
 To enable the module:
@@ -40,27 +62,9 @@ listen:
 With that configuration, you can send HTTP POST requests to the URL:
 `http://localhost:5285/rest`
 
-Configurable options:
 
-- `allowed_ips`: IP addresses that can use the rest service.
-  Notice that the IP address is checked after the connection is established.
-  If you want to restrict the IP address that listens connections, and
-  only allow a certain IP to be able to connect to the port, then the
-  option `allowed_ips` is not useful to you: you better define the
-  listening IP address in the ejabberd listeners (see the ejabberd Guide).
-
-- `allowed_destinations`: Allowed destination Jabber ID addresses in the stanza.
-
-- `allowed_stanza_types`: Allowed stanza types of the posted stanza.
-
-- `access_commands`: Access restrictions to execute ejabberd commands.
-  This option is similar to the option `ejabberdctl_access_commands` that 
-  is documented in the ejabberd Guide.
-  There is more information about AccessCommands in the ejabberd Guide.
-
-
-Example Configuration
----------------------
+Example Access Configuration
+----------------------------
 
 ```yaml
 acl:

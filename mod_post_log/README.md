@@ -10,15 +10,40 @@ This module implements logging of all messages sent (chat and groupchat) via an 
 Configuration
 -------------
 
-Add the module to your `ejabberd.yml`, in the modules section:
+- `url`:
+  URL where the HTTP POSTs are to be sent.
+
+- `ts_header`:
+  Default value: `"X-Message-Timestamp"`
+
+- `from_header`:
+  Default value: `"X-Message-From"`
+
+- `to_header`:
+  Default value: `"X-Message-To"`
+
+- `headers`:
+  Default value: `[]`
+
+- `content_type`:
+  Default value: `"text/xml"`
+
+- `http_options`:
+  Default value: `[]`
+
+- `req_options`:
+  Default value: `[]`
+
+
+Example Configuration
+---------------------
 
 ```yaml
 modules:
-  ...
   mod_post_log:
     url: "http://foo.bar.com/messages"
-  ...
 ```
+
 
 API Example
 -----------

@@ -22,7 +22,6 @@ following:
 
 ```yaml
 modules:
-  # [...]
   mod_default_contacts:
     contacts:
       -

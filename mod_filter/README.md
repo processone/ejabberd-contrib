@@ -39,7 +39,6 @@ index d13c05601..c2a72fd9f 100644
 Configuration
 -------------
 
-To use this module, follow the general build instructions.
 You can modify the default module configuration file like this:
 
 To enable the module:

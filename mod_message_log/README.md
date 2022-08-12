@@ -27,15 +27,19 @@ ejabberdctl reopen_log
 Configuration
 -------------
 
-In order to use this module, add the following lines to the modules section
-of your ejabberd.yml file:
+- `filename`
 
-```
+  Define the filename and path to store the log.
+  If the filename option is set to `auto`, it will be set to
+  the default ejabberd log path, with the file name `"message.log"`.
+  The filename option takes as default value `auto`.
+
+
+Example Configuration
+---------------------
+
+```yaml
 modules:
   mod_message_log:
     filename: "/path/to/ejabberd-message.log"
 ```
-
-If the filename option is set to `auto`, it will be set to
-the default ejabberd log path, with the file name `"message.log"`.
-The filename option takes as default value `auto`.

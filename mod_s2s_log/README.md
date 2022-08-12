@@ -5,7 +5,7 @@ mod_s2s_log - Log all s2s connections in a file
 This module can be used to keep track of other XMPP servers your server has
 been connected with.
 
-You can use it by adding the following lines `ejabberd.yml`:
+Example configuration:
 ```yaml
 modules:
   mod_s2s_log:

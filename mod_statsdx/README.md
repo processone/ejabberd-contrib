@@ -13,14 +13,9 @@ Web Admin and two ejabberd commands to view the information.
 Configuration
 -------------
 
-Enable the module in ejabberd.yml for example with a basic configuration:
-```yaml
-modules:
-  mod_statsdx: {}
-```
-
 Configurable options:
-- `hooks`:
+
+- `hooks`
 
   Set to `true` to enable hooks and related statistics.
   This option by default `false` because it is expected to
@@ -30,6 +25,14 @@ Configurable options:
 
 Example Configuration
 ---------------------
+
+To start using the module, simply enable it:
+```yaml
+modules:
+  mod_statsdx: {}
+```
+
+To enable the `hooks` option:
 
 ```yaml
 modules:
@@ -64,12 +67,6 @@ Configuration
 
 This module requires `mod_statsdx`.
 
-Enable the module in `ejabberd.yml` for example with a basic configuration:
-```yaml
-modules:
-  mod_stats2file: {}
-```
-
 Configurable options:
 - `interval`: Time between updates, in minutes (default: `5`)
 - `type`: Type of output. Allowed values: `html`, `txt`, `dat` (default: `html`)
@@ -81,6 +78,13 @@ Configurable options:
 Example Configuration
 ---------------------
 
+The module can be simply enabled, accepting the default options configuration:
+```yaml
+modules:
+  mod_stats2file: {}
+```
+
+Or set some options:
 ```yaml
 modules:
   mod_stats2file:

@@ -59,10 +59,10 @@ so this module is only recommended for experienced ejabberd and Erlang/OTP
 administrators.
 
 
-Basic Configuration
--------------------
+Configuration
+-------------
 
-Add the module to your `ejabberd.yml`, on the modules section:
+This module has no configurable options, simply enable it:
 ```
 modules:
   mod_shcommands: {}

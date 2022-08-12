@@ -18,8 +18,13 @@ of `mod_http_fileserver`, customized for log serving.
 Configuration
 -------------
 
-Sample ejabberd.yml options. The directory to serve is already defined
-on `mod_muc_log`.
+This module has no configurable options, simply enable it.
+
+
+Example Configuration
+---------------------
+
+The directory to serve is already defined on `mod_muc_log`.
 
 ```yaml
 listen:

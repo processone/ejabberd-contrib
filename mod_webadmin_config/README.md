@@ -16,10 +16,8 @@ It also displays a diff of last changes detected in the configuration.
 
 # Configuration
 
-The module has no options to configure, simply enable it:
+The module has no options to configure, it's simply enabled with:
 ```yaml
 modules:
-  ...
   mod_webadmin_config: {}
-  ...
 ```

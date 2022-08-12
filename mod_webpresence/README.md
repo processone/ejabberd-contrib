@@ -22,38 +22,6 @@ Allowed output methods are
 No web server, database, additional libraries or programs are required.
 
 
-Install
--------
-
-1. Compile the module
- * On Windows: `build.bat`
- * On other systems: `./build.sh`
-
-2. Copy `ebin/mod_webpresence.beam` to your ejabberd `ebin` directory.
-
-3. Copy the directory `data/pixmaps` to a directory you prefer.
-
-4. Edit `ejabberd.yml` and add the HTTP and module definitions:
-
-```yaml
-listen:
-  -
-    port: 5280
-    module: ejabberd_http
-    [...]
-    request_handlers:
-      "/presence": mod_webpresence
-
-modules:
-  mod_webpresence:
-    pixmaps_path: "/path/to/pixmaps"
-```
-
-5. Restart ejabberd.
-If problems appear, remember to always look first the ejabberd log files
-`ejabberd.log` and `sasl.log` since they may provide some valuable information.
-
-
 Configuration
 -------------
 
@@ -85,6 +53,26 @@ Configuration
     It is the base part of the URL of the webpresence HTTP content.
     You can use the keyword `@HOST@`.
     If the option is not specified, it takes as default value: `http://host:52080/presence/`
+
+
+Example Configuration
+---------------------
+
+```yaml
+listen:
+  -
+    port: 5280
+    module: ejabberd_http
+    request_handlers:
+      "/presence": mod_webpresence
+
+modules:
+  mod_webpresence:
+    pixmaps_path: "/path/to/pixmaps"
+```
+
+If problems appear, remember to always look first the ejabberd log files
+`ejabberd.log` and `sasl.log` since they may provide some valuable information.
 
 
 Automatic Enable

@@ -17,7 +17,7 @@ ejabberd log file.
 Basic Configuration
 -------------------
 
-Add the module to your `ejabberd.yml`, on the `modules` section:
+Add the module to the `modules` section on the configuration file:
 ```yaml
 modules:
   mod_cron: {}

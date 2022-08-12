@@ -18,12 +18,10 @@ to control which recipients are subject to spam filtering.
 Configuration
 -------------
 
-In order to use this module, add a configuration snippet such as the
-following:
+To enable this module, configure it like this:
 
 ```yaml
 modules:
-  # [...]
   mod_spam_filter:
     spam_jids_file: "/etc/ejabberd/spam-filter/jids.txt"
     spam_urls_file: "/etc/ejabberd/spam-filter/urls.txt"
