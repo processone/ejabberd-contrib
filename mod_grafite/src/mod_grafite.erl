@@ -115,12 +115,8 @@ push(Host, Probe) ->
 encode_metrics(Host, Probe) ->
     [_, NodeId] = str:tokens(misc:atom_to_binary(node()), <<"@">>),
     [Node | _] = str:tokens(NodeId, <<".">>),
-    Data = case Probe of
-    {Key, Val} ->
-        encode(gauge, ?GRAFITE_KEY(Node, Host, Probe), Val, 1.0);
-    Key ->
-        encode(gauge, ?GRAFITE_KEY(Node, Host, Probe), 1, 1.0)
-    end,
+    Key = Probe,
+    Data = encode(gauge, ?GRAFITE_KEY(Node, Host, Probe), 1, 1.0),
     ?INFO_MSG("Stats: ~p ~p ~n", [Data, encode(gauge, Key, 1, undefined)]),
     Data.
 
@@ -132,10 +128,7 @@ encode(gauge, Key, Value, _SampleRate) ->
     [Key, ":", format_value(Value), "|g"].
 
 format_value(Value) when is_integer(Value) ->
-    integer_to_list(Value);
-format_value(Value) when is_float(Value) ->
-    float_to_list(Value, [{decimals, 2}]).
-
+    integer_to_list(Value).
 
 %%====================================================================
 %% UDP Utils
