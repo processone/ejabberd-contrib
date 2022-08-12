@@ -144,7 +144,13 @@ jobs:
     - run: make hooks
     - run: make options
     - run: make xref
-#    - run: make dialyzer # Too many errors... first fix them, then enable this
+
+    - name: Run Dialyzer
+      if: always()
+      run: |
+        rm -rf _build/default/lib/ejabberd/ebin/fusco*
+        rm -rf _build/default/lib/ejabberd/ebin/observer_cli*
+        make dialyzer # Too many errors... first fix them, then enable this
 
     - name: View logs dir
       if: always()
