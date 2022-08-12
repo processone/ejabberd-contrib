@@ -15,6 +15,8 @@
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 
+-dialyzer({no_match, [check_stanza_type/2, check_access/1]}).
+
 start(_Host, _Opts) ->
     ejabberd_hooks:add(filter_packet, global, ?MODULE, filter_packet, 100).
 
