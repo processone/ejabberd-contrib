@@ -20,11 +20,10 @@ following:
 
 ```yaml
 modules:
-  # [...]
   mod_default_rooms:
     rooms:
-      - "foo@conference.example.net"
-      - "bar@conference.example.org"
+      - foo@conference.example.net
+      - bar@conference.example.org
 ```
 
 The configurable `mod_default_rooms` options are:

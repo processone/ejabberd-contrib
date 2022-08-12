@@ -52,11 +52,11 @@ stop(Host) ->
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
--spec mod_opt_type(atom()) -> fun((term()) -> term()).
+-spec mod_opt_type(atom()) -> econf:validator().
 mod_opt_type(auto_join) ->
-    fun (B) when is_boolean(B) -> B end;
+    econf:bool();
 mod_opt_type(rooms) ->
-    fun (Rs) -> [jid:decode(iolist_to_binary(R)) || R <- Rs] end.
+    econf:list(econf:jid(), [unique]).
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
