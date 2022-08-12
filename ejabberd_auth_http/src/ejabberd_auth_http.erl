@@ -126,7 +126,7 @@ try_register(LUser, LServer, Password) ->
                         false -> Password
                     end,
     case make_req(post, <<"register">>, LUser, LServer, PasswordFinal) of
-        {ok, created} -> {cache, {ok, Password}};
+        {ok, <<"created">>} -> {cache, {ok, Password}};
         {error, conflict} -> {nocache, {error, exists}};
         _Error -> {nocache, {error, not_allowed}}
     end.
@@ -220,7 +220,7 @@ make_req(Method, Path, LUser, LServer, Password) ->
         <<"400">> -> {error, RespBody};
 	<<"503">> -> {error, RespBody};
         <<"204">> -> {ok, <<"">>};
-        <<"201">> -> {ok, created};
+        <<"201">> -> {ok, <<"created">>};
         <<"200">> -> {ok, RespBody};
         _ -> {error, RespBody}
     end.

@@ -195,7 +195,7 @@ find_omemo_nodes(#ps_publish{node = Node, items = Items}) ->
 find_omemo_nodes(_) ->
     [].
 
--spec find_omemo_nodes(binary(), ps_items()) -> [binary()].
+-spec find_omemo_nodes(binary(), [ps_item()]) -> [binary()].
 find_omemo_nodes(<<?DEVICELIST_NODE>> = Node, [Item]) ->
     [Node | find_bundle_nodes(Item)];
 find_omemo_nodes(<<?DEVICELIST_NODE>> = Node, []) ->

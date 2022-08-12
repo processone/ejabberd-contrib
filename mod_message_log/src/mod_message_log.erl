@@ -67,7 +67,7 @@
 %% -------------------------------------------------------------------
 %% gen_mod callbacks.
 %% -------------------------------------------------------------------
--spec start(binary(), gen_mod:opts()) -> {ok, _} | {ok, _, _} | {error, _}.
+-spec start(binary(), gen_mod:opts()) -> ok | {ok, pid()} | {error, term()}.
 start(Host, Opts) ->
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
 		       log_packet_send, 42),
@@ -75,7 +75,7 @@ start(Host, Opts) ->
 		       log_packet_receive, 42),
     ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
 		       log_packet_offline, 42),
-    case gen_mod:start_child(?MODULE, global, Opts) of
+    case gen_mod:start_child(?MODULE, <<"global">>, Opts) of
 	{ok, Ref} ->
 	    {ok, Ref};
 	{error, {already_started, Ref}} ->
@@ -92,10 +92,10 @@ stop(Host) ->
 			  log_packet_receive, 42),
     ejabberd_hooks:delete(offline_message_hook, Host, ?MODULE,
 			  log_packet_offline, 42),
-    gen_mod:stop_child(?MODULE, global),
+    gen_mod:stop_child(gen_mod:get_module_proc(global, ?MODULE)),
     ok.
 
--spec mod_opt_type(atom()) -> fun((term()) -> term()).
+-spec mod_opt_type(atom()) -> econf:validator().
 mod_opt_type(filename) ->
     econf:either(auto, econf:file(write)).
 
@@ -210,7 +210,7 @@ log_packet(Direction, #message{from = From, to = To, type = Type} = Msg) ->
 
 -spec is_carbon(message()) -> {true, direction()} | false.
 is_carbon(#message{meta = #{carbon_copy := true}} = Msg) ->
-    case xmpp:has_subtag(Msg, #carbons_sent{}) of
+    case xmpp:has_subtag(Msg, #carbons_sent{forwarded = #forwarded{}}) of
 	true ->
 	    {true, outgoing};
 	false ->

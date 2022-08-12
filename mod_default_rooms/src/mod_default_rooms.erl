@@ -87,6 +87,6 @@ register_user(LUser, LServer) ->
 %%--------------------------------------------------------------------
 %% Internal functions.
 %%--------------------------------------------------------------------
--spec build_bookmark(jid(), boolean()) -> bookmark_storage().
+-spec build_bookmark(jid(), boolean()) -> bookmark_conference().
 build_bookmark(Room, AutoJoin) ->
     #bookmark_conference{jid = Room, autojoin = AutoJoin}.
