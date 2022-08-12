@@ -70,7 +70,7 @@ start(_Host, Opts) ->
 
 stop(Host) ->
   Blacklists = gen_mod:get_module_opt(Host, ?MODULE, blacklists),
-  lists:map(fun banword_gen_server:stop/0, Blacklists),
+  banword_gen_server:stop(),
   CharMaps = gen_mod:get_module_opt(Host, ?MODULE, charmaps),
   lists:map(fun normalize_leet_gen_server:stop/1, CharMaps),
   ejabberd_hooks:delete(filter_packet, global, ?MODULE, on_filter_packet, 0),
