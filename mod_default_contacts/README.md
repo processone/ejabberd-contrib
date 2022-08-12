@@ -26,10 +26,10 @@ modules:
     contacts:
       -
         name: "Bob Virding"
-        jid: "bob@example.com"
+        jid: bob@example.com
       -
         name: "Alice Armstrong"
-        jid: "alice@example.com"
+        jid: alice@example.com
 ```
 
 The configurable `mod_default_contacts` options are:

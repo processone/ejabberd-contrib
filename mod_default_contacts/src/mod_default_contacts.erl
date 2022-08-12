@@ -52,18 +52,19 @@ stop(Host) ->
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
--spec mod_opt_type(atom()) -> fun((term()) -> term()).
+-spec mod_opt_type(atom()) -> econf:validator().
 mod_opt_type(contacts) ->
-    fun (L) ->
-	    lists:map(fun (Opts) ->
-			      JID1 = proplists:get_value(jid, Opts),
-			      JID2 = iolist_to_binary(JID1),
-			      JID3 = jid:decode(JID2),
-			      Name1 = proplists:get_value(name, Opts, <<>>),
-			      Name2 = iolist_to_binary(Name1),
-			      #roster_item{jid = JID3, name = Name2}
-		      end, L)
-    end.
+    econf:list(
+      econf:and_then(
+	econf:options(
+	  #{jid => econf:jid(),
+	    name => econf:binary()},
+	  [{required, [jid]}]),
+        fun(Opts) ->
+                Jid = proplists:get_value(jid, Opts),
+                Name = proplists:get_value(name, Opts, <<>>),
+                #roster_item{jid = Jid, name = Name}
+        end)).
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
