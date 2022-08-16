@@ -1103,17 +1103,17 @@ do_stat_table_with(Values, Total) ->
 do_table_element(L, [N], Perc) ->
     ?XE(<<"tr">>,
 	[?XE(<<"td">>, [L]),
-	 ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}], [N]),
+	 ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}], ?BC(N)),
 	 ?XE(<<"td">>,
 	     [?XAE(<<"div">>,
 		   [{<<"class">>, <<"graph">>}],
 		   [?XAC(<<"div">>,
-			 [{<<"class">>, <<"bar">>}, {<<"style">>, ?BC([<<"width: ">>, Perc, <<"%;">>])}],
-			 []
+			 [{<<"class">>, <<"bar">>}, {<<"style">>, ?BC(["width: ", Perc, "%;"])}],
+			 <<>>
 			)]
 		  )]
 	    ),
-	 ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}], [?BC([Perc, <<"%">>])])
+	 ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}], ?BC([Perc, "%"]))
 	]).
 
 css_table()->
