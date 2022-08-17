@@ -757,23 +757,7 @@ available_themes(list) ->
 	    [T || T <- L2, hd(T) =/= 46];
         {error, _} ->
             []
-    end;
-
-available_themes(xdata) ->
-    lists:map(
-      fun(Theme) ->
-              #xmlel{
-                 name = <<"option">>,
-                 attrs = [{<<"label">>, iolist_to_binary(Theme)}],
-                 children = [
-                             #xmlel{
-                                name = <<"value">>,
-                                attrs = [],
-                                children = [{xmlcdata, iolist_to_binary(Theme)}]
-                               }
-                            ]
-                }
-      end, available_themes(list)).
+    end.
 
 show_presence({image_no_check, Theme, Pr}) ->
     Dir = get_pixmaps_directory(),
