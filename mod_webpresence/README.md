@@ -147,7 +147,8 @@ Usage
 The web-presence feature by default is switched off for every user. If
 user wants to use it, he should register on service `webpresence.example.org`,
 which is accessible from Service Discovery.
-There are several switches for web-presence:
+There are several switches for web-presence,
+but right now are all enabled and can't be disabled at all:
  * Jabber ID: publish the presence in URIs that use the user's Jabber ID.
  * Random ID: publish the presence in URIs that use a Random ID.
  * XML: allow XML output.
