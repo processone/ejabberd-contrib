@@ -106,7 +106,7 @@ notify(#jid{lserver = LServer} = To, Pkt) ->
     UnWrappedPkt = unwrap_message(Pkt),
 	DelayedPkt = add_delay_info(UnWrappedPkt, LServer, undefined),
 	Id = p1_rand:get_string(),
-	PushServer = mod_push_modified_opt:host(LServer),
+	PushServer = mod_push_offline_opt:host(LServer),
 	WrappedPacket = wrap(DelayedPkt, <<"urn:xmpp:push:nodes:messages">>, Id),
 	ejabberd_router:route(xmpp:set_from_to(WrappedPacket, To, jid:make(PushServer))).
 
