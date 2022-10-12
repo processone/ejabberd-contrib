@@ -1,0 +1,5 @@
+author: "Mujtaba Roohani <mujtaba.roohani at gmail.com>"
+category: "data"
+summary: "Send offline messages to a component"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"
