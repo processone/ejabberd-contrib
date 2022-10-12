@@ -104,7 +104,7 @@ offline_message(Acc) ->
 -spec notify(jid(), xmpp_element() | xmlel() | none) -> ok.
 notify(#jid{lserver = LServer} = To, Pkt) ->
     UnWrappedPkt = unwrap_message(Pkt),
-	DelayedPkt = add_delay_info(UnWrappedPkt, LServer, undefined),
+	DelayedPkt = add_delay_info(UnWrappedPkt, LServer),
 	Id = p1_rand:get_string(),
 	PushServer = mod_push_offline_opt:host(LServer),
 	WrappedPacket = wrap(DelayedPkt, <<"urn:xmpp:push:nodes:messages">>, Id),
@@ -137,13 +137,8 @@ wrap(Packet, Node, Id) ->
 		    id = Id,
 		    sub_els = [Packet]}]}}]}.
 
--spec add_delay_info(message(), binary(),
-		     undefined | erlang:timestamp()) -> message().
-add_delay_info(Packet, LServer, TS) ->
-    NewTS = case TS of
-		undefined -> erlang:timestamp();
-		_ -> TS
-	    end,
+-spec add_delay_info(message(), binary()) -> message().
+add_delay_info(Packet, LServer) ->
     Packet1 = xmpp:put_meta(Packet, from_offline, true),
-    misc:add_delay_info(Packet1, jid:make(LServer), NewTS,
+    misc:add_delay_info(Packet1, jid:make(LServer), erlang:timestamp(),
 			<<"Offline storage">>).
