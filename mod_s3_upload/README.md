@@ -1,6 +1,8 @@
 mod\_s3\_upload: XEP-0363 with S3-compatible storage
 ====================================================
 
+* Author: Roman Hargrave <roman@hargrave.info>
+
 Implements HTTP Upload using any S3-compatible storage service.
 
 # OTP Compatibility
