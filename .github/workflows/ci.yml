@@ -121,6 +121,7 @@ jobs:
         CTL=_build/dev/rel/ejabberd/bin/ejabberdctl
         for i in `cat modules_available.txt` ; do
             echo "Copying from $i"
+            find .ejabberd-modules/sources/ejabberd-contrib/ -wholename "*/ejabberd-contrib/$i/include/*.hrl" -exec 'cp' '{}' 'include/' ';'
             find .ejabberd-modules/sources/ejabberd-contrib/ -wholename "*/ejabberd-contrib/$i/src/*.erl" -exec 'cp' '{}' 'src/' ';'
             find .ejabberd-modules/sources/ejabberd-contrib/ -wholename "*/ejabberd-contrib/$i/deps/*/ebin/*.beam" -exec 'cp' '{}' '_build/default/lib/ejabberd/ebin/' ';'
             find .ejabberd-modules/sources/ejabberd-contrib/ -wholename "*/ejabberd-contrib/$i/deps/*/include/*.hrl" -exec 'cp' '{}' 'include/' ';'
