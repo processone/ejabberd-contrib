@@ -447,16 +447,8 @@ object_url(BucketURL, FileName) ->
         FileName :: binary()
        ) ->
           ObjectName :: binary().
-% generate a unique-in-time object name. the name consists of a hash
-% derived from the file, node, time, and a random number, a
-% forward-slash, and the original filename. this ensures that it does
-% not collide with other objects, while the forward slash ensures that
-% the client displays only the original file name.
+% generate reasonably unique sortable (by time first) object name.
 object_name(FileName) ->
-    MD = crypto:hash_init(sha256),
-    MDFilename = crypto:hash_update(MD, FileName),
-    MDNodeName = crypto:hash_update(MDFilename, atom_to_list(node())),
-    MDTime = crypto:hash_update(MDNodeName, <<(os:system_time())>>),
-    MDRand = crypto:hash_update(MDTime, crypto:strong_rand_bytes(256)),
-    Hash = crypto:hash_final(MDRand),
-    <<(str:to_hexlist(Hash))/binary, "/", FileName/binary>>.
+    str:format("~.36B~.36B-~s", [os:system_time(microsecond),
+                                  erlang:phash2(node()),
+                                  FileName]).
