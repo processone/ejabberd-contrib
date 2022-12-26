@@ -1,0 +1,13 @@
+captcha_cmd: mod_ecaptcha
+
+captcha_url: http://localhost:5288/captcha/
+
+listen:
+  -
+    port: 5288
+    module: ejabberd_http
+    request_handlers:
+      /captcha: ejabberd_captcha
+
+modules:
+  mod_ecaptcha: {}
