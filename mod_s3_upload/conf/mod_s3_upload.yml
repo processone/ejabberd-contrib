@@ -1,9 +1,9 @@
 modules:
   mod_s3_upload:
-    region: 
-    bucket_url:
-    access_key_id: 
-    access_key_secret: 
+    region: us-west-1
+    bucket_url: https://example.s3.us-west-1.wasabisys.com
+    access_key_id: 1234
+    access_key_secret: AE32BFFFFFD
     ## Maximum permitted object size, in bytes
     # max_size: 1073741824
     ## How long, in seconds from generation, an upload URL is valid
