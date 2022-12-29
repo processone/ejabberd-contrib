@@ -1,0 +1,19 @@
+modules:
+  mod_s3_upload:
+    region: us-west-1
+    bucket_url: https://example.s3.us-west-1.wasabisys.com
+    access_key_id: WBPXK3YWS457RV9P
+    access_key_secret: N2UC4RSLPU6VH6FYGNJ9BRNMC74XM6G9MP74RNH7D4ZG9UBZY9Z5G4ZR8T782KR7
+    ## Maximum permitted object size, in bytes
+    # max_size: 1073741824
+    ## How long, in seconds from generation, an upload URL is valid
+    # put_ttl: 600
+    ## Whether to apply the special public-read ACL to the object
+    # set_public: true
+    ## Advertised service name
+    # service_name: 'S3 Upload'
+    ## ACL containing users permitted to request slots
+    # access: local
+    ## Hostnames that this module will receive IQs at
+    # hosts:
+    #   - upload.@HOST@
