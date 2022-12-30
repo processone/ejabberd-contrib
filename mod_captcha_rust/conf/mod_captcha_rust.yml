@@ -1,0 +1,13 @@
+captcha_cmd: 'Elixir.ModCaptchaRust'
+
+captcha_url: http://localhost:5288/captcha/
+
+listen:
+  -
+    port: 5288
+    module: ejabberd_http
+    request_handlers:
+      /captcha: ejabberd_captcha
+
+modules:
+  'Elixir.ModCaptchaRust': {}
