@@ -106,7 +106,7 @@ jobs:
     - name: Get list of available modules
       run: |
         CTL=_build/dev/rel/ejabberd/bin/ejabberdctl
-        $CTL modules_available | awk '{print $1}' >modules_available.txt
+        $CTL modules_available | awk '{print $1}' | grep -v mod_captcha_rust >modules_available.txt
 
     - name: Install modules
       run: |
