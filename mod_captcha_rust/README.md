@@ -43,7 +43,7 @@ make
 ```
 
 Install ejabberd as usual, restart it
-and now you can proceed to install `mod_captchanif`.
+and now you can proceed to install `mod_captcha_rust`.
 
 
 ### B) ejabberd with binary installer
@@ -62,7 +62,7 @@ mix release
 Copy all the directories from `_build/dev/rel/captcha/lib`
 to the path where you have ejabberd lib directories installed.
 
-Now you can restart ejabberd and proceed to install `mod_captchanif`.
+Now you can restart ejabberd and proceed to install `mod_captcha_rust`.
 
 
 Basic Configuration
