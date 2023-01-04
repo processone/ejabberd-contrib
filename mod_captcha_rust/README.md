@@ -12,6 +12,9 @@ This small module generates CAPTCHA images suitable for ejabberd's
 thanks to the [captcha](https://github.com/feng19/captcha) Elixir library,
 which internally uses the [captcha](https://github.com/daniel-e/captcha) Rust library.
 
+See example CAPTCHA images in the
+[captcha Rust documentation](https://docs.rs/captcha/latest/captcha/).
+
 
 Get captcha_nif library
 -----------------------
