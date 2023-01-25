@@ -83,7 +83,7 @@ create_image(_Key) ->
                    font => get_opt(font)}
                 ),
     case Response of
-        {Phrase, PNGImage} when is_binary(PNGImage) ->
+        {Phrase, PNGImage} when is_binary(Phrase) ->
             PNGBin = binary:list_to_bin([PNGImage]),
             {ok, <<"image/png">>, Phrase, PNGBin};
         {error, Reason} ->
