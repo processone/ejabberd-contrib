@@ -213,13 +213,22 @@ make_req(Method, Path, LUser, LServer, Password) ->
     Connection = cuesport:get_worker(existing_pool_name(LServer)),
 
     ?DEBUG("Making request '~s' for user ~s@~s...", [Path, LUser, LServer]),
-    {ok, {{Code, _Reason}, _RespHeaders, RespBody, _, _}} = case Method of
-        get -> fusco:request(Connection, <<PathPrefix/binary, Path/binary, "?", Query/binary>>,
-                             "GET", Header, "", 2, 5000);
-        post -> fusco:request(Connection, <<PathPrefix/binary, Path/binary>>,
-                              "POST", [ContentType|Header], Query, 2, 5000)
-    end,
+    {Url, MethodStr, Headers, Query2} =
+        case Method of
+            get -> {<<PathPrefix/binary, Path/binary, "?", Query/binary>>,
+                    "GET",
+                    Header,
+                    ""};
+            post -> {<<PathPrefix/binary, Path/binary>>,
+                     "POST",
+                     [ContentType|Header],
+                     Query}
+        end,
+    http_request(Connection, Url, MethodStr, Headers, Query2, 0).
 
+http_request(Connection, Url, MethodStr, Headers, Query, RedirectCounter) ->
+    {ok, {{Code, _Reason}, RespHeaders, RespBody, _, _}} =
+        fusco:request(Connection, Url, MethodStr, Headers, Query, 2, 5000),
     ?DEBUG("Request result: ~s: ~p", [Code, RespBody]),
     case Code of
         <<"409">> -> {error, conflict};
@@ -231,8 +240,17 @@ make_req(Method, Path, LUser, LServer, Password) ->
         <<"204">> -> {ok, <<"">>};
         <<"201">> -> {ok, <<"created">>};
         <<"200">> -> {ok, RespBody};
+        R when (R==<<"301">>) or (R==<<"307">>) or (R==<<"308">>) ->
+            handle_redirect(RespHeaders, Connection, MethodStr, Headers, Query, RedirectCounter+1);
         _ -> {error, RespBody}
     end.
+
+handle_redirect(RespHeaders, Connection, MethodStr, Headers, Query, RedirectCounter)
+      when RedirectCounter < 5 ->
+    {_, Location} = lists:keyfind(<<"location">>, 1, RespHeaders),
+    http_request(Connection, Location, MethodStr, Headers, Query, RedirectCounter);
+handle_redirect(_, _, _, _, _, _) ->
+    {error, redirect_loop}.
 
 %%%----------------------------------------------------------------------
 %%% Other internal functions
