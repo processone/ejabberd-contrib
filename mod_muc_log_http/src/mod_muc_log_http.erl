@@ -32,8 +32,19 @@
 %%% REQUEST HANDLERS
 %%%----------------------------------------------------------------------
 
-process(LocalPath, Request) ->
-	serve(LocalPath, Request).
+process(Path, #request{raw_path = RawPath} = Request) ->
+    Continue = case Path of
+		   [E] ->
+		       binary:match(E, <<".">>) /= nomatch;
+		   _ ->
+		       false
+	       end,
+    case Continue orelse binary:at(RawPath, size(RawPath) - 1) == $/ of
+	true ->
+	    serve(Path, Request);
+	_ ->
+	    {301, [{<<"Location">>, <<RawPath/binary, "/">>}], <<>>}
+    end.
 
 serve(LocalPathBin, #request{host = Host} = Request) ->
 	DocRoot = binary_to_list(gen_mod:get_module_opt(Host, mod_muc_log, outdir)),
