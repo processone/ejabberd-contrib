@@ -58,7 +58,7 @@ start(Host, Opts) ->
                                      "s2s.log");
                            FN -> FN
              end,
-            Filename = list_to_binary(FilenameStr),
+            Filename = iolist_to_binary(FilenameStr),
 		    register(?PROCNAME,
 			     spawn(?MODULE, init, [#config{filename=Filename}])),
 		    ejabberd_hooks:add(reopen_log_hook, ?MODULE, reopen_log, 55),
