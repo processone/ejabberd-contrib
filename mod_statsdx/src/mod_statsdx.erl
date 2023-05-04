@@ -16,7 +16,7 @@
 -export([start/2, stop/1, depends/2, mod_opt_type/1, mod_options/1, mod_doc/0, mod_status/0]).
 -export([loop/1, get_statistic/2,
 	 pre_uninstall/0,
-	 received_response/3,
+	 received_response/3, received_response/7,
 	 %% Commands
 	 getstatsdx/1, getstatsdx/2,
 	 get_top_users/2,
@@ -821,13 +821,15 @@ request_iqversion(User, Host, Resource) ->
     IQ = #iq{type = get,
              from = From,
              to = To,
-             id = p1_rand:get_string(),
              sub_els = [Query]},
     HandleResponse = fun(#iq{type = Type} = IQr) when (Type == result) or (Type == error) ->
 			       spawn(?MODULE, received_response,
 				     [To, From, IQr]);
+			  (timeout) ->
+			       spawn(?MODULE, received_response,
+				     [To, unknown, unknown, <<"">>, "unknown", "unknown", "unknown"]);
 			  (R) ->
-			       ?INFO_MSG("Unexpected response: ~n~p", [R]),
+			       ?INFO_MSG("Unexpected response: ~n~p", [{User, Host, Resource, R}]),
 			       ok % Hmm.
 		       end,
     ejabberd_router:route_iq(IQ, HandleResponse).
