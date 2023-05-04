@@ -485,8 +485,6 @@ get(_, ["registeredusers", Host]) -> ejabberd_auth:count_users(Host);
 get(_, ["onlineusers", title]) -> "Online users";
 get(N, ["onlineusers"]) -> rpc:call(N, mnesia, table_info, [session, size]);
 get(_, ["onlineusers", Host]) -> length(ejabberd_sm:get_vh_session_list(Host));
-get(_, ["httppollusers", title]) -> "HTTP-Poll users (aprox)";
-get(N, ["httppollusers"]) -> rpc:call(N, mnesia, table_info, [http_poll, size]);
 get(_, ["httpbindusers", title]) -> "HTTP-Bind users (aprox)";
 get(N, ["httpbindusers"]) -> rpc:call(N, mnesia, table_info, [http_bind, size]);
 
@@ -976,7 +974,6 @@ list_elem(conntypes, full) ->
      {"c2s_tls", c2s_tls},
      {"c2s_compressed", c2s_compressed},
      {"c2s_compressed_tls", c2s_compressed_tls},
-     {"http_poll", http_poll},
      {"http_bind", http_bind},
      {"websocket", websocket},
      {"unknown", unknown}
@@ -1320,7 +1317,6 @@ web_page_node(_, Node, [<<"statsdx">>], _Query, Lang) ->
 	 ?XAE(<<"table">>, [],
 	      [?XE(<<"tbody">>, [
 			     do_stat(global, Lang, "onlineusers"),
-			     do_stat(Node, Lang, "httppollusers"),
 			     do_stat(Node, Lang, "httpbindusers"),
 			     do_stat(Node, Lang, "s2sconnections"),
 			     do_stat(Node, Lang, "s2sservers")
