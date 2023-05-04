@@ -978,6 +978,7 @@ list_elem(conntypes, full) ->
      {"c2s_compressed_tls", c2s_compressed_tls},
      {"http_poll", http_poll},
      {"http_bind", http_bind},
+     {"websocket", websocket},
      {"unknown", unknown}
     ];
 list_elem(oss, full) ->
