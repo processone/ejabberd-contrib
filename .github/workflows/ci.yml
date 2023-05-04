@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ['21.0', '21.3', '24.3', '25']
+        otp: ['21.3', '25.3']
     runs-on: ubuntu-latest
     container:
       image: erlang:${{ matrix.otp }}
