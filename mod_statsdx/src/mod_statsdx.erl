@@ -26,7 +26,7 @@
 	 web_menu_host/3, web_page_host/3,
 	 web_user/4,
 	 %% Hooks
-	 register_user/2, remove_user/2, user_send_packet/1,
+	 register_user/2, remove_user/2, %user_send_packet/1,
          user_send_packet_traffic/1, user_receive_packet_traffic/1,
 	 %%user_logout_sm/3,
 	 request_iqversion/4,
@@ -198,18 +198,18 @@ prepare_stats_host(Host, Hooks, CD) ->
 	    ejabberd_hooks:add(register_user, Host, ?MODULE, register_user, 90),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 90),
 	    ejabberd_hooks:add(c2s_session_opened, Host, ?MODULE, user_login, 90),
-	    ejabberd_hooks:add(c2s_closed, Host, ?MODULE, user_logout, 40),
+	    ejabberd_hooks:add(c2s_closed, Host, ?MODULE, user_logout, 40);
 	    %%ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
-	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 90);
+	    %ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 90);
 	traffic ->
 	    ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, user_receive_packet_traffic, 92),
 	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet_traffic, 92),
 	    ejabberd_hooks:add(register_user, Host, ?MODULE, register_user, 90),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 90),
 	    ejabberd_hooks:add(c2s_session_opened, Host, ?MODULE, user_login, 90),
-	    ejabberd_hooks:add(c2s_closed, Host, ?MODULE, user_logout, 40),
+	    ejabberd_hooks:add(c2s_closed, Host, ?MODULE, user_logout, 40);
 	    %%ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
-	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 90);
+	    %ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 90);
 	false ->
 	    ok
     end,
@@ -229,7 +229,7 @@ finish_stats(Host) ->
     ejabberd_hooks:delete(c2s_session_opened, Host, ?MODULE, user_login, 90),
     ejabberd_hooks:delete(c2s_closed, Host, ?MODULE, user_logout, 40),
     %%ejabberd_hooks:delete(sm_remove_connection_hook, Host, ?MODULE, user_logout_sm, 90),
-    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, user_send_packet, 90),
+    %ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, user_send_packet, 90),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, user_send_packet_traffic, 92),
     ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE, user_receive_packet_traffic, 92),
     ejabberd_hooks:delete(register_user, Host, ?MODULE, register_user, 90),
@@ -256,15 +256,17 @@ remove_user(_User, Host) ->
     ets:update_counter(TableHost, {remove_user, Host}, 1),
     ets:update_counter(TableServer, {remove_user, server}, 1).
 
-user_send_packet({NewEl, C2SState}) ->
-    FromJID = xmpp:get_from(NewEl),
-    ToJID = xmpp:get_from(NewEl),
-    %% Registrarse para tramitar Host/mod_stats2file
-    case catch binary_to_existing_atom(ToJID#jid.lresource, utf8) of
-	?MODULE -> received_response(FromJID, ToJID, NewEl);
-	_ -> ok
-    end,
-    {NewEl, C2SState}.
+%%user_send_packet({NewEl, C2SState}) ->
+%%    FromJID = xmpp:get_from(NewEl),
+%%    ToJID = xmpp:get_from(NewEl),
+%%    %% Registrarse para tramitar Host/mod_stats2file
+%%    case catch binary_to_existing_atom(ToJID#jid.lresource, utf8) of
+%%	?MODULE ->
+%%            ok; %received_response(FromJID, ToJID, NewEl);
+%%	_ ->
+%%            ok
+%%    end,
+%%    {NewEl, C2SState}.
 
 %% Only required for traffic stats
 user_send_packet_traffic({NewEl, _C2SState} = Acc) ->
