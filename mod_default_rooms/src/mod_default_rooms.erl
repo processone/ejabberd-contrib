@@ -32,7 +32,7 @@
         mod_doc/0]).
 
 %% ejabberd_hooks callbacks.
--export([register_user/2]).
+-export([register_user/2, set_presence/4]).
 
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -42,10 +42,12 @@
 %%--------------------------------------------------------------------
 -spec start(binary(), gen_mod:opts()) -> ok.
 start(Host, _Opts) ->
+    ejabberd_hooks:add(set_presence_hook, Host, ?MODULE, set_presence, 50),
     ejabberd_hooks:add(register_user, Host, ?MODULE, register_user, 50).
 
 -spec stop(binary()) -> ok.
 stop(Host) ->
+    ejabberd_hooks:delete(set_presence_hook, Host, ?MODULE, set_presence_hook, 50),
     ejabberd_hooks:delete(register_user, Host, ?MODULE, register_user, 50).
 
 -spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok.
@@ -73,6 +75,17 @@ mod_doc() ->
 %%--------------------------------------------------------------------
 %% ejabberd_hooks callbacks.
 %%--------------------------------------------------------------------
+-spec set_presence(binary(), binary(), binary(), binary()) -> ok | {error, _}.
+set_presence(LUser, LServer, _Resource, _Presence) ->
+    case ejabberd_auth:store_type(LServer) of
+        external ->
+            case mod_private:get_data(LUser, LServer) of
+                [] -> register_user(LUser, LServer);
+                _ -> ok
+            end;
+        _ -> ok
+    end.
+
 -spec register_user(binary(), binary()) -> ok | {error, _}.
 register_user(LUser, LServer) ->
     JID = jid:make(LUser, LServer),
