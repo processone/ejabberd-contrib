@@ -29,7 +29,7 @@ Configuration
     Default value: `[internal, vhosts, external]`
 - `orientation`:
     Log packets only when orientation matches.
-    Default value: `[send, revc]`
+    Default value: `[send, recv]`
 - `logdir`:
     Base filename, including absolute path.
     If set to `auto`, it uses the ejabberd log path.

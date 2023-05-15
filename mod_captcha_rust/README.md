@@ -39,7 +39,7 @@ ejabberd source code and apply this small patch:
       {:ex_doc, ">= 0.0.0", only: :dev},
 ```
 
-Then get the new dependecies, and compile as usual:
+Then get the new dependencies, and compile as usual:
 ```
 mix deps.get
 make

@@ -5,7 +5,7 @@ The module blocks communication of users between different virtual hosts.
 
 # Configuration
 
-The module doesn't have any options, so the simpliest way to configure is:
+The module doesn't have any options, so the simplest way to configure is:
 ```yaml
 modules:
   mod_isolation: {}

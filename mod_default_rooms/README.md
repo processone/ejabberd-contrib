@@ -35,5 +35,5 @@ The configurable `mod_default_rooms` options are:
 
 - `auto_join` (default: `true`)
 
-  This option specifies wether the auto-join flag should be set for the
+  This option specifies whether the auto-join flag should be set for the
   bookmarks created on registration.
