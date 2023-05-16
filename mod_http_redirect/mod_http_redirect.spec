@@ -1,0 +1,5 @@
+author: "Badlop <badlop at process-one.net>"
+category: "HTTP"
+summary: "Redirect HTTP path to another URI"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"

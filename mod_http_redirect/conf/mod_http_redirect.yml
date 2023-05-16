@@ -1,0 +1,10 @@
+#listen:
+#  -
+#    port: 5286
+#    module: ejabberd_http
+#    request_handlers:
+#       /: mod_http_redirect
+#
+#modules:
+#  mod_http_redirect:
+#    location: http://example.com/some-path/
