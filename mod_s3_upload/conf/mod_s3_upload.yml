@@ -2,6 +2,8 @@ modules:
   mod_s3_upload:
     region: us-west-1
     bucket_url: https://example.s3.us-west-1.wasabisys.com
+    ## Set this if you wish to use a different base URL for downloads
+    # download_url: https://my-super-cdn.com
     access_key_id: WBPXK3YWS457RV9P
     access_key_secret: N2UC4RSLPU6VH6FYGNJ9BRNMC74XM6G9MP74RNH7D4ZG9UBZY9Z5G4ZR8T782KR7
     ## Maximum permitted object size, in bytes
