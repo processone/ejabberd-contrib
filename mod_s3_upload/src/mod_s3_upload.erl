@@ -103,6 +103,8 @@ mod_opt_type(region) ->
     econf:binary();
 mod_opt_type(bucket_url) ->
     econf:url([http, https]);
+mod_opt_type(download_url) ->
+    econf:binary();
 mod_opt_type(max_size) ->
     econf:pos_int(infinity);
 mod_opt_type(set_public) ->
@@ -126,6 +128,7 @@ mod_options(Host) ->
      {access_key_secret, undefined},
      {region, undefined},
      {bucket_url, undefined},
+     {download_url, undefined},
      {max_size, 1073741824},
      {set_public, true},
      {put_ttl, 600},
@@ -158,6 +161,9 @@ mod_doc() ->
            {bucket_url,
             #{value => ?T("BucketUrl"),
               desc => ?T("S3 Bucket URL.")}},
+           {download_url,
+            #{value => ?T("DownloadUrl"),
+              desc => ?T("Host for GET/Download requests.")}},
            {max_size,
             #{value => ?T("MaxSize"),
               desc => ?T("Maximum file size, in bytes. 0 is unlimited.")}},
@@ -189,6 +195,7 @@ depends(_Host, _Opts) ->
          service_jids :: [binary()], % stanzas destined for these JIDs will be routed to the service.
          max_size     :: integer() | infinity, % maximum upload size. sort of the honor system in this case.
          bucket_url   :: binary(), % S3 bucket URL or subdomain
+         download_url :: binary() | undefined,
          set_public   :: boolean(), % set the public-read ACL on the object?
          ttl          :: integer(), % TTL of the signed PUT URL
          server_host  :: binary(), % XMPP vhost the service belongs to
@@ -311,10 +318,10 @@ handle_iq(#iq{type = get,
               from = From,
               lang = Lang,
               sub_els = [#upload_request_0{size = FileSize,
-                                           filename = FileName}]} = IQ,
+                                           filename = Filename}]} = IQ,
           #params{max_size = MaxSize}) when FileSize > MaxSize ->
     ?WARNING_MSG("~ts tried to upload an oversize file (~ts, ~B bytes)",
-                 [jid:encode(From), FileName, FileSize]),
+                 [jid:encode(From), Filename, FileSize]),
     ErrorMessage = {?T("File larger than ~B bytes"), [MaxSize]},
     Error = xmpp:err_not_acceptable(ErrorMessage, Lang),
     Els = [#upload_file_too_large{'max-file-size' = MaxSize,
@@ -325,30 +332,21 @@ handle_iq(#iq{type = get,
 handle_iq(#iq{type    = get,
               from    = Requester,
               lang    = Lang,
-              sub_els = [#upload_request_0{filename = FileName,
+              sub_els = [#upload_request_0{filename = Filename,
                                            size     = FileSize} = UploadRequest]} = IQ,
           #params{server_host = ServerHost,
-                  access      = Access,
-                  bucket_url  = BucketURL,
-                  ttl         = TTL,
-                  auth        = Auth} = Params) ->
+                  access      = Access} = Params) ->
     case acl:match_rule(ServerHost, Access, Requester) of
         allow ->
             ?INFO_MSG("Generating S3 Object URL Pair for ~ts to upload file ~ts (~B bytes)",
-                      [jid:encode(Requester), FileName, FileSize]),
-            % generate a unique object ID and url based on settings
-            ObjectURL = object_url(BucketURL, FileName),
-            % attach configuration- and request-specific query params to the
-            % PUT url
-            UnsignedPutURL = put_url(UploadRequest, Params, ObjectURL),
-            % sign the PUT url
-            PutURL = aws_util:signed_url(Auth, put, ?AWS_SERVICE_S3, UnsignedPutURL, [], calendar:universal_time(), TTL),
-            xmpp:make_iq_result(IQ, #upload_slot_0{get = ObjectURL,
+                      [jid:encode(Requester), Filename, FileSize]),
+            {PutURL, GetURL} = put_get_url(Params, UploadRequest, Filename),
+            xmpp:make_iq_result(IQ, #upload_slot_0{get = GetURL,
                                                    put = PutURL,
                                                    xmlns = ?NS_HTTP_UPLOAD_0});
         deny ->
             ?INFO_MSG("Denied upload request from ~ts for file ~ts (~B bytes)",
-                      [jid:encode(Requester), FileName, FileSize]),
+                      [jid:encode(Requester), Filename, FileSize]),
             xmpp:make_error(IQ, xmpp:err_forbidden(?T("Access denied"), Lang))
     end;
 % handle unexpected IQ
@@ -384,11 +382,37 @@ build_service_params(ServerHost, Opts) ->
             service_jids = expanded_jids(ServerHost, get_opt(hosts, Opts)),
             max_size     = get_opt(max_size, Opts),
             bucket_url   = get_opt(bucket_url, Opts),
+            download_url = get_opt(download_url, Opts),
             set_public   = get_opt(set_public, Opts),
             ttl          = get_opt(put_ttl, Opts),
             server_host  = ServerHost,
             auth         = Auth,
             access       = get_opt(access, Opts)}.
+
+
+-spec put_get_url(
+        Params :: #params{},
+        UploadRequest :: #upload_request_0{},
+        Filename :: binary()
+       ) ->
+          {binary(), binary()}.
+% produce a list of {put_url, get_url}, where put_url is signed and
+% get_url may use the optional download_url override
+put_get_url(#params{bucket_url = BucketURL,
+                    download_url = undefined} = Params,
+            UploadRequest,
+            Filename) ->
+    put_get_url(Params#params{download_url = BucketURL}, UploadRequest, Filename);
+put_get_url(#params{bucket_url = BucketURL,
+                    download_url = DownloadURL,
+                    auth = Auth,
+                    ttl = TTL} = Params,
+            UploadRequest,
+            Filename) ->
+    ObjectName = object_name(Filename),
+    UnsignedPutURL = decorated_put_url(UploadRequest, Params, ObjectName),
+    {aws_util:signed_url(Auth, put, ?AWS_SERVICE_S3, UnsignedPutURL, [], calendar:universal_time(), TTL),
+     object_url(DownloadURL, ObjectName)}.
 
 -spec url_service_parameters(
         Params :: #params{}
@@ -413,14 +437,14 @@ upload_parameters(#upload_request_0{size           = FileSize,
      {<<"Content-Length">>, erlang:integer_to_binary(FileSize)}
     | url_service_parameters(ServiceParams)].
 
--spec put_url(
+-spec decorated_put_url(
         UploadRequest :: #upload_request_0{},
         Params :: #params{},
         URL :: binary()
        ) ->
           PutURL :: binary().
 % attach additional query parameters (to the PUT URL), specifically canned ACL.
-put_url(UploadRequest, ServiceParams, URL) ->
+decorated_put_url(UploadRequest, ServiceParams, URL) ->
     UriMap = uri_string:parse(URL),
     QueryList = case UriMap of
                     #{query := QueryString} ->
@@ -434,21 +458,20 @@ put_url(UploadRequest, ServiceParams, URL) ->
 
 -spec object_url(
         BucketURL :: binary(),
-        FileName :: binary()
+        Filename :: binary()
        ) ->
           ObjectURL :: binary().
 % generate a unique random object URL for the given filename
-object_url(BucketURL, FileName) ->
+object_url(BucketURL, ObjectName) ->
     #{path := BasePath} = UriMap = uri_string:parse(BucketURL),
-    ObjectName = object_name(FileName),
     uri_string:recompose(UriMap#{path => <<BasePath/binary, "/", ObjectName/binary>>}).
 
 -spec object_name(
-        FileName :: binary()
+        Filename :: binary()
        ) ->
           ObjectName :: binary().
 % generate reasonably unique sortable (by time first) object name.
-object_name(FileName) ->
+object_name(Filename) ->
     str:format("~.36B~.36B-~s", [os:system_time(microsecond),
-                                  erlang:phash2(node()),
-                                  FileName]).
+                                 erlang:phash2(node()),
+                                 Filename]).
