@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ['21.3', '25.3']
+        otp: ['21.3', '25.3', '26']
     runs-on: ubuntu-latest
     container:
       image: erlang:${{ matrix.otp }}
@@ -109,15 +109,13 @@ jobs:
             $CTL module_install $i
         done
 
-    - name: Copy modules
+    - name: Copy modules source code
       run: |
         CTL=_build/dev/rel/ejabberd/bin/ejabberdctl
         for i in `cat modules_available.txt` ; do
             echo "Copying from $i"
             find .ejabberd-modules/sources/ejabberd-contrib/ -wholename "*/ejabberd-contrib/$i/include/*.hrl" -exec 'cp' '{}' 'include/' ';'
             find .ejabberd-modules/sources/ejabberd-contrib/ -wholename "*/ejabberd-contrib/$i/src/*.erl" -exec 'cp' '{}' 'src/' ';'
-            find .ejabberd-modules/sources/ejabberd-contrib/ -wholename "*/ejabberd-contrib/$i/deps/*/ebin/*.beam" -exec 'cp' '{}' '_build/default/lib/ejabberd/ebin/' ';'
-            find .ejabberd-modules/sources/ejabberd-contrib/ -wholename "*/ejabberd-contrib/$i/deps/*/include/*.hrl" -exec 'cp' '{}' 'include/' ';'
         done
 
     - name: Uninstall modules
@@ -130,6 +128,14 @@ jobs:
 
 #    This doesn't work right now, because epmd is in another path
 #    - run: ./ejabberdctl stop && ./ejabberdctl stopped
+
+    - name: Setup dependencies
+      run: |
+        sed -i 's|{deps, \[|{deps, \[fusco, observer_cli, recon, \
+                  {cuesport, ".*", {git, "https://github.com/goj/cuesport"}}, \
+                  {ecaptcha, ".*", {git, "https://github.com/seriyps/ecaptcha", {branch, "master"}}}, \
+                 |g' rebar.config
+        sed -i 's|stdlib, |stdlib, fusco, observer_cli, recon, cuesport, ecaptcha, |g' rebar.config
 
     - run: make
     - run: make hooks
