@@ -47,7 +47,7 @@ start(Host, _Opts) ->
 
 -spec stop(binary()) -> ok.
 stop(Host) ->
-    ejabberd_hooks:delete(set_presence_hook, Host, ?MODULE, set_presence_hook, 50),
+    ejabberd_hooks:delete(set_presence_hook, Host, ?MODULE, set_presence, 50),
     ejabberd_hooks:delete(register_user, Host, ?MODULE, register_user, 50).
 
 -spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok.
