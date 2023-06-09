@@ -60,13 +60,6 @@ jobs:
                               {http_uri, encode, 1},
                               {http_uri, decode, 1}
                              ]}.' >>rebar.config
-        echo '{xref_checks, [deprecated_function_calls, deprecated_functions,
-              locals_not_used, undefined_function_calls, undefined_functions]}.
-              % Disabled: exports_not_used,' >>rebar.config
-        echo '{dialyzer, [{get_warnings, true}, {plt_extra_apps, [cache_tab,
-              eimp, epam, esip, ezlib, fast_tls, fast_xml, fast_yaml,
-              mqtree, p1_acme, p1_mysql, p1_oauth2, p1_pgsql, p1_utils, pkix,
-              sqlite3, stringprep, stun, xmpp, yconf]} ]}.' >>rebar.config
         echo '{ct_extra_params, "-verbosity 20"}.' >>rebar.config
 
     - name: Remove syntax_tools from release
