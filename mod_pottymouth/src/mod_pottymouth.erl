@@ -69,7 +69,6 @@ start(_Host, Opts) ->
   ok.
 
 stop(Host) ->
-  Blacklists = gen_mod:get_module_opt(Host, ?MODULE, blacklists),
   banword_gen_server:stop(),
   CharMaps = gen_mod:get_module_opt(Host, ?MODULE, charmaps),
   lists:map(fun normalize_leet_gen_server:stop/1, CharMaps),

@@ -59,7 +59,7 @@ depends(_Host, _Opts) ->
 %%% HTTP handlers
 %%%----------------------------------------------------------------------
 
-process(Path, #request{host = Host} = Request) ->
+process(_Path, #request{host = Host}) ->
     Location = gen_mod:get_module_opt(Host, ?MODULE, location),
     {301, [{<<"Location">>, Location}], <<>>}.
 
