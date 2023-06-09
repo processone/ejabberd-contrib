@@ -15,14 +15,6 @@
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 
--define(HOOKS, [offline_message_hook,
-                sm_register_connection_hook, sm_remove_connection_hook,
-                user_send_packet, user_receive_packet,
-                s2s_send_packet, s2s_receive_packet,
-                remove_user, register_user]).
-
--define(GLOBAL_HOOKS, [component_connected, component_disconnected]).
-
 -export([start/2, stop/1, mod_opt_type/1, mod_options/1,
    depends/2, mod_doc/0, udp_loop_start/1, push/2]).
 
@@ -47,9 +39,9 @@
 
 start(Host, Opts) ->
     [ejabberd_hooks:add(Hook, Host, ?MODULE, Hook, 20)
-     || Hook <- ?HOOKS],
+     || Hook <- hooks()],
     [ejabberd_hooks:add(Hook, ?MODULE, Hook, 18)
-     || Hook <- ?GLOBAL_HOOKS],
+     || Hook <- global_hooks()],
      StatsDH = gen_mod:get_opt(statsdhost, Opts),
      {ok, StatsDHost} = getaddrs(StatsDH),
      StatsDPort = gen_mod:get_opt(statsdport, Opts),
@@ -58,15 +50,30 @@ start(Host, Opts) ->
 
 stop(Host) ->
     [ejabberd_hooks:delete(Hook, Host, ?MODULE, Hook, 20)
-     || Hook <- ?HOOKS],
+     || Hook <- hooks()],
          [ejabberd_hooks:delete(Hook, Host, ?MODULE, Hook, 20)
-     || Hook <- ?GLOBAL_HOOKS],
+     || Hook <- global_hooks()],
     ok.
 
 depends(_Host, _Opts) ->
     [].
 
 mod_doc() -> #{}.
+
+hooks() ->
+    [offline_message_hook,
+     sm_register_connection_hook,
+     sm_remove_connection_hook,
+     user_send_packet,
+     user_receive_packet,
+     s2s_send_packet,
+     s2s_receive_packet,
+     remove_user,
+     register_user].
+
+global_hooks() ->
+    [component_connected,
+     component_disconnected].
 
 %%====================================================================
 %% Hooks handlers
