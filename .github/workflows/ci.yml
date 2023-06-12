@@ -133,7 +133,7 @@ jobs:
       run: |
         sed -i 's|{deps, \[|{deps, \[fusco, observer_cli, recon, \
                   {cuesport, ".*", {git, "https://github.com/goj/cuesport"}}, \
-                  {ecaptcha, ".*", {git, "https://github.com/badlop/ecaptcha", {branch, "fix-otp-26"}}}, \
+                  {ecaptcha, ".*", {git, "https://github.com/seriyps/ecaptcha", {branch, "master"}}}, \
                  |g' rebar.config
         sed -i 's|stdlib, |stdlib, fusco, observer_cli, recon, cuesport, ecaptcha, |g' rebar.config
 
