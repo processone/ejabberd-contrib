@@ -1,10 +1,13 @@
 -module(ejabberd_observer_cli).
 
--export([start/0, mod_status/0]).
+-export([start/0, stop/1, mod_status/0]).
 
 start() ->
     application:set_env(observer_cli, plugins, plugins(), [{persistent, true}]),
     observer_cli:start_plugin().
+
+stop(_Host) ->
+    ok.
 
 mod_status() ->
     "In an erlang shell run: ejabberd_observer_cli:start().".
