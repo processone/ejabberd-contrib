@@ -60,8 +60,13 @@ depends(_Host, _Opts) ->
 %%%----------------------------------------------------------------------
 
 process(_Path, #request{host = Host}) ->
-    Location = gen_mod:get_module_opt(Host, ?MODULE, location),
-    {301, [{<<"Location">>, Location}], <<>>}.
+    try gen_mod:get_module_opt(Host, ?MODULE, location) of
+        Location when is_binary(Location) ->
+            {301, [{<<"Location">>, Location}], <<>>}
+    catch
+        error:{module_not_loaded, ?MODULE, Host} ->
+            {404, [], <<"Not Found">>}
+    end.
 
 %%%----------------------------------------------------------------------
 %%% Options and documentation
