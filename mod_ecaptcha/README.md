@@ -2,7 +2,7 @@ mod_ecaptcha - Generate CAPTCHAs using ecaptcha
 ===============================================
 
 Requires:
-- ejabberd 23.xx or higher
+- ejabberd 23.01 or higher
 - C compiler and makefile
 - write access to ejabberd's priv dir
 

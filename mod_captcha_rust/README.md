@@ -2,7 +2,7 @@ mod_captcha_rust - Generate CAPTCHAs using Rust library
 =======================================================
 
 Requires:
-- ejabberd 23.xx or higher compiled with Elixir
+- ejabberd 23.01 or higher compiled with Elixir
 - Erlang/OTP and Elixir to compile the `captcha_nif` Elixir library
 - Rust compiler (package `rustc` in some package managers)
 
