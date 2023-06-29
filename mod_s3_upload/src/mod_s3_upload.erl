@@ -474,6 +474,9 @@ object_url(BucketURL, ObjectName) ->
           ObjectName :: binary().
 % generate reasonably unique sortable (by time first) object name.
 object_name(Filename) ->
-    str:format("~.36B~.36B-~s", [os:system_time(microsecond),
-                                 erlang:phash2(node()),
-                                 uri_string:quote(Filename)]).
+    <<RandomPrefix:128/big-unsigned-integer>> = crypto:strong_rand_bytes(16),
+    RandomPrefixS = str:format("~32.16.0b", [RandomPrefix]),
+    FolderName = str:substr(RandomPrefixS, 1, 2),
+    str:format("~s/~s-~s", [FolderName,
+                            RandomPrefixS,
+                            uri_string:quote(Filename)]).
