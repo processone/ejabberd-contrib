@@ -51,6 +51,8 @@
 
 -import(gen_mod, [get_opt/2]).
 
+-import(crypto, [strong_rand_bytes/1]).
+
 %%-----------------------------------------------------------------------
 %% gen_mod callbacks and related machinery
 %%-----------------------------------------------------------------------
@@ -474,4 +476,4 @@ object_url(BucketURL, ObjectName) ->
 object_name(Filename) ->
     str:format("~.36B~.36B-~s", [os:system_time(microsecond),
                                  erlang:phash2(node()),
-                                 Filename]).
+                                 uri_string:quote(Filename)]).
