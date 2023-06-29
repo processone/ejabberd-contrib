@@ -410,7 +410,7 @@ put_get_url(#params{bucket_url = BucketURL,
             UploadRequest,
             Filename) ->
     ObjectName = object_name(Filename),
-    UnsignedPutURL = decorated_put_url(UploadRequest, Params, ObjectName),
+    UnsignedPutURL = decorated_put_url(UploadRequest, Params, BucketURL, ObjectName),
     {aws_util:signed_url(Auth, put, ?AWS_SERVICE_S3, UnsignedPutURL, [], calendar:universal_time(), TTL),
      object_url(DownloadURL, ObjectName)}.
 
@@ -440,12 +440,13 @@ upload_parameters(#upload_request_0{size           = FileSize,
 -spec decorated_put_url(
         UploadRequest :: #upload_request_0{},
         Params :: #params{},
-        URL :: binary()
+        BucketURL :: binary(),
+        ObjectName :: binary()
        ) ->
           PutURL :: binary().
 % attach additional query parameters (to the PUT URL), specifically canned ACL.
-decorated_put_url(UploadRequest, ServiceParams, URL) ->
-    UriMap = uri_string:parse(URL),
+decorated_put_url(UploadRequest, ServiceParams, BucketURL, ObjectName) ->
+    UriMap = uri_string:parse(uri_string:resolve(ObjectName, BucketURL)),
     QueryList = case UriMap of
                     #{query := QueryString} ->
                         uri_string:dissect_query(QueryString);
@@ -463,8 +464,7 @@ decorated_put_url(UploadRequest, ServiceParams, URL) ->
           ObjectURL :: binary().
 % generate a unique random object URL for the given filename
 object_url(BucketURL, ObjectName) ->
-    #{path := BasePath} = UriMap = uri_string:parse(BucketURL),
-    uri_string:recompose(UriMap#{path => <<BasePath/binary, "/", ObjectName/binary>>}).
+    uri_string:resolve(ObjectName, BucketURL).
 
 -spec object_name(
         Filename :: binary()
