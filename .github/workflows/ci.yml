@@ -99,7 +99,10 @@ jobs:
     - name: Get list of available modules
       run: |
         CTL=_build/dev/rel/ejabberd/bin/ejabberdctl
-        $CTL modules_available | awk '{print $1}' | grep -v mod_captcha_rust >modules_available.txt
+        $CTL modules_available | awk '{print $1}' >modules_available.txt
+
+    - name: Disable mod_captcha_rust testing
+      run: sed -i '/mod_captcha_rust/d' modules_available.txt
 
     - name: Install modules
       run: |
