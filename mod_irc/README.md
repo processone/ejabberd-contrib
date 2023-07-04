@@ -1,5 +1,11 @@
 ## mod_irc
 
+---
+> **This module is obsolete and not maintained anymore.**
+> Please try other XMPP-IRC transports/gateways, for example
+> [Biboumi](https://biboumi.louiz.org/).
+---
+
 This module is an IRC transport that can be used to join channels on IRC
 servers.
 
