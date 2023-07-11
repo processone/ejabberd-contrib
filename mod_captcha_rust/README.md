@@ -33,7 +33,7 @@ ejabberd source code and apply this small patch:
  
    defp deps do
      [{:base64url, "~> 1.0"},
-+     {:captcha_nif, "~> 0.1", hex: :captcha_nif},
++     {:captcha, "~> 0.1", hex: :captcha_nif},
       {:cache_tab, "~> 1.0"},
       {:eimp, "~> 1.0"},
       {:ex_doc, ">= 0.0.0", only: :dev},
