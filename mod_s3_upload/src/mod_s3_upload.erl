@@ -51,6 +51,8 @@
 
 -import(gen_mod, [get_opt/2]).
 
+-import(crypto, [strong_rand_bytes/1]).
+
 %%-----------------------------------------------------------------------
 %% gen_mod callbacks and related machinery
 %%-----------------------------------------------------------------------
@@ -410,7 +412,7 @@ put_get_url(#params{bucket_url = BucketURL,
             UploadRequest,
             Filename) ->
     ObjectName = object_name(Filename),
-    UnsignedPutURL = decorated_put_url(UploadRequest, Params, ObjectName),
+    UnsignedPutURL = decorated_put_url(UploadRequest, Params, BucketURL, ObjectName),
     {aws_util:signed_url(Auth, put, ?AWS_SERVICE_S3, UnsignedPutURL, [], calendar:universal_time(), TTL),
      object_url(DownloadURL, ObjectName)}.
 
@@ -440,12 +442,13 @@ upload_parameters(#upload_request_0{size           = FileSize,
 -spec decorated_put_url(
         UploadRequest :: #upload_request_0{},
         Params :: #params{},
-        URL :: binary()
+        BucketURL :: binary(),
+        ObjectName :: binary()
        ) ->
           PutURL :: binary().
 % attach additional query parameters (to the PUT URL), specifically canned ACL.
-decorated_put_url(UploadRequest, ServiceParams, URL) ->
-    UriMap = uri_string:parse(URL),
+decorated_put_url(UploadRequest, ServiceParams, BucketURL, ObjectName) ->
+    UriMap = uri_string:parse(uri_string:resolve(ObjectName, BucketURL)),
     QueryList = case UriMap of
                     #{query := QueryString} ->
                         uri_string:dissect_query(QueryString);
@@ -463,8 +466,7 @@ decorated_put_url(UploadRequest, ServiceParams, URL) ->
           ObjectURL :: binary().
 % generate a unique random object URL for the given filename
 object_url(BucketURL, ObjectName) ->
-    #{path := BasePath} = UriMap = uri_string:parse(BucketURL),
-    uri_string:recompose(UriMap#{path => <<BasePath/binary, "/", ObjectName/binary>>}).
+    uri_string:resolve(ObjectName, BucketURL).
 
 -spec object_name(
         Filename :: binary()
@@ -472,6 +474,9 @@ object_url(BucketURL, ObjectName) ->
           ObjectName :: binary().
 % generate reasonably unique sortable (by time first) object name.
 object_name(Filename) ->
-    str:format("~.36B~.36B-~s", [os:system_time(microsecond),
-                                 erlang:phash2(node()),
-                                 Filename]).
+    <<RandomPrefix:128/big-unsigned-integer>> = crypto:strong_rand_bytes(16),
+    RandomPrefixS = str:format("~32.16.0b", [RandomPrefix]),
+    FolderName = str:substr(RandomPrefixS, 1, 2),
+    str:format("~s/~s-~s", [FolderName,
+                            RandomPrefixS,
+                            uri_string:quote(Filename)]).
