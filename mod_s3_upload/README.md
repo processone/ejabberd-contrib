@@ -7,8 +7,8 @@ Implements HTTP Upload using any S3-compatible storage service.
 
 # OTP Compatibility
 
-This module depends heavily on the `uri_string` module introduced in
-OTP 21 in order to implement URL signing.
+This module requires Erlang/OTP 25.0 or higher, as it depends heavily
+on the `uri_string` module to implement URL signing.
 
 # How it works
 

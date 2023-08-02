@@ -104,6 +104,10 @@ jobs:
     - name: Disable mod_captcha_rust testing
       run: sed -i '/mod_captcha_rust/d' modules_available.txt
 
+    - name: Disable mod_s3_upload testing with old OTP
+      if: matrix.otp < '25'
+      run: sed -i '/mod_s3_upload/d' modules_available.txt
+
     - name: Install modules
       run: |
         CTL=_build/dev/rel/ejabberd/bin/ejabberdctl
