@@ -28,7 +28,7 @@
 -behaviour(gen_mod).
 
 %% gen_mod callbacks.
--export([start/2, stop/1, depends/2, mod_options/1, get_sm_features/5, mod_doc/0,]).
+-export([start/2, stop/1, depends/2, mod_options/1, get_sm_features/5, mod_doc/0]).
 
 -define(NS_SERVERINFO, <<"urn:xmpp:serverinfo:0">>).
 
