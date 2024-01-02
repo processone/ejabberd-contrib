@@ -32,11 +32,11 @@
 
 -define(NS_SERVERINFO, <<"urn:xmpp:serverinfo:0">>).
 
-start(_Host, _Opts) ->
+start(Host, _Opts) ->
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     ok.
 
-stop(_Host) ->
+stop(Host) ->
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     ok.
 
