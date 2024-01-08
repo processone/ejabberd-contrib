@@ -28,16 +28,16 @@
 -behaviour(gen_mod).
 
 %% gen_mod callbacks.
--export([start/2, stop/1, depends/2, mod_options/1, get_sm_features/5, mod_doc/0]).
+-export([start/2, stop/1, depends/2, mod_options/1, get_local_features/5, mod_doc/0]).
 
 -define(NS_SERVERINFO, <<"urn:xmpp:serverinfo:0">>).
 
 start(Host, _Opts) ->
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, get_local_features, 50),
     ok.
 
 stop(Host) ->
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_local_features, 50),
     ok.
 
 depends(_Host, _Opts) ->
@@ -48,11 +48,11 @@ mod_options(_Host) ->
 
 mod_doc() -> #{}.
 
-get_sm_features({error, _} = Acc, _From, _To, _Node,
+get_local_features({error, _} = Acc, _From, _To, _Node,
 		_Lang) ->
     Acc;
 
-get_sm_features(Acc, _From, _To, Node, _Lang) ->
+get_local_features(Acc, _From, _To, Node, _Lang) ->
     case Node of
       [] ->
 	  case Acc of
