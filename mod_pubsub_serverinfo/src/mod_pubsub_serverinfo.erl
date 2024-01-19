@@ -59,7 +59,7 @@ stop(Host) ->
 init([Host, _Opts]) ->
     TRef = timer:send_interval(timer:minutes(5), self(), update_pubsub),
     State = #state{host = Host, pubsub_host = <<"pubsub.", Host/binary>>, node = <<"serverinfo">>, timer = TRef},
-    self() ! {timeout, ok, update_pubsub},
+    self() ! update_pubsub,
     {ok, State}.
 
 handle_cast({register_in, MyDomain, Target, Pid}, #state{monitors = Mon} = State) ->
@@ -76,7 +76,7 @@ handle_cast(_, State) ->
 handle_call(_Request, _From, State) ->
     {noreply, State}.
 
-handle_info({timeout, _, update_pubsub}, State) ->
+handle_info(update_pubsub, State) ->
     update_pubsub(State),
     {noreply, State};
 handle_info({'DOWN', Mon, process, _Pid, _Info}, #state{monitors = Mons} = State) ->
@@ -145,7 +145,7 @@ update_pubsub(#state{host = Host, pubsub_host = PubsubHost, node = Node, monitor
     PubOpts = [{persist_items, true}, {max_items, 1}, {access_model, open}],
     mod_pubsub:publish_item(
 	PubsubHost, Host, Node, jid:make(Host),
-	<<>>, [xmpp:encode(#pubsub_serverinfo{domain = Domains})], PubOpts, all).
+	<<"current">>, [xmpp:encode(#pubsub_serverinfo{domain = Domains})], PubOpts, all).
 
 get_local_features({error, _} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
