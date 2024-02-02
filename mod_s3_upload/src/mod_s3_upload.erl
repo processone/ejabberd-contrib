@@ -342,7 +342,7 @@ handle_iq(#iq{type    = get,
         allow ->
             ?INFO_MSG("Generating S3 Object URL Pair for ~ts to upload file ~ts (~B bytes)",
                       [jid:encode(Requester), Filename, FileSize]),
-            {PutURL, GetURL} = put_get_url(Params, UploadRequest, Filename),
+            {PutURL, GetURL} = put_get_url(Params, UploadRequest, Filename, Requester),
             xmpp:make_iq_result(IQ, #upload_slot_0{get = GetURL,
                                                    put = PutURL,
                                                    xmlns = ?NS_HTTP_UPLOAD_0});
@@ -395,7 +395,8 @@ build_service_params(ServerHost, Opts) ->
 -spec put_get_url(
         Params :: #params{},
         UploadRequest :: #upload_request_0{},
-        Filename :: binary()
+        Filename :: binary(),
+        JID :: jid()
        ) ->
           {binary(), binary()}.
 % produce a list of {put_url, get_url}, where put_url is signed and
@@ -403,15 +404,17 @@ build_service_params(ServerHost, Opts) ->
 put_get_url(#params{bucket_url = BucketURL,
                     download_url = undefined} = Params,
             UploadRequest,
-            Filename) ->
-    put_get_url(Params#params{download_url = BucketURL}, UploadRequest, Filename);
+            Filename,
+            JID) ->
+    put_get_url(Params#params{download_url = BucketURL}, UploadRequest, Filename, JID);
 put_get_url(#params{bucket_url = BucketURL,
                     download_url = DownloadURL,
                     auth = Auth,
                     ttl = TTL} = Params,
             UploadRequest,
-            Filename) ->
-    ObjectName = object_name(Filename),
+            Filename,
+            JID) ->
+    ObjectName = object_name(Filename, JID),
     UnsignedPutURL = decorated_put_url(UploadRequest, Params, BucketURL, ObjectName),
     {aws_util:signed_url(Auth, put, ?AWS_SERVICE_S3, UnsignedPutURL, [], calendar:universal_time(), TTL),
      object_url(DownloadURL, ObjectName)}.
@@ -469,14 +472,13 @@ object_url(BucketURL, ObjectName) ->
     uri_string:resolve(ObjectName, BucketURL).
 
 -spec object_name(
-        Filename :: binary()
+        Filename :: binary(),
+        JID :: jid()
        ) ->
           ObjectName :: binary().
-% generate reasonably unique sortable (by time first) object name.
-object_name(Filename) ->
-    <<RandomPrefix:128/big-unsigned-integer>> = crypto:strong_rand_bytes(16),
-    RandomPrefixS = str:format("~32.16.0b", [RandomPrefix]),
-    FolderName = str:substr(RandomPrefixS, 1, 2),
-    str:format("~s/~s-~s", [FolderName,
-                            RandomPrefixS,
-                            uri_string:quote(Filename)]).
+% generate a unique random object name for the given filename
+object_name(Filename, #jid{luser = User, lserver = Server}) ->
+    UserStr = str:sha(<<User/binary, $@, Server/binary>>),
+    RandStr = p1_rand:get_alphanum_string(20),
+    FileStr = uri_string:quote(Filename),
+    str:format("~s/~s/~s", [UserStr, RandStr, FileStr]).
