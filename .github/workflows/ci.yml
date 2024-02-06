@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         otp: ['21.3', '25.3', '26']
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: erlang:${{ matrix.otp }}
 
