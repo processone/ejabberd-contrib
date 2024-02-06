@@ -29,12 +29,12 @@ jobs:
     steps:
 
     - name: Checkout ejabberd
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: processone/ejabberd
 
     - name: Checkout ejabberd-contrib
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: .ejabberd-modules/sources/ejabberd-contrib
 
@@ -66,7 +66,7 @@ jobs:
       run: sed -i 's|, syntax_tools||g' src/ejabberd.app.src.script
 
     - name: Cache rebar
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cache/rebar3/
