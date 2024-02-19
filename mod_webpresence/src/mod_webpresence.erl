@@ -42,9 +42,6 @@
 -record(state, {host, server_host, base_url, access}).
 -record(presence2, {resource, show, priority, status}).
 
-%% Copied from ejabberd_sm.erl
--record(session, {sid, usr, us, priority, info}).
-
 -define(AUTO_ACL, webpresence_auto).
 
 %%====================================================================
@@ -591,7 +588,7 @@ get_status_weight(Show) ->
         _                 -> 9
     end.
 
-session_to_presence(#session{sid = {_, Pid}}) ->
+sid_to_presence({_, Pid}) ->
     P = ejabberd_c2s:get_presence(Pid),
     #presence2{resource = (P#presence.from)#jid.resource,
               show = misc:atom_to_binary(humanize_show(P#presence.show)),
@@ -604,8 +601,8 @@ humanize_show(Show) ->
     Show.
 
 get_presences({bare, LUser, LServer}) ->
-    [session_to_presence(Session) ||
-        Session <- mnesia:dirty_index_read(session, {LUser, LServer}, #session.us)];
+    Sids = ejabberd_sm:get_session_sids(LUser, LServer),
+    lists:map(fun sid_to_presence/1, Sids);
 
 get_presences({sorted, LUser, LServer}) ->
     lists:sort(
