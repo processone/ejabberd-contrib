@@ -62,20 +62,32 @@ init([Host, _Opts]) ->
     self() ! update_pubsub,
     {ok, State}.
 
-handle_cast({register_in, MyDomain, Target, Pid}, #state{monitors = Mon} = State) ->
-    Ref = monitor(process, Pid),
-    Mon2 = maps:put(Ref, {incoming, {MyDomain, Target}}, Mon),
-    {noreply, State#state{monitors = Mon2}};
-handle_cast({register_out, MyDomain, Target, Pid}, #state{monitors = Mon} = State) ->
-    Ref = monitor(process, Pid),
-    Mon2 = maps:put(Ref, {outgoing, {MyDomain, Target}}, Mon),
-    {noreply, State#state{monitors = Mon2}};
 handle_cast(_, State) ->
     {noreply, State}.
 
 handle_call(_Request, _From, State) ->
     {noreply, State}.
 
+handle_info({iq_reply, IQReply, {LServer, RServer, Dir, Pid}},
+	    #state{monitors = Mon} = State) ->
+    case IQReply of
+	#iq{type = result, sub_els = [El]} ->
+	    case xmpp:decode(El) of
+		#disco_info{features = Features} ->
+		    case lists:member(?NS_URN_SERVERINFO, Features) of
+			true ->
+			    Ref = monitor(process, Pid),
+			    Mon2 = maps:put(Ref, {Dir, {LServer, RServer}}, Mon),
+			    {noreply, State#state{monitors = Mon2}};
+			_ ->
+			    {noreply, State}
+		    end;
+		_ ->
+		    {noreply, State}
+	    end;
+	_ ->
+	    {noreply, State}
+    end;
 handle_info(update_pubsub, State) ->
     update_pubsub(State),
     {noreply, State};
@@ -112,16 +124,22 @@ mod_options(_Host) ->
 mod_doc() -> #{}.
 
 in_auth_result(#{server_host := Host, server := LServer, remote_server := RServer} = State, true, _Server) ->
-    gen_server:cast(gen_mod:get_module_proc(Host, ?MODULE), {register_in, LServer, RServer, self()}),
+    check_if_remote_has_support(Host, LServer, RServer, incoming),
     State;
 in_auth_result(State, _, _) ->
     State.
 
 out_auth_result(#{server_host := Host, server := LServer, remote_server := RServer} = State, true) ->
-    gen_server:cast(gen_mod:get_module_proc(Host, ?MODULE), {register_out, LServer, RServer, self()}),
+    check_if_remote_has_support(Host, LServer, RServer, outgoing),
     State;
 out_auth_result(State, _) ->
     State.
+
+check_if_remote_has_support(Host, LServer, RServer, Dir) ->
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    IQ = #iq{type = get, from = jid:make(LServer),
+	     to = jid:make(RServer), sub_els = [#disco_info{}]},
+    ejabberd_router:route_iq(IQ, {LServer, RServer, Dir, self()}, Proc).
 
 update_pubsub(#state{host = Host, pubsub_host = PubsubHost, node = Node, monitors = Mons}) ->
     Map = maps:fold(
@@ -167,5 +185,13 @@ get_info(Acc, Host, Mod, Node, Lang) when (Mod == undefined orelse Mod == mod_di
 	_ ->
 	    Acc
     end;
+get_info(Acc, Host, Mod, Node, _Lang) when Node == <<"">>, is_atom(Mod) ->
+    [#xdata{type = result,
+	fields = [
+	    #xdata_field{type = hidden,
+		var = <<"FORM_TYPE">>,
+		values = [?NS_SERVERINFO]},
+	    #xdata_field{var = <<"serverinfo-pubsub-node">>,
+		values = [<<"xmpp:pubsub.", Host/binary, "?;node=serverinfo">>]}]} | Acc];
 get_info(Acc, _Host, _Mod, _Node, _Lang) ->
     Acc.
