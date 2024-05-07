@@ -49,6 +49,7 @@
 %% ejabberd_hooks callbacks.
 -export([s2s_in_handle_info/2,
 	 s2s_receive_packet/1,
+	 sm_receive_packet/1,
 	 reopen_log/0]).
 
 %% ejabberd_commands callbacks.
@@ -148,6 +149,8 @@ init([Host, Opts]) ->
 			       s2s_in_handle_info, 90),
 	    ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE,
 			       s2s_receive_packet, 50),
+	    ejabberd_hooks:add(sm_receive_packet, Host, ?MODULE,
+			       sm_receive_packet, 50),
 	    ejabberd_hooks:add(reopen_log_hook, ?MODULE,
 			       reopen_log, 50),
 	    DumpFd = if DumpFile == none ->
@@ -262,6 +265,8 @@ terminate(Reason, #state{host = Host} = State) ->
     close_dump_file(DumpFile1, State),
     ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE,
 			  s2s_receive_packet, 50),
+    ejabberd_hooks:delete(sm_receive_packet, Host, ?MODULE,
+			  sm_receive_packet, 50),
     ejabberd_hooks:delete(s2s_in_handle_info, Host, ?MODULE,
 			  s2s_in_handle_info, 90),
     case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
@@ -281,13 +286,18 @@ code_change(_OldVsn, #state{host = Host} = State, _Extra) ->
 %% Hook callbacks.
 %%--------------------------------------------------------------------
 -spec s2s_receive_packet({stanza() | drop, s2s_in_state()})
-      -> {stanza(), s2s_in_state()} | {stop, {drop, s2s_in_state()}}.
-s2s_receive_packet({drop, _State} = Acc) ->
+      -> {stanza() | drop, s2s_in_state()}.
+s2s_receive_packet({A, State}) ->
+    {sm_receive_packet(A), State}.
+
+-spec sm_receive_packet(stanza() | drop)
+      -> stanza() | stop.
+sm_receive_packet(drop = Acc) ->
     Acc;
-s2s_receive_packet({#message{from = From,
+sm_receive_packet(#message{from = From,
 			     to = #jid{lserver = LServer} = To,
-			     type = Type, body = Body} = Msg,
-		    State} = Acc) when Type /= groupchat,
+			     type = Type, body = Body} = Msg
+		    = Acc) when Type /= groupchat,
 				       Type /= error ->
     case needs_checking(From, To) of
 	true ->
@@ -298,18 +308,18 @@ s2s_receive_packet({#message{from = From,
 			    Acc;
 			spam ->
 			    reject(Msg),
-			    {drop, State}
+			    drop
 		    end;
 		spam ->
 		    reject(Msg),
-		    {drop, State}
+		    drop
 	    end;
 	false ->
 	    Acc
     end;
-s2s_receive_packet({#presence{from = From,
+sm_receive_packet(#presence{from = From,
 			      to = #jid{lserver = LServer} = To,
-			      type = subscribe} = Presence, State} = Acc) ->
+			      type = subscribe} = Presence = Acc) ->
     case needs_checking(From, To) of
 	true ->
 	    case check_from(LServer, From) of
@@ -317,12 +327,12 @@ s2s_receive_packet({#presence{from = From,
 		    Acc;
 		spam ->
 		    reject(Presence),
-		    {drop, State}
+		    drop
 	    end;
 	false ->
 	    Acc
     end;
-s2s_receive_packet({_Stanza, _State} = Acc) ->
+sm_receive_packet(Acc) ->
     Acc.
 
 -spec s2s_in_handle_info(s2s_in_state(), any())
