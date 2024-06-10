@@ -13,7 +13,9 @@
 
 -export([start/2, stop/1, depends/2, mod_options/1, mod_doc/0, mod_status/0]).
 -export([execute_system/1, execute_erlang/1]).
--export([web_menu_node/3, web_page_node/5]).
+-export([web_menu_node/3, web_page_node/3,
+         web_page_node/5 % ejabberd 24.02 or older
+        ]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_commands.hrl").
@@ -95,10 +97,19 @@ web_menu_node(Acc, _Node, Lang) ->
 %% Web Admin Page
 %%-------------------
 
-web_page_node(_, Node, [<<"shcommands">>], Query, Lang) ->
+%% ejabberd 24.02 or older
+web_page_node(Acc, Node, Path, Query, Lang) ->
+    web_page_node(Acc, Node, #request{method = 'GET',
+                                      raw_path = <<"">>,
+                                      ip = {{127,0,0,1}, 0},
+                                      sockmod = 'gen_tcp',
+                                      socket = hd(erlang:ports()),
+                                      path = Path, q = Query, lang = Lang}).
+
+web_page_node(_, Node, #request{path = [<<"shcommands">>], q = Query, lang = Lang}) ->
     Res = [?XC(<<"h1">>, translate:translate(Lang, ?T("Shell Commands"))) | get_content(Node, Query, Lang)],
     {stop, Res};
-web_page_node(Acc, _, _, _, _) -> Acc.
+web_page_node(Acc, _, _) -> Acc.
 
 %%-------------------
 %% Generate content

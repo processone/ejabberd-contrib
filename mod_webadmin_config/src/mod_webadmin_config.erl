@@ -12,7 +12,9 @@
 
 -export([start/2, stop/1, depends/2, mod_options/1, mod_doc/0, mod_status/0]).
 -export([get_content/3]).
--export([web_menu_node/3, web_page_node/5]).
+-export([web_menu_node/3, web_page_node/3,
+         web_page_node/5 % ejabberd 24.02 or older
+        ]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_http.hrl").
@@ -53,16 +55,25 @@ mod_status() ->
 %%-------------------
 
 web_menu_node(Acc, _Node, Lang) ->
-    Acc ++ [{<<"config">>, translate:translate(Lang, ?T("Configuration"))}].
+    Acc ++ [{<<"config-content">>, translate:translate(Lang, ?T("Configuration Content"))}].
 
 %%-------------------
 %% Web Admin Page
 %%-------------------
 
-web_page_node(_, Node, [<<"config">>], Query, Lang) ->
+%% ejabberd 24.02 or older
+web_page_node(Acc, Node, Path, Query, Lang) ->
+    web_page_node(Acc, Node, #request{method = 'GET',
+                                      raw_path = <<"">>,
+                                      ip = {{127,0,0,1}, 0},
+                                      sockmod = 'gen_tcp',
+                                      socket = hd(erlang:ports()),
+                                      path = Path, q = Query, lang = Lang}).
+
+web_page_node(_, Node, #request{path = [<<"config-content">>], q = Query, lang = Lang}) ->
     Res = rpc:call(Node, mod_webadmin_config, get_content, [Node, Query, Lang]),
     {stop, Res};
-web_page_node(Acc, _, _, _, _) ->
+web_page_node(Acc, _, _) ->
     Acc.
 
 %%-------------------

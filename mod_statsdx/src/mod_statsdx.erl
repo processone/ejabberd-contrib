@@ -22,9 +22,11 @@
 	 get_top_users/2,
 	 %% WebAdmin
 	 web_menu_main/2, web_page_main/2,
-	 web_menu_node/3, web_page_node/5,
+	 web_menu_node/3, web_page_node/3,
+         web_page_node/5, % ejabberd 24.02 or older
 	 web_menu_host/3, web_page_host/3,
-	 web_user/4,
+	 web_user/5,
+	 web_user/4, % ejabberd 24.02 or older
 	 %% Hooks
 	 register_user/2, remove_user/2, %user_send_packet/1,
          user_send_packet_traffic/1, user_receive_packet_traffic/1,
@@ -1076,7 +1078,16 @@ web_menu_node(Acc, _Node, Lang) ->
 web_menu_host(Acc, _Host, Lang) ->
     Acc ++ [{<<"statsdx">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>}].
 
+%% ejabberd 24.02 or older
 web_user(Acc, User, Host, Lang) ->
+    EmptyRequest = #request{method = 'GET',
+                            raw_path = <<"">>,
+                            ip = {{127,0,0,1}, 0},
+                            sockmod = 'gen_tcp',
+                            socket = hd(erlang:ports())},
+    web_user(Acc, User, Host, EmptyRequest, Lang).
+
+web_user(Acc, User, Host, _R, Lang) ->
     Filter = [<<"username">>, User],
     Sort_query = {normal, 1},
     Acc ++
@@ -1303,7 +1314,16 @@ make_sessions_table_tr(Lang, Sorting) ->
 	  Titles),
     Titles_TR.
 
-web_page_node(_, Node, [<<"statsdx">>], _Query, Lang) ->
+%% ejabberd 24.02 or older
+web_page_node(Acc, Node, Path, Query, Lang) ->
+    web_page_node(Acc, Node, #request{method = 'GET',
+                                      raw_path = <<"">>,
+                                      ip = {{127,0,0,1}, 0},
+                                      sockmod = 'gen_tcp',
+                                      socket = hd(erlang:ports()),
+                                      path = Path, q = Query, lang = Lang}).
+
+web_page_node(_, Node, #request{path = [<<"statsdx">>], lang = Lang}) ->
     TransactionsCommited =
 	rpc:call(Node, mnesia, system_info, [transaction_commits]),
     TransactionsAborted =
@@ -1405,7 +1425,7 @@ web_page_node(_, Node, [<<"statsdx">>], _Query, Lang) ->
 		   ])
 	      ])],
     {stop, Res};
-web_page_node(Acc, _, _, _, _) -> Acc.
+web_page_node(Acc, _, _) -> Acc.
 
 web_page_host(_, Host,
 	      #request{path = [<<"statsdx">>],
