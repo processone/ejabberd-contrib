@@ -138,11 +138,14 @@ jobs:
 
     - name: Setup dependencies
       run: |
-        sed -i 's|{deps, \[|{deps, \[fusco, observer_cli, recon, \
-                  {cuesport, ".*", {git, "https://github.com/goj/cuesport"}}, \
+        sed -i 's|{deps, \[|{deps, \[ \
+                  {cuesport, ".*", {git, "https://github.com/goj/cuesport", {branch, "master"}}}, \
                   {ecaptcha, ".*", {git, "https://github.com/seriyps/ecaptcha", {branch, "master"}}}, \
+                  {fusco, ".*", {git, "https://github.com/esl/fusco", {branch, "master"}}}, \
+                  {observer_cli, ".*", {git, "https://github.com/zhongwencool/observer_cli", {branch, "master"}}}, \
+                  {recon, ".*", {git, "https://github.com/ferd/recon", {branch, "master"}}}, \
                  |g' rebar.config
-        sed -i 's|stdlib, |stdlib, fusco, observer_cli, recon, cuesport, ecaptcha, |g' rebar.config
+        sed -i 's|stdlib, |stdlib, cuesport, ecaptcha, fusco, observer_cli, recon, |g' rebar.config
 
     - run: make
     - run: make hooks
