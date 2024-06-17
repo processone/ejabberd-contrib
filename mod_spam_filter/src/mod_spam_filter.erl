@@ -286,12 +286,11 @@ code_change(_OldVsn, #state{host = Host} = State, _Extra) ->
 %% Hook callbacks.
 %%--------------------------------------------------------------------
 -spec s2s_receive_packet({stanza() | drop, s2s_in_state()})
-      -> {stanza() | drop, s2s_in_state()}.
+      -> {stanza() | drop | {stop, drop}, s2s_in_state()}.
 s2s_receive_packet({A, State}) ->
     {sm_receive_packet(A), State}.
 
--spec sm_receive_packet(stanza() | drop)
-      -> stanza() | stop.
+-spec sm_receive_packet(stanza() | drop) -> stanza() | drop | {stop, drop}.
 sm_receive_packet(drop = Acc) ->
     Acc;
 sm_receive_packet(#message{from = From,
@@ -308,11 +307,11 @@ sm_receive_packet(#message{from = From,
 			    Acc;
 			spam ->
 			    reject(Msg),
-			    drop
+			    {stop, drop}
 		    end;
 		spam ->
 		    reject(Msg),
-		    drop
+		    {stop, drop}
 	    end;
 	false ->
 	    Acc
@@ -327,7 +326,7 @@ sm_receive_packet(#presence{from = From,
 		    Acc;
 		spam ->
 		    reject(Presence),
-		    drop
+		    {stop, drop}
 	    end;
 	false ->
 	    Acc
