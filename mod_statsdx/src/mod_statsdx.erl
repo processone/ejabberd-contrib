@@ -25,8 +25,7 @@
 	 web_menu_node/3, web_page_node/3,
          web_page_node/5, % ejabberd 24.02 or older
 	 web_menu_host/3, web_page_host/3,
-	 web_user/5,
-	 web_user/4, % ejabberd 24.02 or older
+	 web_user/4,
 	 %% Hooks
 	 register_user/2, remove_user/2, %user_send_packet/1,
          user_send_packet_traffic/1, user_receive_packet_traffic/1,
@@ -1079,15 +1078,16 @@ web_menu_host(Acc, _Host, Lang) ->
     Acc ++ [{<<"statsdx">>, <<(translate:translate(Lang, ?T("Statistics")))/binary, " Dx">>}].
 
 %% ejabberd 24.02 or older
-web_user(Acc, User, Host, Lang) ->
+web_user(Acc, User, Host, Lang) when is_binary(Lang) ->
     EmptyRequest = #request{method = 'GET',
                             raw_path = <<"">>,
                             ip = {{127,0,0,1}, 0},
+                            lang = Lang,
                             sockmod = 'gen_tcp',
                             socket = hd(erlang:ports())},
-    web_user(Acc, User, Host, EmptyRequest, Lang).
+    web_user(Acc, User, Host, EmptyRequest);
 
-web_user(Acc, User, Host, _R, Lang) ->
+web_user(Acc, User, Host, #request{lang = Lang}) ->
     Filter = [<<"username">>, User],
     Sort_query = {normal, 1},
     Acc ++
