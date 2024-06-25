@@ -1,0 +1,4 @@
+modules:
+  'ModLibcluster':
+    # Connect with any other local node
+    strategy: local_epmd

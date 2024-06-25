@@ -1,0 +1,24 @@
+#modules:
+#  'ModLibcluster':
+
+    # Connect with any other local node
+    #strategy: local_epmd
+
+    # Connect only to those specific nodes
+    #strategy: epmd
+    #config:
+    #  hosts:
+    #    - ejabberd1@127.0.0.1
+    #    - ejabberd2@127.0.0.1
+    #    - ejabberd3@127.0.0.1
+
+    #strategy: kubernetes
+    #config:
+    #  mode: hostname
+    #  kubernetes_ip_lookup_mode: pods
+    #  kubernetes_namespace: "ejabberd"
+    #  kubernetes_selector: "app=ejabberd"
+    #  kubernetes_node_basename: "ejabberd"
+    #  kubernetes_service_name: "ejabberd-headless"
+    #  polling_interval: 10000
+

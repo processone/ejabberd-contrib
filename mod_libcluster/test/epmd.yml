@@ -1,0 +1,9 @@
+modules:
+  'ModLibcluster':
+    # Connect only to those specific nodes
+    strategy: epmd
+    timeout: 5000
+    hosts:
+      - ejabberd1@127.0.0.1
+      - ejabberd2@127.0.0.1
+      - ejabberd3@127.0.0.1

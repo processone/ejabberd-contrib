@@ -1,0 +1,5 @@
+author: "Badlop <badlop at process-one.net>"
+category: "cluster"
+summary: "Join nodes into cluster"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"
