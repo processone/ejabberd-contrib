@@ -83,3 +83,4 @@ If you feel they are worth it, your help to fix them is welcome:
  - mod_mam_mnesia: This feature got included in ejabberd 15.06
  - mod_openid: "Transform the Jabber Server in an openid provider."
  - mod_profile: "User Profile (XEP-0154) in Mnesia table."
+ - mod_promethus_exporter: There is brand new module that adds Prometheus support, see mod_prometheus
