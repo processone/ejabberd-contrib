@@ -1,0 +1,45 @@
+listen:
+  -
+    port: 5289
+    ip: "::"
+    module: ejabberd_http
+    request_handlers:
+      /metrics: mod_prometheus
+
+modules:
+  mod_prometheus:
+    mnesia: true
+    vm:
+      memory: true
+      system_info: true
+      statistics: false
+      distribution: false
+      microstate_accounting: false
+    hooks:
+      # Histogram for a hook:
+      - hook: user_send_packet
+        type: histogram
+        help: "Handling of sent messages duration in millisecond"
+        stanza_label: true
+        host_label: true
+      # Counter for a hook:
+      - hook: user_send_packet
+        type: counter
+        help: "Number of sent messages"
+      # Histograms only for some callbacks of a hook:
+      - hook: user_send_packet
+        type: histogram
+        host_label: true
+        collect:
+          - module: mod_carboncopy
+            function: user_send_packet
+            help: "Handling of carbon copied messages in millisecond"
+          - module: mod_mam
+            function: user_send_packet
+            help: "Handling of MAM messages in millisecond"
+            buckets:
+              - 10
+              - 100
+              - 750
+              - 1000
+              - 1500
