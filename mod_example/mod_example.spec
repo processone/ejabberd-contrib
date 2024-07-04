@@ -1,0 +1,5 @@
+author: "Author name <name@example.org>"
+category: "example"
+summary: "Example ejabberd module for testing and development"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"
