@@ -147,7 +147,7 @@ jobs:
                   {quantile_estimator, ".*", {git, "https://github.com/deadtrickster/quantile_estimator", {branch, "master"}}}, \
                   {recon, ".*", {git, "https://github.com/ferd/recon", {branch, "master"}}}, \
                  |g' rebar.config
-        sed -i 's|stdlib, |stdlib, cuesport, ecaptcha, fusco, observer_cli, recon, |g' rebar.config
+        sed -i 's|stdlib, |stdlib, cuesport, ecaptcha, fusco, observer_cli, prometheus, recon, |g' rebar.config
 
     - run: make
     - run: make hooks
