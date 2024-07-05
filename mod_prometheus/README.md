@@ -57,7 +57,7 @@ Quick Start Guide
    ```sh
    ejabberdctl module_install mod_prometheus
    ```
-1. Check ejabberd provides metrics in the URL: `http://localhost:5289/metrics/`
+1. Check ejabberd provides metrics in the URL: http://localhost:5289/metrics/
 
 ### Start Prometheus and Grafana
 
@@ -72,20 +72,23 @@ podman-compose up
 
 ### Test Prometheus
 
-1. Open in web browser `http://localhost:9090/`
+1. Open in web browser http://localhost:9090/
 
 1. Enter example query: `erlang_mnesia_tablewise_size{table="muc_online_room"}`
 
 ### Setup Grafana
 
-1. Open in web browser `http://localhost:3000/`
+1. Open in web browser http://localhost:3000/
 
 1. Login with username `admin` and password `admin`
 
-1. Add data source: Prometheus
-   - Connection: `http://host.docker.internal:9090` (or `http://prometheus:9090`, or something similar)
+1. Add your first data source:
+   - Add data source: `Prometheus`
+   - Connection URL: `http://localhost:9090`
    - Click `Save & test`
 
 1. Create your first dashboard
    - Import dashboard
    - Upload dashboard JSON file: you can try `ejabberd-dash.json`
+   - prometheus: select the data source you created previously
+   - Click `Import`
