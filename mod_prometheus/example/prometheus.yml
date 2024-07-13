@@ -23,4 +23,4 @@ scrape_configs:
       - targets: ["localhost:9090"]
   - job_name: "ejabberd"
     static_configs:
-      - targets: ["host.docker.internal:5289"]
+      - targets: ["localhost:5289"]

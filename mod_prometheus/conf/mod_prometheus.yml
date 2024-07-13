@@ -20,16 +20,36 @@ modules:
       - hook: user_send_packet
         type: histogram
         help: "Handling of sent messages duration in millisecond"
-        stanza_label: true
-        host_label: true
+        labels:
+          - host
+          - stanza
+      # Histogram for all modules of a hook:
+      - hook: user_receive_packet
+        type: histogram
+        help: "Handling of received messages duration in millisecond"
+        labels:
+          - host
+          - stanza
+          - module
       # Counter for a hook:
-      - hook: user_send_packet
+      - hook: sm_register_connection_hook
         type: counter
-        help: "Number of sent messages"
-      # Histograms only for some callbacks of a hook:
+        labels:
+          - host
+          - stanza
+      # Counter for all modules of a hook:
+      - hook: sm_remove_connection_hook
+        type: counter
+        labels:
+          - host
+          - stanza
+          - module
+        help: "Number of closed c2s sessions"
+      # Histogram for some modules (callbacks) of a hook:
       - hook: user_send_packet
         type: histogram
-        host_label: true
+        labels:
+          - host
         collect:
           - module: mod_carboncopy
             function: user_send_packet
@@ -37,6 +57,9 @@ modules:
           - module: mod_mam
             function: user_send_packet
             help: "Handling of MAM messages in millisecond"
+            labels:
+              # It also inherits above `host` label
+              - stanza
             buckets:
               - 10
               - 100

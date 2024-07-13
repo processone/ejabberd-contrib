@@ -3,6 +3,7 @@ version: '3.7'
 services:
 
   prometheus:
+    network_mode: "host"
     image: docker.io/prom/prometheus
     container_name: prometheus
     ports:
@@ -11,6 +12,7 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
+    network_mode: "host"
     image: docker.io/grafana/grafana-enterprise
     container_name: grafana
     ports:
