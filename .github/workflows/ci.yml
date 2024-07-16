@@ -80,10 +80,8 @@ jobs:
         ./configure --with-rebar=./rebar3 \
                     --prefix=/tmp/ejabberd \
                     --enable-all \
-                    --disable-elixir \
                     --disable-mssql \
                     --disable-odbc
-        make update
         make
 
     - name: Start ejabberd
