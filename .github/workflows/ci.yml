@@ -70,6 +70,8 @@ jobs:
       with:
         path: |
           ~/.cache/rebar3/
+          ~/.hex/
+          ~/.mix/
         key: ${{matrix.otp}}-${{hashFiles('rebar.config')}}
 
     - name: Compile
