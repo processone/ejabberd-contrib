@@ -21,15 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: [23, 26, 27]
-        elixir: ['1.13', '1.17']
-        exclude:
-        - otp: '23.0'
-          elixir: '1.17'
-        - otp: '26'
-          elixir: '1.13'
-        - otp: '27'
-          elixir: '1.13'
+        otp: [25, 26, 27]
+        elixir: ['1.17']
     runs-on: ubuntu-20.04
 
     steps:
@@ -49,13 +42,6 @@ jobs:
       uses: actions/checkout@v4
       with:
         path: .ejabberd-modules/sources/ejabberd-contrib
-
-    - name: Get a compatible Rebar3
-      if: matrix.otp <= 23
-      run: |
-        rm rebar3
-        wget https://github.com/processone/ejabberd/raw/21.12/rebar3
-        chmod +x rebar3
 
     - name: Prepare libraries
       run: |
