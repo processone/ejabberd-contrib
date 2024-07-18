@@ -2,7 +2,7 @@ mod_libcluster - Join nodes into cluster
 ========================================
 
 Requires:
-- ejabberd 24.xx or higher compiled with Elixir support
+- ejabberd 24.07 or higher compiled with Elixir support
 
 
 This small module connects this ejabberd node to other nodes
