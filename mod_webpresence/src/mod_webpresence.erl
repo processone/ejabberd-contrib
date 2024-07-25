@@ -58,7 +58,8 @@ start(Host, Opts) ->
               PP ->
                   PP
           end,
-    catch ets:new(pixmaps_dirs, [named_table, public]),
+    Heir = {heir, whereis(ext_mod), ?MODULE},
+    catch ets:new(pixmaps_dirs, [named_table, public, Heir]),
     ets:insert(pixmaps_dirs, {directory, Dir}),
     case gen_mod:start_child(?MODULE, Host, Opts) of
        {ok, Ref} ->

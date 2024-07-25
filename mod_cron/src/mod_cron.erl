@@ -36,7 +36,8 @@ start(Host, Opts) ->
     ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, web_page_host, 50),
     Tasks = gen_mod:get_opt(tasks, Opts),
-    catch ets:new(cron_tasks, [ordered_set, named_table, public, {keypos, 2}]),
+    Heir = {heir, whereis(ext_mod), ?MODULE},
+    catch ets:new(cron_tasks, [ordered_set, named_table, public, {keypos, 2}, Heir]),
     [add_task(Host, Task) || Task <- Tasks],
     ok.
 
