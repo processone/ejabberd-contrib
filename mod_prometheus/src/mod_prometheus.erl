@@ -352,7 +352,7 @@ handle_histogram(Name, HName, HistogramOpts, Host, Action, State) ->
   InitArg = State#{name => HName, labels => LabelNames},
   case Action of
     subscribe ->
-      prometheus_histogram:new(
+      prometheus_histogram:declare(
         [
           {name, HName},
           {buckets, maps:get(buckets, HistogramOpts, [1, 10, 100, 500, 750, 1000, 3000, 5000])},
@@ -377,7 +377,7 @@ handle_counter(Name, HName, CounterOpts, Host, Action, State) ->
   InitArg = State#{name => HName, labels => LabelNames},
   case Action of
     subscribe ->
-      prometheus_counter:new(
+      prometheus_counter:declare(
         [{name, HName}, {help, maps:get(help, CounterOpts, "No help")}, {labels, LabelNames}]
       ),
       ?INFO_MSG("Created new Prometheus counter for ~p with labels ~p", [HName, LabelNames]),
