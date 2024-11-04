@@ -3,17 +3,25 @@ version: '3.7'
 services:
 
   prometheus:
-    network_mode: "host"
     image: docker.io/prom/prometheus
     container_name: prometheus
     ports:
       - "9090:9090"
     volumes:
+      - prometheus-data:/prometheus
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: always
 
   grafana:
-    network_mode: "host"
     image: docker.io/grafana/grafana-enterprise
     container_name: grafana
     ports:
       - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana_defaults.ini:/usr/share/grafana/conf/defaults.ini
+    restart: always
+
+volumes:
+  prometheus-data:
+  grafana-data:
