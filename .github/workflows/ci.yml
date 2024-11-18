@@ -21,9 +21,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: [25, 26, 27]
-        elixir: ['1.17']
-    runs-on: ubuntu-20.04
+        elixir: ['1.13', '1.14', '1.15', '1.16', '1.17']
+    runs-on: ubuntu-24.04
+    container:
+      image: elixir:${{ matrix.elixir }}
 
     steps:
 
@@ -32,12 +33,6 @@ jobs:
       with:
         repository: processone/ejabberd
 
-    - name: Get specific Erlang/OTP
-      uses: erlef/setup-beam@v1
-      with:
-        otp-version: ${{matrix.otp}}
-        elixir-version: ${{matrix.elixir}}
-
     - name: Checkout ejabberd-contrib
       uses: actions/checkout@v4
       with:
@@ -45,10 +40,10 @@ jobs:
 
     - name: Prepare libraries
       run: |
-        sudo apt-get -qq update
-        sudo apt-get -y purge libgd3 nginx
-        sudo apt-get -qq install libexpat1-dev libgd-dev libpam0g-dev \
-                                 libsqlite3-dev libwebp-dev libyaml-dev
+        apt-get -qq update
+        apt-get -y purge libgd3 nginx
+        apt-get -qq install libexpat1-dev libgd-dev libpam0g-dev \
+                            libsqlite3-dev libwebp-dev libyaml-dev
 
     - name: Prepare rebar
       id: rebar
@@ -70,7 +65,12 @@ jobs:
           ~/.cache/rebar3/
           ~/.hex/
           ~/.mix/
-        key: ${{matrix.otp}}-${{hashFiles('rebar.config')}}
+        key: ${{matrix.elixir}}-${{hashFiles('rebar.config')}}
+
+    - name: Install Hex and Rebar3 manually on older Elixir
+      run: |
+        mix local.hex --force
+        mix local.rebar --force
 
     - name: Compile
       run: |
@@ -103,7 +103,7 @@ jobs:
       run: sed -i '/mod_captcha_rust/d' modules_available.txt
 
     - name: Disable mod_s3_upload testing with old OTP
-      if: matrix.otp < 25
+      if: matrix.elixir < '1.16'
       run: sed -i '/mod_s3_upload/d' modules_available.txt
 
     - name: Install modules
