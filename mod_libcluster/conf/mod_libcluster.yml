@@ -1,5 +1,5 @@
 #modules:
-#  'ModLibcluster':
+#  'Ejabberd.Module.Libcluster':
 
     # Connect with any other local node
     #strategy: local_epmd

@@ -74,7 +74,7 @@ Basic Configuration
 The minimal configuration required to get this module working is:
 
 ```yaml
-captcha_cmd: 'Elixir.ModCaptchaRust'
+captcha_cmd: 'Ejabberd.Module.CaptchaRust'
 
 captcha_url: http://localhost:5280/captcha
 
@@ -106,7 +106,7 @@ Example of module configuration:
 
 ```yaml
 modules:
-  'Elixir.ModCaptchaRust':
+  'Ejabberd.Module.CaptchaRust':
     difficulty: hard
     color: [255, 0, 0]
 ```

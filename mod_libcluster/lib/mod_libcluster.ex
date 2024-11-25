@@ -1,5 +1,7 @@
-defmodule ModLibcluster do
-  use Ejabberd.Module
+defmodule Ejabberd.Module.Libcluster do
+
+  @behaviour :gen_mod
+  import Ejabberd.Logger
 
   def start(_host, opts) do
 

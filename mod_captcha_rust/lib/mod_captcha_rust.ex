@@ -1,5 +1,7 @@
-defmodule ModCaptchaRust do
-  use Ejabberd.Module
+defmodule Ejabberd.Module.CaptchaRust do
+
+  @behaviour :gen_mod
+  import Ejabberd.Logger
 
   require Record
 
@@ -57,7 +59,7 @@ defmodule ModCaptchaRust do
 
   def get_opt(option_name) do
     host = List.first(:ejabberd_option.hosts())
-    :gen_mod.get_module_opt(host, Elixir.ModCaptchaRust, option_name)
+    :gen_mod.get_module_opt(host, Ejabberd.Module.CaptchaRust, option_name)
   end
 
 end

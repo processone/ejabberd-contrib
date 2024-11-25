@@ -1,5 +1,5 @@
 modules:
-  'ModLibcluster':
+  'Ejabberd.Module.Libcluster':
     # Connect only to those specific nodes
     strategy: epmd
     timeout: 5000

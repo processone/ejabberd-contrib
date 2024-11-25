@@ -1,4 +1,4 @@
-captcha_cmd: 'Elixir.ModCaptchaRust'
+captcha_cmd: 'Ejabberd.Module.CaptchaRust'
 
 captcha_url: http://localhost:5288/captcha/
 
@@ -10,4 +10,4 @@ listen:
       /captcha: ejabberd_captcha
 
 modules:
-  'Elixir.ModCaptchaRust': {}
+  'Ejabberd.Module.CaptchaRust': {}
