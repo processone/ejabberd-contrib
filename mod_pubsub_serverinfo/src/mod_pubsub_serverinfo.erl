@@ -64,23 +64,39 @@ init([Host, _Opts]) ->
     self() ! update_pubsub,
     {ok, State}.
 
+handle_cast({register_in, Host, LServer, RServer, Pid}, #state{monitors = Mons} = State) ->
+    Ref = monitor(process, Pid),
+    NewMons = maps:put(Ref, {incoming, {LServer, RServer, false}}, Mons),
+    check_if_remote_has_support(Host, LServer, RServer, incoming),
+    {noreply, State#state{monitors = NewMons}};
+handle_cast({register_out, Host, LServer, RServer, Pid}, #state{monitors = Mons} = State) ->
+    Ref = monitor(process, Pid),
+    NewMons = maps:put(Ref, {outgoing, {LServer, RServer, false}}, Mons),
+    check_if_remote_has_support(Host, LServer, RServer, outgoing),
+    {noreply, State#state{monitors = NewMons}};
 handle_cast(_, State) ->
     {noreply, State}.
 
 handle_call(_Request, _From, State) ->
     {noreply, State}.
 
-handle_info({iq_reply, IQReply, {LServer, RServer, Dir, Pid}},
-	    #state{monitors = Mon} = State) ->
+handle_info({iq_reply, IQReply, {LServer, RServer, Dir, _Pid}},
+	    #state{monitors = Mons} = State) ->
     case IQReply of
 	#iq{type = result, sub_els = [El]} ->
 	    case xmpp:decode(El) of
 		#disco_info{features = Features} ->
 		    case lists:member(?NS_URN_SERVERINFO, Features) of
 			true ->
-			    Ref = monitor(process, Pid),
-			    Mon2 = maps:put(Ref, {Dir, {LServer, RServer}}, Mon),
-			    {noreply, State#state{monitors = Mon2}};
+			    Mons2 = maps:fold(fun(Ref, {Dir0, {LServer0, RServer0, _}}, NewMons)
+                                  when Dir == Dir0, LServer == LServer0, RServer == RServer0 ->
+                                    maps:put(Ref, {Dir, {LServer, RServer, true}}, NewMons);
+                               (Ref, Other, NewMons) ->
+                                    maps:put(Ref, Other, NewMons)
+                            end,
+                            #{},
+                            Mons),
+			    {noreply, State#state{monitors = Mons2}};
 			_ ->
 			    {noreply, State}
 		    end;
@@ -126,18 +142,19 @@ mod_options(_Host) ->
 mod_doc() -> #{}.
 
 in_auth_result(#{server_host := Host, server := LServer, remote_server := RServer} = State, true, _Server) ->
-    check_if_remote_has_support(Host, LServer, RServer, incoming),
+    gen_server:cast(gen_mod:get_module_proc(Host, ?MODULE), {register_in, Host, LServer, RServer, self()}),
     State;
 in_auth_result(State, _, _) ->
     State.
 
 out_auth_result(#{server_host := Host, server := LServer, remote_server := RServer} = State, true) ->
-    check_if_remote_has_support(Host, LServer, RServer, outgoing),
+    gen_server:cast(gen_mod:get_module_proc(Host, ?MODULE), {register_out, Host, LServer, RServer, self()}),
     State;
 out_auth_result(State, _) ->
     State.
 
 check_if_remote_has_support(Host, LServer, RServer, Dir) ->
+    %% [FIXME] No need to do this per direction, either the remote host supports it or not.
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     IQ = #iq{type = get, from = jid:make(LServer),
 	     to = jid:make(RServer), sub_els = [#disco_info{}]},
@@ -145,27 +162,29 @@ check_if_remote_has_support(Host, LServer, RServer, Dir) ->
 
 update_pubsub(#state{host = Host, pubsub_host = PubsubHost, node = Node, monitors = Mons}) ->
     Map = maps:fold(
-	fun(_, {Dir, {MyDomain, Target}}, Acc) ->
-	    maps:update_with(MyDomain,
-		fun(Acc2) ->
-		    maps:update_with(Target,
-			fun(Types) -> Types#{Dir => true} end,
-			#{Dir => true}, Acc2)
-		end, #{Target => #{Dir => true}}, Acc)
-	end, #{}, Mons),
+            fun(_, {Dir, {MyDomain, Target, HasSupport}}, Acc) ->
+                    maps:update_with(MyDomain,
+                                     fun(Acc2) ->
+                                             maps:update_with(Target,
+                                                              fun({Types, _}) -> {Types#{Dir => true}, HasSupport} end,
+                                                              {#{Dir => true}, HasSupport}, Acc2)
+                                     end, #{Target => {#{Dir => true}, HasSupport}}, Acc)
+            end, #{}, Mons),
     Domains = maps:fold(
-	fun(MyDomain, Targets, Acc) ->
-	    Remote = maps:fold(
-		fun(Remote, Types, Acc2) ->
-		    [#pubsub_serverinfo_remote_domain{name = Remote, type = maps:keys(Types)} | Acc2]
-		end, [], Targets),
-	    [#pubsub_serverinfo_domain{name = MyDomain, remote_domain = Remote} | Acc]
-	end, [], Map),
+                fun(MyDomain, Targets, Acc) ->
+                        Remote = maps:fold(
+                                   fun(Remote, {Types, true}, Acc2) ->
+                                           [#pubsub_serverinfo_remote_domain{name = Remote, type = maps:keys(Types)} | Acc2];
+                                      (_HiddenRemote, {Types, false}, Acc2) ->
+                                           [#pubsub_serverinfo_remote_domain{type = maps:keys(Types)} | Acc2]
+                                   end, [], Targets),
+                        [#pubsub_serverinfo_domain{name = MyDomain, remote_domain = Remote} | Acc]
+                end, [], Map),
 
     PubOpts = [{persist_items, true}, {max_items, 1}, {access_model, open}],
     mod_pubsub:publish_item(
-	PubsubHost, Host, Node, jid:make(Host),
-	<<"current">>, [xmpp:encode(#pubsub_serverinfo{domain = Domains})], PubOpts, all).
+      PubsubHost, Host, Node, jid:make(Host),
+      <<"current">>, [xmpp:encode(#pubsub_serverinfo{domain = Domains})], PubOpts, all).
 
 get_local_features({error, _} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
