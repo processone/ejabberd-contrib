@@ -58,6 +58,8 @@ stop(Host) ->
 
 init([Host, _Opts]) ->
     TRef = timer:send_interval(timer:minutes(5), self(), update_pubsub),
+    %% [FIXME] pubsub_host shouldn't just be hardcoded, there should be a config option to reflect
+    %% the `hosts` option of mod_pubsub's configuration
     State = #state{host = Host, pubsub_host = <<"pubsub.", Host/binary>>, node = <<"serverinfo">>, timer = TRef},
     self() ! update_pubsub,
     {ok, State}.
@@ -180,7 +182,8 @@ get_info(Acc, Host, Mod, Node, Lang) when (Mod == undefined orelse Mod == mod_di
     case mod_disco:get_info(Acc, Host, Mod, Node, Lang) of
 	[#xdata{fields = Fields} = XD | Rest] ->
 	    NodeField = #xdata_field{var = <<"serverinfo-pubsub-node">>,
-		values = [<<"xmpp:pubsub.", Host/binary, "?;node=serverinfo">>]},
+                               %% [FIXME] don't hardcode pubsub host (see above)
+		                           values = [<<"xmpp:pubsub.", Host/binary, "?;node=serverinfo">>]},
 	    {stop, [XD#xdata{fields = Fields ++ [NodeField]} | Rest]};
 	_ ->
 	    Acc
@@ -192,6 +195,7 @@ get_info(Acc, Host, Mod, Node, _Lang) when Node == <<"">>, is_atom(Mod) ->
 		var = <<"FORM_TYPE">>,
 		values = [?NS_SERVERINFO]},
 	    #xdata_field{var = <<"serverinfo-pubsub-node">>,
-		values = [<<"xmpp:pubsub.", Host/binary, "?;node=serverinfo">>]}]} | Acc];
+                   %% [FIXME] don't hardcode pubsub host (see above)
+                   values = [<<"xmpp:pubsub.", Host/binary, "?;node=serverinfo">>]}]} | Acc];
 get_info(Acc, _Host, _Mod, _Node, _Lang) ->
     Acc.

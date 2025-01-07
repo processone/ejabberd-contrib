@@ -15,4 +15,9 @@ the local XMPP domain(s).
 Configuration
 -------------
 
-This module does not have any configurable settings.
+This module does not have any configurable settings for now.
+
+> [!NOTE] 
+> As of now your pubsub component must be reachable at `pubsub.<yourhost>` (the
+> default), otherwise this module would advertise the wrong address.
+> See: https://github.com/processone/ejabberd-contrib/issues/343
