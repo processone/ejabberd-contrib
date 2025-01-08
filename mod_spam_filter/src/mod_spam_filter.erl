@@ -286,9 +286,14 @@ code_change(_OldVsn, #state{host = Host} = State, _Extra) ->
 %% Hook callbacks.
 %%--------------------------------------------------------------------
 -spec s2s_receive_packet({stanza() | drop, s2s_in_state()})
-      -> {stanza() | drop | {stop, drop}, s2s_in_state()}.
+      -> {stanza() | drop, s2s_in_state()} | {stop, {drop, s2s_in_state()}}.
 s2s_receive_packet({A, State}) ->
-    {sm_receive_packet(A), State}.
+    case sm_receive_packet(A) of
+        {stop, drop} ->
+            {stop, {drop, State}};
+        Result ->
+            {Result, State}
+    end.
 
 -spec sm_receive_packet(stanza() | drop) -> stanza() | drop | {stop, drop}.
 sm_receive_packet(drop = Acc) ->
