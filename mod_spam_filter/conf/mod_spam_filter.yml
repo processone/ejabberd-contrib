@@ -1,2 +1,5 @@
 #modules:
-#  mod_spam_filter: {}
+#  mod_spam_filter: #{}
+#    spam_jids_file: "/etc/ejabberd/spam-filter/jids.txt"
+#    spam_urls_file: "/etc/ejabberd/spam-filter/urls.txt"
+#    spam_dump_file: "/var/log/ejabberd/spam_dump.log"
