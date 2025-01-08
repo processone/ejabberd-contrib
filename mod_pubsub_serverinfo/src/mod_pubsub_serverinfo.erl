@@ -64,23 +64,21 @@ init([Host, _Opts]) ->
     self() ! update_pubsub,
     {ok, State}.
 
-handle_cast({register_in, Host, LServer, RServer, Pid}, #state{monitors = Mons} = State) ->
+handle_cast({Event, Host, LServer, RServer, Pid}, #state{monitors = Mons} = State) when Event == register_in; Event == register_out ->
     Ref = monitor(process, Pid),
-    NewMons = maps:put(Ref, {incoming, {LServer, RServer, false}}, Mons),
-    check_if_remote_has_support(Host, LServer, RServer, incoming),
-    {noreply, State#state{monitors = NewMons}};
-handle_cast({register_out, Host, LServer, RServer, Pid}, #state{monitors = Mons} = State) ->
-    Ref = monitor(process, Pid),
-    NewMons = maps:put(Ref, {outgoing, {LServer, RServer, false}}, Mons),
-    check_if_remote_has_support(Host, LServer, RServer, outgoing),
+    HasSupport = check_if_remote_has_support(Host, LServer, RServer, Mons),
+    NewMons = maps:put(Ref, {event_to_dir(Event), {LServer, RServer, HasSupport}}, Mons),
     {noreply, State#state{monitors = NewMons}};
 handle_cast(_, State) ->
     {noreply, State}.
 
+event_to_dir(register_in) -> incoming;
+event_to_dir(register_out) -> outgoing.
+
 handle_call(_Request, _From, State) ->
     {noreply, State}.
 
-handle_info({iq_reply, IQReply, {LServer, RServer, Dir, _Pid}},
+handle_info({iq_reply, IQReply, {LServer, RServer}},
 	    #state{monitors = Mons} = State) ->
     case IQReply of
 	#iq{type = result, sub_els = [El]} ->
@@ -88,15 +86,15 @@ handle_info({iq_reply, IQReply, {LServer, RServer, Dir, _Pid}},
 		#disco_info{features = Features} ->
 		    case lists:member(?NS_URN_SERVERINFO, Features) of
 			true ->
-			    Mons2 = maps:fold(fun(Ref, {Dir0, {LServer0, RServer0, _}}, NewMons)
-                                  when Dir == Dir0, LServer == LServer0, RServer == RServer0 ->
-                                    maps:put(Ref, {Dir, {LServer, RServer, true}}, NewMons);
-                               (Ref, Other, NewMons) ->
-                                    maps:put(Ref, Other, NewMons)
-                            end,
-                            #{},
-                            Mons),
-			    {noreply, State#state{monitors = Mons2}};
+			    NewMons = maps:fold(fun(Ref, {Dir, {LServer0, RServer0, _}}, Acc)
+                                    when LServer == LServer0, RServer == RServer0 ->
+                                      maps:put(Ref, {Dir, {LServer, RServer, true}}, Acc);
+                                 (Ref, Other, Acc) ->
+                                      maps:put(Ref, Other, Acc)
+                              end,
+                              #{},
+                              Mons),
+			    {noreply, State#state{monitors = NewMons}};
 			_ ->
 			    {noreply, State}
 		    end;
@@ -153,12 +151,25 @@ out_auth_result(#{server_host := Host, server := LServer, remote_server := RServ
 out_auth_result(State, _) ->
     State.
 
-check_if_remote_has_support(Host, LServer, RServer, Dir) ->
-    %% [FIXME] No need to do this per direction, either the remote host supports it or not.
+check_if_remote_has_support(Host, LServer, RServer, Mons) ->
+    maybe_send_disco_info(has_support(LServer, RServer, Mons), Host, LServer, RServer).
+
+has_support(LServer, RServer, Mons) ->
+   maps:size(
+     maps:filter(
+       fun(_Ref, {_Dir, {LServer0, RServer0, HasSupport}})
+          when LServer0 == LServer, RServer0 == RServer -> HasSupport;
+          (_Ref, _Other) -> false
+       end,
+       Mons)) =/= 0.
+
+maybe_send_disco_info(true, _Host, _LServer, _RServer) -> true;
+maybe_send_disco_info(false, Host, LServer, RServer) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     IQ = #iq{type = get, from = jid:make(LServer),
 	     to = jid:make(RServer), sub_els = [#disco_info{}]},
-    ejabberd_router:route_iq(IQ, {LServer, RServer, Dir, self()}, Proc).
+    ejabberd_router:route_iq(IQ, {LServer, RServer}, Proc),
+    false.
 
 update_pubsub(#state{host = Host, pubsub_host = PubsubHost, node = Node, monitors = Mons}) ->
     Map = maps:fold(
