@@ -440,14 +440,14 @@ do_resolve_redirects([URL | Rest], Acc) ->
         httpc:request(get, {URL, [{"user-agent", "curl/8.7.1"}]},
                       [{autoredirect, false}, {timeout, ?HTTPC_TIMEOUT}], [])
     of
-        {ok, {{_, Moved, _}, Headers, _Body}} when Moved >= 300, Moved < 400 ->
+        {ok, {{_, StatusCode, _}, Headers, _Body}} when StatusCode >= 300, StatusCode < 400 ->
             Location = proplists:get_value("location", Headers),
-            case lists:member(Location, Acc) of
-                false ->
-                    do_resolve_redirects([Location | Rest], [URL | Acc]);
+            case Location == undefined orelse lists:member(Location, Acc) of
                 true ->
-                    do_resolve_redirects(Rest, [URL | Acc])
-            end;
+                    do_resolve_redirects(Rest, [URL | Acc]);
+                false ->
+                    do_resolve_redirects([Location | Rest], [URL | Acc])
+              end;
         _Res ->
             do_resolve_redirects(Rest, [URL | Acc])
     end.
