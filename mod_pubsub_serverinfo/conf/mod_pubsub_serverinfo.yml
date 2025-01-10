@@ -1,2 +1,2 @@
-#modules:
-#  mod_pubsub_serverinfo: {}
+modules:
+  mod_pubsub_serverinfo: {}
