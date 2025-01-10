@@ -58,13 +58,27 @@ stop(Host) ->
 
 init([Host, _Opts]) ->
     TRef = timer:send_interval(timer:minutes(5), self(), update_pubsub),
+    Monitors = init_monitors(Host),
     %% [FIXME] pubsub_host shouldn't just be hardcoded, there should be a config option to reflect
     %% the `hosts` option of mod_pubsub's configuration
-    State = #state{host = Host, pubsub_host = <<"pubsub.", Host/binary>>, node = <<"serverinfo">>, timer = TRef},
+    State = #state{host = Host, pubsub_host = <<"pubsub.", Host/binary>>, node = <<"serverinfo">>, timer = TRef, monitors = Monitors},
     self() ! update_pubsub,
     {ok, State}.
 
-handle_cast({Event, Host, LServer, RServer, Pid}, #state{monitors = Mons} = State) when Event == register_in; Event == register_out ->
+init_monitors(Host) ->
+    lists:foldl(
+      fun(Domain, Monitors) ->
+              RefIn = make_ref(), % just dummies
+              RefOut = make_ref(),
+              maps:merge(#{RefIn => {incoming, {Host, Domain, true}},
+                           RefOut => {outgoing, {Host, Domain, true}}},
+                         Monitors)
+      end,
+      #{},
+      ejabberd_option:hosts() -- [Host]).
+
+handle_cast({Event, Host, LServer, RServer, Pid}, #state{monitors = Mons} = State)
+  when Event == register_in; Event == register_out ->
     Ref = monitor(process, Pid),
     HasSupport = check_if_remote_has_support(Host, LServer, RServer, Mons),
     NewMons = maps:put(Ref, {event_to_dir(Event), {LServer, RServer, HasSupport}}, Mons),
@@ -193,6 +207,7 @@ update_pubsub(#state{host = Host, pubsub_host = PubsubHost, node = Node, monitor
                 end, [], Map),
 
     PubOpts = [{persist_items, true}, {max_items, 1}, {access_model, open}],
+    ?DEBUG("Publishing serverinfo pubsub item on ~s: ~p", [PubsubHost, Domains]),
     mod_pubsub:publish_item(
       PubsubHost, Host, Node, jid:make(Host),
       <<"current">>, [xmpp:encode(#pubsub_serverinfo{domain = Domains})], PubOpts, all).
