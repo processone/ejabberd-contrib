@@ -72,6 +72,7 @@ init([Host, _Opts]) ->
     self() ! update_pubsub,
     {ok, State}.
 
+-spec init_monitors(binary()) -> map().
 init_monitors(Host) ->
     lists:foldl(
       fun(Domain, Monitors) ->
@@ -84,12 +85,18 @@ init_monitors(Host) ->
       #{},
       ejabberd_option:hosts() -- [Host]).
 
+-spec fetch_public_hosts() -> list().
 fetch_public_hosts() ->
     try
         {ok, {{_, 200, _}, _Headers, Body}} = httpc:request(?PUBLIC_HOSTS_URL),
-        misc:json_decode(Body)
-    catch _E:_R ->
-            ?WARNING_MSG("Failed retrieving public hosts (~p): ~p", [_E, _R]),
+        case misc:json_decode(Body) of
+            PublicHosts when is_list(PublicHosts) -> PublicHosts;
+            Other ->
+                ?WARNING_MSG("Parsed JSON for public hosts was not a list: ~p", [Other]),
+                []
+        end
+    catch E:R ->
+            ?WARNING_MSG("Failed fetching public hosts (~p): ~p", [E, R]),
             []
     end.
 
