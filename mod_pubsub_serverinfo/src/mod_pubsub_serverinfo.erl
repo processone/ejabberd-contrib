@@ -38,8 +38,9 @@
 -export([in_auth_result/3, out_auth_result/2, get_info/5]).
 
 -define(NS_URN_SERVERINFO, <<"urn:xmpp:serverinfo:0">>).
+-define(PUBLIC_HOSTS_URL, <<"https://data.xmpp.net/providers/v2/providers-Ds.json">>).
 
--record(state, {host, pubsub_host, node, monitors = #{}, timer = undefined}).
+-record(state, {host, pubsub_host, node, monitors = #{}, timer = undefined, public_hosts = []}).
 
 start(Host, Opts) ->
     xmpp:register_codec(pubsub_serverinfo_codec),
@@ -59,9 +60,15 @@ stop(Host) ->
 init([Host, _Opts]) ->
     TRef = timer:send_interval(timer:minutes(5), self(), update_pubsub),
     Monitors = init_monitors(Host),
+    PublicHosts = fetch_public_hosts(),
     %% [FIXME] pubsub_host shouldn't just be hardcoded, there should be a config option to reflect
     %% the `hosts` option of mod_pubsub's configuration
-    State = #state{host = Host, pubsub_host = <<"pubsub.", Host/binary>>, node = <<"serverinfo">>, timer = TRef, monitors = Monitors},
+    State = #state{host = Host,
+                   pubsub_host = <<"pubsub.", Host/binary>>,
+                   node = <<"serverinfo">>,
+                   timer = TRef,
+                   monitors = Monitors,
+                   public_hosts = PublicHosts},
     self() ! update_pubsub,
     {ok, State}.
 
@@ -77,11 +84,20 @@ init_monitors(Host) ->
       #{},
       ejabberd_option:hosts() -- [Host]).
 
-handle_cast({Event, Host, LServer, RServer, Pid}, #state{monitors = Mons} = State)
+fetch_public_hosts() ->
+    try
+        {ok, {{_, 200, _}, _Headers, Body}} = httpc:request(?PUBLIC_HOSTS_URL),
+        misc:json_decode(Body)
+    catch _E:_R ->
+            ?WARNING_MSG("Failed retrieving public hosts (~p): ~p", [_E, _R]),
+            []
+    end.
+
+handle_cast({Event, Domain, Pid}, #state{host = Host, monitors = Mons} = State)
   when Event == register_in; Event == register_out ->
     Ref = monitor(process, Pid),
-    HasSupport = check_if_remote_has_support(Host, LServer, RServer, Mons),
-    NewMons = maps:put(Ref, {event_to_dir(Event), {LServer, RServer, HasSupport}}, Mons),
+    IsPublic = check_if_public(Domain, State),
+    NewMons = maps:put(Ref, {event_to_dir(Event), {Host, Domain, IsPublic}}, Mons),
     {noreply, State#state{monitors = NewMons}};
 handle_cast(_, State) ->
     {noreply, State}.
@@ -153,47 +169,50 @@ mod_options(_Host) ->
 
 mod_doc() -> #{}.
 
-in_auth_result(#{server_host := Host, server := LServer, remote_server := RServer} = State, true, _Server) ->
-    gen_server:cast(gen_mod:get_module_proc(Host, ?MODULE), {register_in, Host, LServer, RServer, self()}),
+in_auth_result(#{server_host := Host, remote_server := RServer} = State, true, _Server) ->
+    gen_server:cast(gen_mod:get_module_proc(Host, ?MODULE), {register_in, RServer, self()}),
     State;
 in_auth_result(State, _, _) ->
     State.
 
-out_auth_result(#{server_host := Host, server := LServer, remote_server := RServer} = State, true) ->
-    gen_server:cast(gen_mod:get_module_proc(Host, ?MODULE), {register_out, Host, LServer, RServer, self()}),
+out_auth_result(#{server_host := Host, remote_server := RServer} = State, true) ->
+    gen_server:cast(gen_mod:get_module_proc(Host, ?MODULE), {register_out, RServer, self()}),
     State;
 out_auth_result(State, _) ->
     State.
 
-check_if_remote_has_support(Host, LServer, RServer, Mons) ->
-    maybe_send_disco_info(has_support(LServer, RServer, Mons), Host, LServer, RServer).
+check_if_public(Domain, State) ->
+    maybe_send_disco_info(is_public(Domain, State) orelse is_monitored(Domain, State), Domain, State).
 
-has_support(LServer, RServer, Mons) ->
-   maps:size(
-     maps:filter(
-       fun(_Ref, {_Dir, {LServer0, RServer0, HasSupport}})
-          when LServer0 == LServer, RServer0 == RServer -> HasSupport;
-          (_Ref, _Other) -> false
-       end,
-       Mons)) =/= 0.
+is_public(Domain, #state{public_hosts = PublicHosts}) ->
+    lists:member(Domain, PublicHosts).
 
-maybe_send_disco_info(true, _Host, _LServer, _RServer) -> true;
-maybe_send_disco_info(false, Host, LServer, RServer) ->
+is_monitored(Domain, #state{host = Host, monitors = Mons}) ->
+    maps:size(
+      maps:filter(
+        fun(_Ref, {_Dir, {LServer, RServer, IsPublic}})
+              when LServer == Host, RServer == Domain -> IsPublic;
+           (_Ref, _Other) -> false
+        end,
+        Mons)) =/= 0.
+
+maybe_send_disco_info(true, _Domain, _State) -> true;
+maybe_send_disco_info(false, Domain, #state{host = Host}) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    IQ = #iq{type = get, from = jid:make(LServer),
-	     to = jid:make(RServer), sub_els = [#disco_info{}]},
-    ejabberd_router:route_iq(IQ, {LServer, RServer}, Proc),
+    IQ = #iq{type = get, from = jid:make(Host),
+	     to = jid:make(Domain), sub_els = [#disco_info{}]},
+    ejabberd_router:route_iq(IQ, {Host, Domain}, Proc),
     false.
 
 update_pubsub(#state{host = Host, pubsub_host = PubsubHost, node = Node, monitors = Mons}) ->
     Map = maps:fold(
-            fun(_, {Dir, {MyDomain, Target, HasSupport}}, Acc) ->
+            fun(_, {Dir, {MyDomain, Target, IsPublic}}, Acc) ->
                     maps:update_with(MyDomain,
                                      fun(Acc2) ->
                                              maps:update_with(Target,
-                                                              fun({Types, _}) -> {Types#{Dir => true}, HasSupport} end,
-                                                              {#{Dir => true}, HasSupport}, Acc2)
-                                     end, #{Target => {#{Dir => true}, HasSupport}}, Acc)
+                                                              fun({Types, _}) -> {Types#{Dir => true}, IsPublic} end,
+                                                              {#{Dir => true}, IsPublic}, Acc2)
+                                     end, #{Target => {#{Dir => true}, IsPublic}}, Acc)
             end, #{}, Mons),
     Domains = maps:fold(
                 fun(MyDomain, Targets, Acc) ->
