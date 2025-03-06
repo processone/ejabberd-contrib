@@ -32,7 +32,12 @@
 %% ---------------------
 
 start(Host, Opts) ->
-    ejabberd_commands:register_commands(commands()),
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:register_commands(?MODULE, commands());
+        true ->
+            ok
+    end,
     ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, web_page_host, 50),
     Tasks = gen_mod:get_opt(tasks, Opts),
@@ -42,7 +47,12 @@ start(Host, Opts) ->
     ok.
 
 stop(Host) ->
-    ejabberd_commands:unregister_commands(commands()),
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:unregister_commands(commands());
+        true ->
+            ok
+    end,
     ejabberd_hooks:delete(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:delete(webadmin_page_host, Host, ?MODULE, web_page_host, 50),
     %% Delete tasks of this host

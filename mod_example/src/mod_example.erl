@@ -79,12 +79,12 @@
 %%%% gen_mod
 
 start(Host, _Opts) ->
-    register_commands(),
+    register_commands(Host),
     register_hooks(),
     register_hooks(Host),
     register_hooks_fold(),
     register_hooks_fold(Host),
-    register_hooks_commands(),
+    register_hooks_commands(Host),
     %register_iq_handlers(Host),
     ok.
 
@@ -129,8 +129,13 @@ mod_doc() ->
 %%%==================================
 %%%% commands: define
 
-register_commands() ->
-    ejabberd_commands:register_commands(?MODULE, get_commands_spec()).
+register_commands(Host) ->
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:register_commands(?MODULE, get_commands_spec());
+        true ->
+            ok
+    end.
 
 unregister_commands(Host) ->
     case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
@@ -370,8 +375,13 @@ all(Integer,
 %%%==================================
 %%%% hooks: run hooks
 
-register_hooks_commands() ->
-    ejabberd_commands:register_commands(?MODULE, get_hooks_commands_spec()).
+register_hooks_commands(Host) ->
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:register_commands(?MODULE, get_hooks_commands_spec());
+        true ->
+            ok
+    end.
 
 unregister_hooks_commands(Host) ->
     case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of

@@ -27,11 +27,15 @@
 %% gen_mod functions
 %%-------------------
 
-start(_Host, _Opts) ->
+start(Host, _Opts) ->
     ejabberd_hooks:add(webadmin_menu_node, ?MODULE, web_menu_node, 50),
     ejabberd_hooks:add(webadmin_page_node, ?MODULE, web_page_node, 50),
-    ejabberd_commands:register_commands(get_commands_spec()),
-    ok.
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:register_commands(?MODULE, get_commands_spec());
+        true ->
+            ok
+    end.
 
 stop(Host) ->
     ejabberd_hooks:delete(webadmin_menu_node, ?MODULE, web_menu_node, 50),

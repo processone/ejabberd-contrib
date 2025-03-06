@@ -70,7 +70,12 @@
 
 start(Host, _Opts) ->
     prepare_graveyard(Host),
-    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:register_commands(?MODULE, get_commands_spec());
+        true ->
+            ok
+    end,
     {ok,
      [{hook, remove_user, remove_user, 50},
       {hook, check_register_user, check_register_user, 50},

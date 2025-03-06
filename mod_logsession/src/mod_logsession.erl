@@ -48,7 +48,12 @@ start(Host, Opts) ->
     ejabberd_hooks:add(reopen_log_hook, Host, ?MODULE, reopen_log, 50),
     ejabberd_hooks:add(forbidden_session_hook, Host, ?MODULE, forbidden, 50),
     ejabberd_hooks:add(c2s_auth_result, Host, ?MODULE, failed_auth, 50),
-    ejabberd_commands:register_commands(commands()),
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:register_commands(?MODULE, commands());
+        true ->
+            ok
+    end,
     Filename1 = case gen_mod:get_opt(sessionlog, Opts) of
                     auto ->
                         filename:join(filename:dirname(ejabberd_logger:get_log_path()),
@@ -65,7 +70,12 @@ stop(Host) ->
     ejabberd_hooks:delete(reopen_log_hook, Host, ?MODULE, reopen_log, 50),
     ejabberd_hooks:delete(forbidden_session_hook, Host, ?MODULE, forbidden, 50),
     ejabberd_hooks:delete(c2s_auth_result, Host, ?MODULE, failed_auth, 50),
-    ejabberd_commands:unregister_commands(commands()),
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:unregister_commands(commands());
+        true ->
+            ok
+    end,
     Proc = get_process_name(Host),
     exit(whereis(Proc), stop),
     {wait, Proc}.

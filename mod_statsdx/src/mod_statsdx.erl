@@ -60,9 +60,12 @@ start(Host, Opts) ->
 	     traffic -> 0;
 	     false -> "disabled"
 	 end,
-
-    ejabberd_commands:register_commands(commands()),
-
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:register_commands(?MODULE, commands());
+        true ->
+            ok
+    end,
     %% If the process that handles statistics for the server is not started yet,
     %% start it now
     case whereis(?PROCNAME) of
@@ -77,7 +80,12 @@ start(Host, Opts) ->
 
 stop(Host) ->
     finish_stats(Host),
-    ejabberd_commands:unregister_commands(commands()),
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:unregister_commands(commands());
+        true ->
+            ok
+    end,
     case whereis(?PROCNAME) of
 	undefined -> ok;
 	_ -> ?PROCNAME ! {stop, Host}
