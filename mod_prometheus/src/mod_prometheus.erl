@@ -1,22 +1,28 @@
 -module(mod_prometheus).
 -author('pouriya.jahanbakhsh@gmail.com').
+-author('stefan@strigler.de').
 -behaviour(gen_mod).
+-behaviour(gen_server).
 
+%% gen_mod callbacks
 -export([start/2, stop/1, reload/3, mod_doc/0,
-  mod_opt_type/1, mod_options/1,
-  depends/2]).
+         mod_opt_type/1, mod_options/1,
+         depends/2]).
 
+%% gen_server callbacks
+-export([init/1, terminate/2, handle_call/3,
+	 handle_cast/2, handle_info/2, code_change/3]).
+
+%% internal API
 -export([process_histogram/5, process_counter/5]).
 
 -export([process/2]).
 
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
--include("mod_roster.hrl").
 -include("ejabberd_http.hrl").
--include("ejabberd_web_admin.hrl").
--include("ejabberd_stacktrace.hrl").
--include("translate.hrl").
+
+-define(INTERVAL, 1000).
 
 start(Host, Opts) ->
   case lists:member({subscribe, 5}, ejabberd_hooks:module_info(exports)) of
@@ -26,16 +32,78 @@ start(Host, Opts) ->
       update_mnesia(get_opt(mnesia, Opts)),
       update_vm(get_opt(vm, Opts)),
       handle_hooks(get_opt(hooks, Opts), Host, subscribe, []),
-      ok;
+      gen_mod:start_child(?MODULE, Host, Opts);
     _ ->
       Error = "Hook subscriber is not supported. Please Upgrade Ejabberd.",
       ?ERROR_MSG(Error, []),
       {error, Error}
   end.
 
+init([Host|_]) ->
+  process_flag(trap_exit, true),
+  Opts = gen_mod:get_module_opts(Host, ?MODULE),
+  TRef = start_timer(),
+  {ok, [Host, Opts, TRef]}.
+
+terminate(_Reason, _State) ->
+  ok.
+
+handle_call(stop, _From, [_Host, _Opts, TRef] = State) ->
+  misc:cancel_timer(TRef),
+  {stop, normal, ok, State};
+handle_call(Request, From, State) ->
+  ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+  {noreply, State}.
+
+handle_cast({reload, NewOpts}, [Host, _OldOpts, TRef]) ->
+  ?DEBUG("Reloading opts: ~p", [NewOpts]),
+  {noreply, [Host, NewOpts, TRef]};
+handle_cast(Msg, State) ->
+  ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
+  {noreply, State}.
+
+handle_info({timeout, _TRef, ping}, [Host, Opts, OldTRef]) ->
+  ?DEBUG("Running commands for ~p", [Host]),
+  lists:foreach(
+    fun(#{type := gauge, hook := Hook, command := Cmd} = Opt) ->
+        OptArgs = maps:get(args, Opt, []),
+        CmdArgs = replace_host(OptArgs, Host, []),
+        Res = ejabberdctl(Cmd, CmdArgs, maps:get(result_type, Opt, raw)),
+        ?DEBUG("Got result for command ~p with args ~p on ~s: ~p", [Cmd, CmdArgs, Host, Res]),
+        LabelNames = maps:get(labels, Opt, []),
+        Labels = replace_host(LabelNames, Host, []),
+        prometheus_gauge:set(Hook, Labels, Res);
+       (_) -> noop
+    end,
+    maps:get(hooks, Opts)
+   ),
+  misc:cancel_timer(OldTRef),
+  TRef = start_timer(),
+  {noreply, [Host, Opts, TRef]};
+handle_info(Info, State) ->
+  ?WARNING_MSG("Unexpected info: ~p", [Info]),
+  {noreply, State}.
+
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
+
+start_timer() ->
+  erlang:start_timer(?INTERVAL, self(), ping).
+
+replace_host([], _Host, Res) ->
+  lists:reverse(Res);
+replace_host([host | Args], Host, Res) ->
+  replace_host(Args, Host, [Host | Res]);
+replace_host([Arg | Args], Host, Res) ->
+  replace_host(Args, Host, [Arg | Res]).
+
+ejabberdctl(Cmd, Args, raw) ->
+  ejabberd_commands:execute_command2(Cmd, Args, #{caller_module => ejabberd_ctl}, 10000);
+ejabberdctl(Cmd, Args, list) ->
+  length(ejabberdctl(Cmd, Args, raw)).
+
 stop(Host) ->
   handle_hooks(get_opt(hooks, Host), Host, unsubscribe, []),
-  ok.
+  gen_mod:stop_child(?MODULE, Host).
 
 reload(Host, NewOpts, OldOpts) ->
   prometheus_registry:clear(),
@@ -43,6 +111,8 @@ reload(Host, NewOpts, OldOpts) ->
   handle_hooks(get_opt(hooks, NewOpts), Host, subscribe, []),
   update_mnesia(get_opt(mnesia, NewOpts)),
   update_vm(get_opt(vm, NewOpts)),
+  Proc = gen_mod:get_module_proc(Host, ?MODULE),
+  gen_server:cast(Proc, {reload, NewOpts}),
   ok.
 
 depends(_Host, _Opts) ->
@@ -66,10 +136,13 @@ mod_opt_type(hooks) ->
     econf:options(
       #{
         hook => econf:atom(),
-        type => econf:enum([histogram, counter]),
+        type => econf:enum([histogram, counter, gauge]),
         buckets => econf:list(econf:int(0, 150000)),
         labels => econf:list(econf:enum([host, stanza, module])),
         help => econf:string(),
+        command => econf:atom(),
+        args => econf:list(econf:either(host, econf:binary())),
+        result_type => econf:enum([raw, list]),
         collect => econf:either(
           all,
           econf:list(
@@ -252,7 +325,6 @@ process_counter(
   LabelNames = maps:get(labels, State, []),
   case lists:member(module, LabelNames) of
     true ->
-      LabelNames = maps:get(labels, State, []),
       Labels = replace_labels(LabelNames, Args, Host, Mod),
       prometheus_counter:inc(Name, Labels);
     _ ->
@@ -293,7 +365,9 @@ handle_hooks([], Host, Action, [{Type, Name, MName, Opts, InitArg} | Metrics]) -
         histogram ->
           handle_histogram(Name, MName, Opts, Host, Action, InitArg);
         counter ->
-          handle_counter(Name, MName, Opts, Host, Action, InitArg)
+          handle_counter(Name, MName, Opts, Host, Action, InitArg);
+        gauge ->
+          handle_gauge(Name, MName, Opts, Host, Action, InitArg)
       end
   end,
   handle_hooks([], Host, Action, Metrics);
@@ -344,7 +418,9 @@ handle_hook(#{hook := Name}=Opts) ->
             }
             || #{module := Mod, function := Func}=Callback <- Callbacks
           ]
-      end
+      end;
+    gauge ->
+      [{Type, Name, Name, Opts, #{hook => Name}}]
   end.
 
 handle_histogram(Name, HName, HistogramOpts, Host, Action, State) ->
@@ -392,7 +468,22 @@ handle_counter(Name, HName, CounterOpts, Host, Action, State) ->
       ejabberd_hooks:unsubscribe(Name, Host, ?MODULE, process_counter, InitArg)
   end.
 
-
+handle_gauge(_Name, GName, GaugeOpts, _Host, Action, _State) ->
+  LabelNames = maps:get(labels, GaugeOpts, []),
+  case Action of
+    subscribe ->
+      prometheus_gauge:declare(
+        [{name, GName}, {help, maps:get(help, GaugeOpts, "No help")}, {labels, LabelNames}]
+       ),
+      ?INFO_MSG("Created new Prometheus gauge for ~p with labels ~p", [GName, LabelNames]);
+    _ ->
+      try prometheus_gauge:deregister(GName) of
+        _ ->
+          ?INFO_MSG("Removed Prometheus gauge for ~p with labels ~p", [GName, LabelNames])
+      catch _:{unknown_metric, _, _} ->
+        ok
+      end
+  end.
 
 duration_histogram_name(Hook) ->
   list_to_atom(atom_to_list(Hook) ++ "_duration_milliseconds").

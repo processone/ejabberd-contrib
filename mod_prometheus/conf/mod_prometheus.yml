@@ -23,6 +23,13 @@ modules:
         labels:
           - host
           - stanza
+      # Can have same hook but as a counter at the same time:
+      - hook: user_send_packet
+        type: counter
+        help: "Number of messages sent"
+        labels:
+          - host
+          - stanza
       # Histogram for all modules of a hook:
       - hook: user_receive_packet
         type: histogram
@@ -66,3 +73,34 @@ modules:
               - 750
               - 1000
               - 1500
+      # Gauge for a "hook" (name of the metric in this case), value retrieved by
+      # manually executing given command and args (needs mod_admin_extra in this
+      # example)
+      - hook: ejabberd_uptime
+        type: gauge
+        help: "Uptime in seconds"
+        command: stats
+        args:
+          - "uptimeseconds"
+      # Keyword `host` will be replaced with actual hostname, needs label `host`
+      # as well
+      - hook: registered_users_num
+        type: gauge
+        help: "Number of registered users per host"
+        labels:
+          - host
+        command: stats
+        args:
+          - "registeredusers"
+          - host
+      # Set `result_type` to `list` if result from command is a list. Will set
+      # gauge to length of list.
+      - hook: spam_filter_cache_size
+        type: gauge
+        help: "Size of spam filter cache"
+        labels:
+          - host
+        command: get_spam_filter_cache
+        args:
+          - host
+        result_type: list
