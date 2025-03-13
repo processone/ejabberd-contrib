@@ -75,6 +75,16 @@
 %%
 %% webadmin
 
+-export([webadmin_menu_main/2, webadmin_page_main/2, webadmin_menu_host/3,
+         webadmin_page_host/3, webadmin_menu_node/3, webadmin_page_node/3,
+         webadmin_menu_hostnode/4, webadmin_page_hostnode/4, webadmin_menu_hostuser/4,
+         webadmin_page_hostuser/4]).
+
+-import(ejabberd_web_admin, [make_command/4, make_command_raw_value/3, make_table/4]).
+
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
+
 %%%==================================
 %%%% gen_mod
 
@@ -86,7 +96,17 @@ start(Host, _Opts) ->
     register_hooks_fold(Host),
     register_hooks_commands(Host),
     %register_iq_handlers(Host),
-    ok.
+    {ok,
+     [{hook, webadmin_menu_main, webadmin_menu_main, 50, global},
+      {hook, webadmin_page_main, webadmin_page_main, 50, global},
+      {hook, webadmin_menu_host, webadmin_menu_host, 50},
+      {hook, webadmin_page_host, webadmin_page_host, 50},
+      {hook, webadmin_menu_node, webadmin_menu_node, 50, global},
+      {hook, webadmin_page_node, webadmin_page_node, 50, global},
+      {hook, webadmin_menu_hostnode, webadmin_menu_hostnode, 50},
+      {hook, webadmin_page_hostnode, webadmin_page_hostnode, 50},
+      {hook, webadmin_menu_hostuser, webadmin_menu_hostuser, 50},
+      {hook, webadmin_page_hostuser, webadmin_page_hostuser, 50}]}.
 
 stop(Host) ->
     unregister_commands(Host),
@@ -643,6 +663,86 @@ example_hook_fold_host_function3(Acc0, Arg1, Arg2) ->
 
 %%%==================================
 %%%% webadmin
+
+%%---------------
+%% WebAdmin Main
+
+webadmin_menu_main(Acc, Lang) ->
+    Acc ++ [{<<"example">>, translate:translate(Lang, ?T("Example Main"))}].
+
+webadmin_page_main(_, #request{path = [<<"example">>]} = R) ->
+    Title = [?XC(<<"h1">>, <<"Example Main Page">>)],
+    Get = [?X(<<"hr">>),
+           make_command(command_test_apiversion, R, [], []),
+           make_command(command_test_apizero, R, [], []),
+           make_command(command_test_apione, R, [], []),
+           ?X(<<"hr">>),
+           make_command(command_test_atom, R, [], []),
+           make_command(command_test_integer, R, [], []),
+           make_command(command_test_string, R, [], []),
+           make_command(command_test_binary, R, [], []),
+           ?X(<<"hr">>),
+           make_command(command_test_rescode, R, [], []),
+           make_command(command_test_restuple, R, [], []),
+           ?X(<<"hr">>),
+           make_command(command_test_tuple, R, [], []),
+           make_command(command_test_list, R, [], []),
+           make_command(command_test_list_tuple, R, [], []),
+           make_command(command_test_all, R, [], [])],
+    {stop, Title ++ Get};
+webadmin_page_main(Acc, _) ->
+    Acc.
+
+%%---------------
+%% WebAdmin Host
+
+webadmin_menu_host(Acc, _Host, Lang) ->
+    Acc ++ [{<<"example">>, translate:translate(Lang, ?T("Example Host"))}].
+
+webadmin_page_host(_, Host, #request{path = [<<"example">> | _RPath]}) ->
+    Title = [?XC(<<"h1">>, <<"Example Host Page: ", Host/binary>>)],
+    {stop, Title};
+webadmin_page_host(Acc, _, _) ->
+    Acc.
+
+%%--------------------
+%% WebAdmin Node
+
+webadmin_menu_node(Acc, _Node, _Lang) ->
+    Acc ++ [{<<"example">>, <<"Example Node">>}].
+
+webadmin_page_node(_, Node, #request{path = [<<"example">>]}) ->
+    NodeBin = atom_to_binary(Node),
+    Title = [?XC(<<"h1">>, <<"Example Node Page: ", NodeBin/binary>>)],
+    {stop, Title};
+webadmin_page_node(Acc, _, _) ->
+    Acc.
+
+%%--------------------
+%% WebAdmin Host User
+
+webadmin_menu_hostuser(Acc, _Host, _Username, _Lang) ->
+    Acc ++ [{<<"example-user">>, <<"Example User">>}].
+
+webadmin_page_hostuser(_, Host, User, #request{path = [<<"example-user">>]}) ->
+    Title = [?XC(<<"h1">>, <<"Example Host-User Page: ", Host/binary, " - ", User/binary>>)],
+    {stop, Title};
+webadmin_page_hostuser(Acc, _, _, _) ->
+    Acc.
+
+%%--------------------
+%% WebAdmin Host Node
+
+webadmin_menu_hostnode(Acc, _Host, _Username, _Lang) ->
+    Acc ++ [{<<"example-host-node">>, <<"Example Host Node">>}].
+
+webadmin_page_hostnode(_, Host, Node, #request{path = [<<"example-host-node">>]}) ->
+    NodeBin = atom_to_binary(Node),
+    Title =
+        [?XC(<<"h1">>, <<"Example Host-Node Page: ", Host/binary, " - ", NodeBin/binary>>)],
+    {stop, Title};
+webadmin_page_hostnode(Acc, _Host, _Node, _Request) ->
+    Acc.
 
 %%%==================================
 
