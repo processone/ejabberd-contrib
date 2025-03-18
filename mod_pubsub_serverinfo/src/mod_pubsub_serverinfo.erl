@@ -61,10 +61,9 @@ init([Host, _Opts]) ->
     TRef = timer:send_interval(timer:minutes(5), self(), update_pubsub),
     Monitors = init_monitors(Host),
     PublicHosts = fetch_public_hosts(),
-    %% [FIXME] pubsub_host shouldn't just be hardcoded, there should be a config option to reflect
-    %% the `hosts` option of mod_pubsub's configuration
+    PubsubHost = gen_mod:get_module_opt(Host, mod_pubsub, host),
     State = #state{host = Host,
-                   pubsub_host = <<"pubsub.", Host/binary>>,
+                   pubsub_host = PubsubHost,
                    node = <<"serverinfo">>,
                    timer = TRef,
                    monitors = Monitors,
@@ -252,21 +251,21 @@ get_local_features(Acc, _From, _To, _Node, _Lang) ->
 get_info(Acc, Host, Mod, Node, Lang) when (Mod == undefined orelse Mod == mod_disco), Node == <<"">> ->
     case mod_disco:get_info(Acc, Host, Mod, Node, Lang) of
 	[#xdata{fields = Fields} = XD | Rest] ->
+	    PubsubHost = gen_mod:get_module_opt(Host, mod_pubsub, host),
 	    NodeField = #xdata_field{var = <<"serverinfo-pubsub-node">>,
-                               %% [FIXME] don't hardcode pubsub host (see above)
-		                           values = [<<"xmpp:pubsub.", Host/binary, "?;node=serverinfo">>]},
+	                             values = [<<"xmpp:", PubsubHost/binary, "?;node=serverinfo">>]},
 	    {stop, [XD#xdata{fields = Fields ++ [NodeField]} | Rest]};
 	_ ->
 	    Acc
     end;
 get_info(Acc, Host, Mod, Node, _Lang) when Node == <<"">>, is_atom(Mod) ->
+    PubsubHost = gen_mod:get_module_opt(Host, mod_pubsub, host),
     [#xdata{type = result,
 	fields = [
 	    #xdata_field{type = hidden,
 		var = <<"FORM_TYPE">>,
 		values = [?NS_SERVERINFO]},
 	    #xdata_field{var = <<"serverinfo-pubsub-node">>,
-                   %% [FIXME] don't hardcode pubsub host (see above)
-                   values = [<<"xmpp:pubsub.", Host/binary, "?;node=serverinfo">>]}]} | Acc];
+                         values = [<<"xmpp:", PubsubHost/binary, "?;node=serverinfo">>]}]} | Acc];
 get_info(Acc, _Host, _Mod, _Node, _Lang) ->
     Acc.
