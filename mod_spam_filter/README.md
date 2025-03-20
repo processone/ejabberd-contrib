@@ -2,17 +2,17 @@ mod_spam_filter - Filter spam messages based on JID/content
 ===========================================================
 
 * Author: Holger Weiss <holger@zedat.fu-berlin.de>
-
+* Author: Stefan Strigler <stefan@strigler.de>
 
 Description
 -----------
 
 This module allows for filtering spam messages and subscription requests
-received from remote servers based on lists of known spammer JIDs and/or
-URLs mentioned in spam messages.  Traffic classified as spam is rejected
-with an error (and an `[info]` message is logged) unless the sender is
-subscribed to the recipient's presence.  An access rule can be specified
-to control which recipients are subject to spam filtering.
+received from remote servers based on RTBL domain lists, lists of known spammer
+JIDs and/or URLs mentioned in spam messages. Traffic classified as spam is
+rejected with an error (and an `[info]` message is logged) unless the sender is
+subscribed to the recipient's presence. An access rule can be specified to
+control which recipients are subject to spam filtering.
 
 
 Configuration
@@ -23,12 +23,23 @@ To enable this module, configure it like this:
 ```yaml
 modules:
   mod_spam_filter:
+    rtbl_host: "xmppbl.org"
     spam_jids_file: "/etc/ejabberd/spam-filter/jids.txt"
     spam_urls_file: "/etc/ejabberd/spam-filter/urls.txt"
 ```
 
 The configurable `mod_spam_filter` options are:
 
+- `rtbl_host` (default: none)
+
+  This option specifies which RTBL host to use to query for blocked domains. One
+  such host is located at `xmppbl.org`. Messages and presence-subscribe stanzas
+  originating from domains listed at this host will be blocked in case there is
+  no active roster subscription of the recipeient. If a dump file is configured,
+  messages will get logged. Senders will receive an abuse notification message.
+  The command `ejabberdctl get_blocked_domains` retrieves the current list of
+  blocked domains.
+  
 - `spam_dump_file` (default: `none`)
 
   This option specifies the path to a file that messages classified as
@@ -79,12 +90,20 @@ ejabberd Commands
 -----------------
 
 This module provides ejabberdctl/API calls to reread the spam JID/URL
-files, to print the JID cache contents, and to remove entries from that
-cache.  See:
+files, to print the JID cache contents, and to add or remove entries from that
+cache.  
+
+Furthermore you can add and query the list of blocked domains as retrieved from
+the RTBL host.
+
+See:
 
 ```
-$ ejabberdctl help reload-spam-filter-files
-$ ejabberdctl help get-spam-filter-cache
-$ ejabberdctl help expire-spam-filter-cache
+$ ejabberdctl help add_blocked_domain
+$ ejabberdctl help add_to_spam_filter_cache
 $ ejabberdctl help drop-from-spam-filter-cache
+$ ejabberdctl help expire-spam-filter-cache
+$ ejabberdctl help get-spam-filter-cache
+$ ejabberdctl help get_blocked_domains
+$ ejabberdctl help reload-spam-filter-files
 ```
