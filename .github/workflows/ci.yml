@@ -102,6 +102,9 @@ jobs:
     - name: Disable mod_captcha_rust testing
       run: sed -i '/mod_captcha_rust/d' modules_available.txt
 
+    - name: Disable mod_muc_webchat_url testing (requires mod_conversejs)
+      run: sed -i '/mod_muc_webchat_url/d' modules_available.txt
+
     - name: Disable mod_s3_upload testing with old OTP
       if: matrix.elixir < '1.16'
       run: sed -i '/mod_s3_upload/d' modules_available.txt
