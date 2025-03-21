@@ -90,14 +90,29 @@
 
 start(Host, _Opts) ->
     register_commands(Host),
-    register_hooks(),
     register_hooks(Host),
-    register_hooks_fold(),
-    register_hooks_fold(Host),
     register_hooks_commands(Host),
     %register_iq_handlers(Host),
     {ok,
-     [{hook, webadmin_menu_main, webadmin_menu_main, 50, global},
+     [
+      %% global
+      {hook, example_hook_global, example_hook_global_function1, 81, global},
+      {hook, example_hook_global, example_hook_global_function2, 82, global},
+      {hook, example_hook_global, example_hook_global_function3, 83, global},
+      %% host
+      {hook, example_hook_host, example_hook_host_function1, 81},
+      {hook, example_hook_host, example_hook_host_function2, 82},
+      {hook, example_hook_host, example_hook_host_function3, 83},
+      %% global fold
+      {hook, example_hook_fold_global, example_hook_fold_global_function1, 81, global},
+      {hook, example_hook_fold_global, example_hook_fold_global_function2, 82, global},
+      {hook, example_hook_fold_global, example_hook_fold_global_function3, 83, global},
+      %% host fold
+      {hook, example_hook_fold_host, example_hook_fold_host_function1, 81},
+      {hook, example_hook_fold_host, example_hook_fold_host_function2, 82},
+      {hook, example_hook_fold_host, example_hook_fold_host_function3, 83},
+      %% webadmin
+      {hook, webadmin_menu_main, webadmin_menu_main, 50, global},
       {hook, webadmin_page_main, webadmin_page_main, 50, global},
       {hook, webadmin_menu_host, webadmin_menu_host, 50},
       {hook, webadmin_page_host, webadmin_page_host, 50},
@@ -110,10 +125,6 @@ start(Host, _Opts) ->
 
 stop(Host) ->
     unregister_commands(Host),
-    unregister_hooks(),
-    unregister_hooks(Host),
-    unregister_hooks_fold(),
-    unregister_hooks_fold(Host),
     unregister_hooks_commands(Host),
     %unregister_iq_handlers(Host),
     ok.
@@ -460,16 +471,6 @@ run_hook_fold_host(Host) ->
 %%%==================================
 %%%% hooks: add global
 
-register_hooks() ->
-    ejabberd_hooks:add(example_hook_global, ?MODULE, example_hook_global_function1, 81),
-    ejabberd_hooks:add(example_hook_global, ?MODULE, example_hook_global_function2, 82),
-    ejabberd_hooks:add(example_hook_global, ?MODULE, example_hook_global_function3, 83).
-
-unregister_hooks() ->
-    ejabberd_hooks:delete(example_hook_global, ?MODULE, example_hook_global_function1, 81),
-    ejabberd_hooks:delete(example_hook_global, ?MODULE, example_hook_global_function2, 82),
-    ejabberd_hooks:delete(example_hook_global, ?MODULE, example_hook_global_function3, 83).
-
 example_hook_global_function1(Arg1, Arg2) ->
     io:format("~nexample_hook_global_function1: ~n"
               "  Arg1: ~p~n  Arg2: ~p~n"
@@ -498,15 +499,7 @@ register_hooks(Host) ->
                              Host,
                              ?MODULE,
                              example_hook_host_subs,
-                             init_args),
-    ejabberd_hooks:add(example_hook_host, Host, ?MODULE, example_hook_host_function1, 81),
-    ejabberd_hooks:add(example_hook_host, Host, ?MODULE, example_hook_host_function2, 82),
-    ejabberd_hooks:add(example_hook_host, Host, ?MODULE, example_hook_host_function3, 83).
-
-unregister_hooks(Host) ->
-    ejabberd_hooks:delete(example_hook_host, Host, ?MODULE, example_hook_host_function1, 81),
-    ejabberd_hooks:delete(example_hook_host, Host, ?MODULE, example_hook_host_function2, 82),
-    ejabberd_hooks:delete(example_hook_host, Host, ?MODULE, example_hook_host_function3, 83).
+                             init_args).
 
 example_hook_host_subs(InitArgs, Time, Host, Hook, Args) ->
     io:format("~nexample_hook_host_subs: ~n"
@@ -541,34 +534,6 @@ example_hook_host_function3(Arg1, Arg2) ->
 %%%==================================
 %%%% hooks: add global fold
 
-register_hooks_fold() ->
-    ejabberd_hooks:add(example_hook_fold_global,
-                       ?MODULE,
-                       example_hook_fold_global_function1,
-                       81),
-    ejabberd_hooks:add(example_hook_fold_global,
-                       ?MODULE,
-                       example_hook_fold_global_function2,
-                       82),
-    ejabberd_hooks:add(example_hook_fold_global,
-                       ?MODULE,
-                       example_hook_fold_global_function3,
-                       83).
-
-unregister_hooks_fold() ->
-    ejabberd_hooks:delete(example_hook_fold_global,
-                          ?MODULE,
-                          example_hook_fold_global_function1,
-                          81),
-    ejabberd_hooks:delete(example_hook_fold_global,
-                          ?MODULE,
-                          example_hook_fold_global_function2,
-                          82),
-    ejabberd_hooks:delete(example_hook_fold_global,
-                          ?MODULE,
-                          example_hook_fold_global_function3,
-                          83).
-
 example_hook_fold_global_function1(Acc0, Arg1, Arg2) ->
     io:format("~nexample_hook_fold_global_function1: ~n"
               "  Acc: ~p~n  Arg1: ~p~n  Arg2: ~p~n"
@@ -593,40 +558,6 @@ example_hook_fold_global_function3(Acc0, Arg1, Arg2) ->
 
 %%%==================================
 %%%% hooks: add host fold
-
-register_hooks_fold(Host) ->
-    ejabberd_hooks:add(example_hook_fold_host,
-                       Host,
-                       ?MODULE,
-                       example_hook_fold_host_function1,
-                       81),
-    ejabberd_hooks:add(example_hook_fold_host,
-                       Host,
-                       ?MODULE,
-                       example_hook_fold_host_function2,
-                       82),
-    ejabberd_hooks:add(example_hook_fold_host,
-                       Host,
-                       ?MODULE,
-                       example_hook_fold_host_function3,
-                       83).
-
-unregister_hooks_fold(Host) ->
-    ejabberd_hooks:delete(example_hook_fold_host,
-                          Host,
-                          ?MODULE,
-                          example_hook_fold_host_function1,
-                          81),
-    ejabberd_hooks:delete(example_hook_fold_host,
-                          Host,
-                          ?MODULE,
-                          example_hook_fold_host_function2,
-                          82),
-    ejabberd_hooks:delete(example_hook_fold_host,
-                          Host,
-                          ?MODULE,
-                          example_hook_fold_host_function3,
-                          83).
 
 example_hook_fold_host_function1(Acc0, Arg1, Arg2) ->
     io:format("~nexample_hook_fold_host_function1: ~n"
