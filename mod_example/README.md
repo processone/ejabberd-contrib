@@ -1,7 +1,7 @@
 mod_example - Example ejabberd module
 ====================================
 
-- Requires: ejabberd 24.06 or higher
+- Requires: ejabberd 25.03 or higher
 - Author: Author name
 
 This is an example ejabberd module.

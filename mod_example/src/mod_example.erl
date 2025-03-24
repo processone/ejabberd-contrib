@@ -88,13 +88,12 @@
 %%%==================================
 %%%% gen_mod
 
-start(Host, _Opts) ->
-    register_commands(Host),
-    register_hooks(Host),
-    register_hooks_commands(Host),
+start(_Host, _Opts) ->
     %register_iq_handlers(Host),
     {ok,
      [
+     [{commands, get_commands_spec()},
+      {commands, get_hooks_commands_spec()},
       %% global
       {hook, example_hook_global, example_hook_global_function1, 81, global},
       {hook, example_hook_global, example_hook_global_function2, 82, global},
@@ -103,6 +102,7 @@ start(Host, _Opts) ->
       {hook, example_hook_host, example_hook_host_function1, 81},
       {hook, example_hook_host, example_hook_host_function2, 82},
       {hook, example_hook_host, example_hook_host_function3, 83},
+      {hook_subscribe, example_hook_host, example_hook_host_subs, []},
       %% global fold
       {hook, example_hook_fold_global, example_hook_fold_global_function1, 81, global},
       {hook, example_hook_fold_global, example_hook_fold_global_function2, 82, global},
@@ -123,9 +123,7 @@ start(Host, _Opts) ->
       {hook, webadmin_menu_hostuser, webadmin_menu_hostuser, 50},
       {hook, webadmin_page_hostuser, webadmin_page_hostuser, 50}]}.
 
-stop(Host) ->
-    unregister_commands(Host),
-    unregister_hooks_commands(Host),
+stop(_Host) ->
     %unregister_iq_handlers(Host),
     ok.
 
@@ -159,22 +157,6 @@ mod_doc() ->
 
 %%%==================================
 %%%% commands: define
-
-register_commands(Host) ->
-    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
-        false ->
-            ejabberd_commands:register_commands(?MODULE, get_commands_spec());
-        true ->
-            ok
-    end.
-
-unregister_commands(Host) ->
-    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
-        false ->
-            ejabberd_commands:unregister_commands(get_commands_spec());
-        true ->
-            ok
-    end.
 
 get_commands_spec() ->
     [#ejabberd_commands{name = command_test_apiversion,
@@ -406,22 +388,6 @@ all(Integer,
 %%%==================================
 %%%% hooks: run hooks
 
-register_hooks_commands(Host) ->
-    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
-        false ->
-            ejabberd_commands:register_commands(?MODULE, get_hooks_commands_spec());
-        true ->
-            ok
-    end.
-
-unregister_hooks_commands(Host) ->
-    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
-        false ->
-            ejabberd_commands:unregister_commands(get_hooks_commands_spec());
-        true ->
-            ok
-    end.
-
 get_hooks_commands_spec() ->
     [#ejabberd_commands{name = run_hook_global,
                         tags = [test],
@@ -493,13 +459,6 @@ example_hook_global_function3(Arg1, Arg2) ->
 
 %%%==================================
 %%%% hooks: add host
-
-register_hooks(Host) ->
-    ejabberd_hooks:subscribe(example_hook_host,
-                             Host,
-                             ?MODULE,
-                             example_hook_host_subs,
-                             init_args).
 
 example_hook_host_subs(InitArgs, Time, Host, Hook, Args) ->
     io:format("~nexample_hook_host_subs: ~n"
