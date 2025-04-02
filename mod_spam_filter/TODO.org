@@ -1,0 +1,30 @@
+#+title: TODO / Improvements / Wishlist for mod_spam_filter
+#+author: Stefan Strigler (zeank@jwchat.org)
+#+date: 2025-04-02
+#+synopsis: Collection of todos, ideas, wishlist, comments. Feel free to contribute, any feedback appreciated.
+
+* TODOS [0/7]
+** TODO Allow to configure node-name
+** TODO Filter telegram channels (etc) via file
+** TODO Filter domains via file
+** TODO Whitelist for filtered domains
+** TODO Filter list of greetings (via file) [maybe]
+** TODO Check if sending jid is from muc/mix service (maybe in bookmarks?)
+** TODO Parse meta-info given on RTBL blocked domains
+*** default policy, eg `block-strangers` (basically hardcoded for now)
+** TODO [0/3] Pubsub XEP bug? Publish node and retract node can only have one item? Needs clarification. Schema says otherwise. 
+    - [ ] Ask Mailinglist
+    - [ ] Bug report on p1/xmpp -> doesn‘t handle multiple items correctly
+    - [ ] Evtl bug in ejabberd mod_pubsub
+** TODO Forward Reports (is this the right place?). See [[https://pad.nixnet.services/s/1ZrHSLq0G][Simplified XMPP Incident Exchange]]
+
+* Ideas/Wishlist
+** Allow list of RTBL hosts
+*** Config option for multiple hosts and their node-names respectivly (and maybe default policy)
+*** Query list of RTBL hosts
+*** Merge strategy for multiple results, block policies (if more than one host), eg
+   - one
+   - more_than_one
+   - all
+** Scoring system (eg: is spam domain? has url(s)? suspicious jid? suspicious host (ibr active)? etc ...)
+** 
