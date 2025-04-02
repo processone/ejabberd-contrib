@@ -91,7 +91,6 @@
 start(_Host, _Opts) ->
     %register_iq_handlers(Host),
     {ok,
-     [
      [{commands, get_commands_spec()},
       {commands, get_hooks_commands_spec()},
       %% global
