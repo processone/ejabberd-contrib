@@ -97,8 +97,8 @@ This module provides ejabberdctl/API calls to reread the spam JID/URL
 files, to print the JID cache contents, and to add or remove entries from that
 cache.  
 
-Furthermore you can add and query the list of blocked domains as retrieved from
-the RTBL host.
+Furthermore you can add/remove items to/from and query the list of blocked
+domains as retrieved from the RTBL host.
 
 See:
 
@@ -110,4 +110,5 @@ $ ejabberdctl help expire-spam-filter-cache
 $ ejabberdctl help get-spam-filter-cache
 $ ejabberdctl help get_blocked_domains
 $ ejabberdctl help reload-spam-filter-files
+$ ejabberdctl help remove_blocked_domain
 ```
