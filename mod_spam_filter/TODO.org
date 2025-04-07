@@ -3,12 +3,14 @@
 #+date: 2025-04-02
 #+synopsis: Collection of todos, ideas, wishlist, comments. Feel free to contribute, any feedback appreciated.
 
-* TODOS [0/7]
-** TODO Allow to configure node-name
-** TODO Filter telegram channels (etc) via file
-** TODO Filter domains via file
+* TODOS [1/9]
+** DONE Allow to configure node-name
+CLOSED: [2025-04-07 Mo 10:32]
+** TODO Command to remove domain from list
 ** TODO Whitelist for filtered domains
-** TODO Filter list of greetings (via file) [maybe]
+** TODO Filter domains via file
+** TODO Filter telegram channels (etc) via file                       :maybe:
+** TODO Filter list of greetings (via file)                           :maybe:
 ** TODO Check if sending jid is from muc/mix service (maybe in bookmarks?)
 ** TODO Parse meta-info given on RTBL blocked domains
 *** default policy, eg `block-strangers` (basically hardcoded for now)
