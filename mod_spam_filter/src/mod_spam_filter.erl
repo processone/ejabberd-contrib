@@ -173,10 +173,10 @@ mod_doc() -> #{}.
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
     DumpFile = expand_host(gen_mod:get_opt(spam_dump_file, Opts), Host),
-    JIDsFile = gen_mod:get_opt(spam_jids_file, Opts),
-    URLsFile = gen_mod:get_opt(spam_urls_file, Opts),
-    try read_files(JIDsFile, URLsFile) of
-	{JIDsSet, URLsSet} ->
+    Files = #{jid => gen_mod:get_opt(spam_jids_file, Opts),
+	      url => gen_mod:get_opt(spam_urls_file, Opts)},
+    try read_files(Files) of
+	#{jid := JIDsSet, url := URLsSet} ->
 	    ejabberd_hooks:add(s2s_in_handle_info, Host, ?MODULE,
 			       s2s_in_handle_info, 90),
 	    ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE,
@@ -234,8 +234,8 @@ handle_call({check_body, URLs, JIDs, From}, _From,
 handle_call({resolve_redirects, URLs}, _From, State) ->
     ResolvedURLs = do_resolve_redirects(URLs, []),
     {reply, {spam_filter, ResolvedURLs}, State};
-handle_call({reload_files, JIDsFile, URLsFile}, _From, State) ->
-    {Result, State1} = reload_files(JIDsFile, URLsFile, State),
+handle_call({reload_files, Files}, _From, State) ->
+    {Result, State1} = reload_files(Files, State),
     {reply, {spam_filter, Result}, State1};
 handle_call({expire_cache, Age}, _From, State) ->
     {Result, State1} = expire_cache(Age, State),
@@ -297,9 +297,9 @@ handle_cast({reload, NewOpts, OldOpts},
 		 {_OldMax, _NewMax} ->
 		     State1
 	     end,
-    JIDsFile = gen_mod:get_opt(spam_jids_file, NewOpts),
-    URLsFile = gen_mod:get_opt(spam_urls_file, NewOpts),
-    {_Result, State3} = reload_files(JIDsFile, URLsFile, State2),
+    Files = #{jid => gen_mod:get_opt(spam_jids_file, NewOpts),
+	      url => gen_mod:get_opt(spam_urls_file, NewOpts)},
+    {_Result, State3} = reload_files(Files, State2),
     ok = mod_spam_filter_rtbl:unsubscribe(OldRTBLHost, OldRTBLDomainsNode, Host),
     RTBLHost = gen_mod:get_opt(rtbl_host, NewOpts),
     RTBLDomainsNode = gen_mod:get_opt(rtbl_domains_node, NewOpts),
@@ -610,11 +610,11 @@ filter_body({_, Addrs}, Set, From, #state{host = Host} = State) ->
 filter_body(none, _Set, _From, State) ->
     {ham, State}.
 
--spec reload_files(filename(), filename(), state())
+-spec reload_files(#{Type :: atom() => filename()}, state())
       -> {ok | {error, binary()}, state()}.
-reload_files(JIDsFile, URLsFile, #state{host = Host} = State) ->
-    try read_files(JIDsFile, URLsFile) of
-	{JIDsSet, URLsSet} ->
+reload_files(Files, #state{host = Host} = State) ->
+    try read_files(Files) of
+	#{jid := JIDsSet, url := URLsSet} ->
 	    case sets_equal(JIDsSet, State#state.jid_set) of
 		true ->
 		    ?INFO_MSG("Reloaded spam JIDs for ~s (unchanged)", [Host]);
@@ -636,10 +636,18 @@ reload_files(JIDsFile, URLsFile, #state{host = Host} = State) ->
 	    {{error, Txt}, State}
     end.
 
--spec read_files(filename(), filename()) -> {jid_set(), url_set()}.
-read_files(JIDsFile, URLsFile) ->
-    {read_file(JIDsFile, fun parse_jid/1),
-     read_file(URLsFile, fun parse_url/1)}.
+-spec read_files(#{Type => filename()}) -> #{jid => jid_set(), url => url_set(), Type => sets:set(binary())}
+	      when Type :: atom().
+read_files(Files) ->
+    maps:map(fun(Type, Filename) ->
+		     read_file(Filename, line_parser(Type))
+	     end,
+	     Files).
+
+-spec line_parser(Type :: atom()) -> fun((binary()) -> binary()).
+line_parser(jid) -> fun parse_jid/1;
+line_parser(url) -> fun parse_url/1;
+line_parser(_) -> fun(V) -> V end.			   
 
 -spec read_file(filename(), fun((binary()) -> ljid() | url()))
       -> jid_set() | url_set().
@@ -926,17 +934,15 @@ reload_spam_filter_files(<<"global">>) ->
     for_all_hosts(fun reload_spam_filter_files/1, []);
 reload_spam_filter_files(Host) ->
     LServer = jid:nameprep(Host),
-    case {gen_mod:get_module_opt(LServer, ?MODULE, spam_jids_file),
-	  gen_mod:get_module_opt(LServer, ?MODULE, spam_urls_file)} of
-	{JIDsFile, URLsFile} ->
-	    case try_call_by_host(Host, {reload_files, JIDsFile, URLsFile}) of
-		{spam_filter, ok} ->
-		    ok;
-		{spam_filter, {error, Txt}} ->
-		    {error, binary_to_list(Txt)};
-		{error, _R} = Error -> 
-		    Error
-	    end
+    Files = #{jid => gen_mod:get_module_opt(LServer, ?MODULE, spam_jids_file),
+	      url => gen_mod:get_module_opt(LServer, ?MODULE, spam_urls_file)},							     
+    case try_call_by_host(Host, {reload_files, Files}) of
+	{spam_filter, ok} ->
+	    ok;
+	{spam_filter, {error, Txt}} ->
+	    {error, binary_to_list(Txt)};
+	{error, _R} = Error -> 
+	    Error
     end.
 
 -spec get_blocked_domains(binary()) -> [binary()].
