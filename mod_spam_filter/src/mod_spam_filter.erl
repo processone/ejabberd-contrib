@@ -259,7 +259,7 @@ handle_call({remove_blocked_domain, Domain}, _From, #state{blocked_domains = Blo
 handle_call(get_blocked_domains, _From, #state{blocked_domains = BlockedDomains} = State) ->
     {reply, {blocked_domains, BlockedDomains}, State};
 handle_call({is_blocked_domain, Domain}, _From, #state{blocked_domains = BlockedDomains} = State) ->
-    {reply, maps:get(Domain, BlockedDomains, false), State};
+    {reply, maps:get(Domain, BlockedDomains, false) =/= false, State};
 handle_call(Request, From, State) ->
     ?ERROR_MSG("Got unexpected request from ~p: ~p", [From, Request]),
     {noreply, State}.
