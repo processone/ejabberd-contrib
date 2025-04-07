@@ -3,10 +3,11 @@
 #+date: 2025-04-02
 #+synopsis: Collection of todos, ideas, wishlist, comments. Feel free to contribute, any feedback appreciated.
 
-* TODOS [1/9]
+* TODOS [2/10]
 ** DONE Allow to configure node-name
 CLOSED: [2025-04-07 Mo 10:32]
-** TODO Command to remove domain from list
+** DONE Command to remove domain from list
+CLOSED: [2025-04-07 Mo 10:59]
 ** TODO Whitelist for filtered domains
 ** TODO Filter domains via file
 ** TODO Filter telegram channels (etc) via file                       :maybe:

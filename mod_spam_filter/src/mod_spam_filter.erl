@@ -61,7 +61,8 @@
 	 get_blocked_domains/1,
 	 get_commands_spec/0,
 	 get_spam_filter_cache/1,
-	 reload_spam_filter_files/1]).
+	 reload_spam_filter_files/1,
+	 remove_blocked_domain/2]).
 
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
@@ -250,6 +251,10 @@ handle_call(get_cache, _From, #state{jid_cache = Cache} = State) ->
 handle_call({add_blocked_domain, Domain}, _From, #state{blocked_domains = BlockedDomains} = State) ->
     BlockedDomains1 = maps:merge(BlockedDomains, #{Domain => true}),
     Txt = format("~s added to blocked domains", [Domain]),
+    {reply, {spam_filter, {ok, Txt}}, State#state{blocked_domains = BlockedDomains1}};
+handle_call({remove_blocked_domain, Domain}, _From, #state{blocked_domains = BlockedDomains} = State) ->
+    BlockedDomains1 = maps:remove(Domain, BlockedDomains),
+    Txt = format("~s removed from blocked domains", [Domain]),
     {reply, {spam_filter, {ok, Txt}}, State#state{blocked_domains = BlockedDomains1}};
 handle_call(get_blocked_domains, _From, #state{blocked_domains = BlockedDomains} = State) ->
     {reply, {blocked_domains, BlockedDomains}, State};
@@ -881,6 +886,12 @@ get_commands_spec() ->
 			module = ?MODULE,
 			function = add_blocked_domain,
 			args = [{host, binary}, {domain, binary}],
+			result = {res, restuple}},
+     #ejabberd_commands{name = remove_blocked_domain, tags = [filter],
+			desc = "Remove domain from list of blocked domains",
+			module = ?MODULE,
+			function = remove_blocked_domain,
+			args = [{host, binary}, {domain, binary}],
 			result = {res, restuple}}
     ].
     
@@ -942,6 +953,17 @@ add_blocked_domain(<<"global">>, Domain) ->
     for_all_hosts(fun add_blocked_domain/2, [Domain]);
 add_blocked_domain(Host, Domain) ->
     case try_call_by_host(Host, {add_blocked_domain, Domain}) of
+	{spam_filter, {Status, Txt}} ->
+	    {Status, binary_to_list(Txt)};
+	{error, _R} = Error ->
+	    Error
+    end.
+
+-spec remove_blocked_domain(binary(), binary()) -> {ok, string()}.
+remove_blocked_domain(<<"global">>, Domain) ->
+    for_all_hosts(fun remove_blocked_domain/2, [Domain]);
+remove_blocked_domain(Host, Domain) ->
+    case try_call_by_host(Host, {remove_blocked_domain, Domain}) of
 	{spam_filter, {Status, Txt}} ->
 	    {Status, binary_to_list(Txt)};
 	{error, _R} = Error ->
