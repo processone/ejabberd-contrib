@@ -39,6 +39,18 @@ The configurable `mod_spam_filter` options are:
   messages will get logged. Senders will receive an abuse notification message.
   The command `ejabberdctl get_blocked_domains` retrieves the current list of
   blocked domains.
+
+- `rtbl_domains_node` (default: `spam_source_domains`)
+
+  The name of the RTBL node to query for the list of blocked domains.
+
+- `spam_domains_file` (default: `none`)
+
+  This option specifies the path to a plain text file containing a list of known
+  spam domains, one domain per line. Messages and subscription requests sent
+  from one of the listed domains will be classified as spam if sender is not in
+  recipient's roster. This list of domains will be merged with the one retrieved
+  by an RTBL host if any given. The behavior is the same.
   
 - `spam_dump_file` (default: `none`)
 
@@ -93,8 +105,8 @@ This module provides ejabberdctl/API calls to reread the spam JID/URL
 files, to print the JID cache contents, and to add or remove entries from that
 cache.  
 
-Furthermore you can add and query the list of blocked domains as retrieved from
-the RTBL host.
+Furthermore you can add/remove items to/from and query the list of blocked
+domains as retrieved from the RTBL host.
 
 See:
 
@@ -106,4 +118,5 @@ $ ejabberdctl help expire-spam-filter-cache
 $ ejabberdctl help get-spam-filter-cache
 $ ejabberdctl help get_blocked_domains
 $ ejabberdctl help reload-spam-filter-files
+$ ejabberdctl help remove_blocked_domain
 ```

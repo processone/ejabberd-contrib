@@ -1,5 +1,10 @@
 #modules:
-#  mod_spam_filter: #{}
+#  mod_spam_filter:
+#    rtbl_host: "xmppbl.org"
+#    spam_domains_file: "/etc/ejabberd/spam-filter/domains.txt"
 #    spam_jids_file: "/etc/ejabberd/spam-filter/jids.txt"
 #    spam_urls_file: "/etc/ejabberd/spam-filter/urls.txt"
 #    spam_dump_file: "/var/log/ejabberd/spam_dump.log"
+#    access_spam:
+#      allow:
+#        user: honeypot@example.org
