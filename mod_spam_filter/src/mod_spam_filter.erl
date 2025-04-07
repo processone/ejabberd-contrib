@@ -75,21 +75,24 @@
 -type s2s_in_state() :: ejabberd_s2s_in:state().
 
 -record(state,
-	{host = <<>>                  :: binary(),
-	 dump_fd = undefined          :: file:io_device() | undefined,
-	 url_set = sets:new()         :: url_set(),
-	 jid_set = sets:new()         :: jid_set(),
-	 jid_cache = #{}              :: map(),
-	 max_cache_size = 0           :: non_neg_integer() | unlimited,
-	 rtbl_host = undefined        :: binary() | undefined,
-	 rtbl_subscribed = false      :: boolean(),
+	{host = <<>>			:: binary(),
+	 dump_fd = undefined		:: file:io_device() | undefined,
+	 url_set = sets:new()		:: url_set(),
+	 jid_set = sets:new()		:: jid_set(),
+	 jid_cache = #{}		:: map(),
+	 max_cache_size = 0		:: non_neg_integer() | unlimited,
+	 rtbl_host = undefined		:: binary() | undefined,
+	 rtbl_subscribed = false	:: boolean(),
 	 rtbl_retry_timer = undefined	:: reference() | undefined,
-	 blocked_domains = #{}        :: #{binary() => any()}}).
+	 rtbl_domains_node		:: binary(),
+	 blocked_domains = #{}		:: #{binary() => any()}}).
 
 -type state() :: #state{}.
 
 -define(COMMAND_TIMEOUT, timer:seconds(30)).
 -define(HTTPC_TIMEOUT, timer:seconds(3)).
+-define(DEFAULT_RTBL_DOMAINS_NODE, <<"spam_source_domains">>).
+-define(DEFAULT_CACHE_SIZE, 10000).
 
 %%--------------------------------------------------------------------
 %% gen_mod callbacks.
@@ -144,7 +147,11 @@ mod_opt_type(cache_size) ->
 mod_opt_type(rtbl_host) ->
     econf:either(
       econf:enum([none]),
-      econf:host()).
+      econf:host());
+mod_opt_type(rtbl_domains_node) ->
+    econf:either(
+      none,
+      econf:binary()).
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
@@ -152,8 +159,9 @@ mod_options(_Host) ->
      {spam_jids_file, none},
      {spam_urls_file, none},
      {access_spam, none},
-     {cache_size, 10000},
-     {rtbl_host, none}].
+     {cache_size, ?DEFAULT_CACHE_SIZE},
+     {rtbl_host, none},
+     {rtbl_domains_node, ?DEFAULT_RTBL_DOMAINS_NODE}].
 
 mod_doc() -> #{}.
 
@@ -179,12 +187,14 @@ init([Host, Opts]) ->
 	    ejabberd_hooks:add(local_send_to_resource_hook, Host,
 			       mod_spam_filter_rtbl, pubsub_event_handler, 50),
 	    RTBLHost = gen_mod:get_opt(rtbl_host, Opts),
+	    RTBLDomainsNode = gen_mod:get_opt(rtbl_domains_node, Opts),
 	    InitState0 = #state{host = Host,
 				jid_set = JIDsSet,
 				url_set = URLsSet,
 				max_cache_size = gen_mod:get_opt(cache_size, Opts),
-				rtbl_host = RTBLHost},
-	    mod_spam_filter_rtbl:request_blocked_domains(RTBLHost, Host),
+				rtbl_host = RTBLHost,
+				rtbl_domains_node = RTBLDomainsNode},
+	    mod_spam_filter_rtbl:request_blocked_domains(RTBLHost, RTBLDomainsNode, Host),
 	    InitState = init_open_dump_file(DumpFile, InitState0),
 	    {ok, InitState}
     catch {Op, File, Reason} when Op == open;
@@ -261,7 +271,10 @@ handle_cast({dump, XML}, #state{dump_fd = Fd} = State) ->
 		       [file:format_error(Reason)])
     end,
     {noreply, State};
-handle_cast({reload, NewOpts, OldOpts}, #state{host = Host, rtbl_host = OldRTBLHost} = State) ->
+handle_cast({reload, NewOpts, OldOpts},
+	    #state{host = Host,
+		   rtbl_host = OldRTBLHost,
+		   rtbl_domains_node = OldRTBLDomainsNode} = State) ->
     State1 = case {gen_mod:get_opt(spam_dump_file, OldOpts),
 		   gen_mod:get_opt(spam_dump_file, NewOpts)} of
 		 {OldDumpFile, NewDumpFile} when NewDumpFile /= OldDumpFile ->
@@ -282,9 +295,11 @@ handle_cast({reload, NewOpts, OldOpts}, #state{host = Host, rtbl_host = OldRTBLH
     JIDsFile = gen_mod:get_opt(spam_jids_file, NewOpts),
     URLsFile = gen_mod:get_opt(spam_urls_file, NewOpts),
     {_Result, State3} = reload_files(JIDsFile, URLsFile, State2),
-    ok = mod_spam_filter_rtbl:unsubscribe(OldRTBLHost, Host),
-    ok = mod_spam_filter_rtbl:request_blocked_domains(gen_mod:get_opt(rtbl_host, NewOpts),  Host),
-    {noreply, State3};
+    ok = mod_spam_filter_rtbl:unsubscribe(OldRTBLHost, OldRTBLDomainsNode, Host),
+    RTBLHost = gen_mod:get_opt(rtbl_host, NewOpts),
+    RTBLDomainsNode = gen_mod:get_opt(rtbl_domains_node, NewOpts),
+    ok = mod_spam_filter_rtbl:request_blocked_domains(RTBLHost, RTBLDomainsNode, Host),
+    {noreply, State3#state{rtbl_host = RTBLHost, rtbl_domains_node = RTBLDomainsNode}};
 handle_cast(reopen_log, State) ->
     {noreply, reopen_dump_file(State)};
 handle_cast({update_blocked_domains, NewItems}, #state{blocked_domains = BlockedDomains} = State) ->
@@ -301,13 +316,13 @@ handle_info({iq_reply, #iq{type = error} = IQ, blocked_domains}, State) ->
     ?WARNING_MSG("Fetching blocked domains failed: ~p. Retrying in 60 seconds",
 		 [xmpp:format_stanza_error(xmpp:get_error(IQ))]),
     {noreply, State#state{rtbl_retry_timer = erlang:send_after(60000, self(), request_blocked_domains)}};
-handle_info({iq_reply, IQReply, blocked_domains}, #state{rtbl_host = RTBLHost, host = Host} = State) ->
+handle_info({iq_reply, IQReply, blocked_domains}, #state{rtbl_host = RTBLHost, rtbl_domains_node = RTBLDomainsNode, host = Host} = State) ->
     case mod_spam_filter_rtbl:parse_blocked_domains(IQReply) of
 	undefined ->
 	    ?WARNING_MSG("Fetching initial list failed: invalid result payload", []),
 	    {noreply, State#state{rtbl_retry_timer = undefined}};
 	BlockedDomains ->
-	    ok = mod_spam_filter_rtbl:subscribe(RTBLHost, Host),
+	    ok = mod_spam_filter_rtbl:subscribe(RTBLHost, RTBLDomainsNode, Host),
 	    {noreply, State#state{rtbl_retry_timer = undefined,
 				  rtbl_subscribed = true,
 				  blocked_domains = BlockedDomains}}
@@ -325,15 +340,15 @@ handle_info({iq_reply, _IQReply, unsubscribe_result}, State) ->
     %% FIXME: we should check it's true (of type `result`, not `error`), but at that point, what
     %% would we do?
     {noreply, State#state{rtbl_subscribed = false}};
-handle_info(request_blocked_domains, #state{host = Host, rtbl_host = RTBLHost} = State) ->
-    mod_spam_filter_rtbl:request_blocked_domains(RTBLHost, Host),
+handle_info(request_blocked_domains, #state{host = Host, rtbl_host = RTBLHost, rtbl_domains_node = RTBLDomainsNode} = State) ->
+    mod_spam_filter_rtbl:request_blocked_domains(RTBLHost, RTBLDomainsNode, Host),
     {noreply, State};
 handle_info(Info, State) ->
     ?ERROR_MSG("Got unexpected info: ~p", [Info]),
     {noreply, State}.
 
 -spec terminate(normal | shutdown | {shutdown, term()} | term(), state()) -> ok.
-terminate(Reason, #state{host = Host, rtbl_host = RTBLHost} = State) ->
+terminate(Reason, #state{host = Host, rtbl_host = RTBLHost, rtbl_domains_node = RTBLDomainsNode} = State) ->
     ?DEBUG("Stopping spam filter process for ~s: ~p", [Host, Reason]),
     DumpFile = gen_mod:get_module_opt(Host, ?MODULE, spam_dump_file),
     DumpFile1 = expand_host(DumpFile, Host),
@@ -346,7 +361,7 @@ terminate(Reason, #state{host = Host, rtbl_host = RTBLHost} = State) ->
 			  s2s_in_handle_info, 90),
     ejabberd_hooks:delete(local_send_to_resource_hook, Host,
 			  mod_spam_filter_rtbl, pubsub_event_handler, 50),
-    mod_spam_filter_rtbl:unsubscribe(RTBLHost, Host),
+    mod_spam_filter_rtbl:unsubscribe(RTBLHost, RTBLDomainsNode,Host),
     case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
 	false ->
 	    ejabberd_hooks:delete(reopen_log_hook, ?MODULE,

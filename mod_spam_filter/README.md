@@ -39,7 +39,11 @@ The configurable `mod_spam_filter` options are:
   messages will get logged. Senders will receive an abuse notification message.
   The command `ejabberdctl get_blocked_domains` retrieves the current list of
   blocked domains.
-  
+
+- `rtbl_domains_node` (default: `spam_source_domains`)
+
+  The name of the RTBL node to query for the list of blocked domains.
+
 - `spam_dump_file` (default: `none`)
 
   This option specifies the path to a file that messages classified as
