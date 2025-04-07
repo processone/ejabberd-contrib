@@ -44,6 +44,14 @@ The configurable `mod_spam_filter` options are:
 
   The name of the RTBL node to query for the list of blocked domains.
 
+- `spam_domains_file` (default: `none`)
+
+  This option specifies the path to a plain text file containing a list of known
+  spam domains, one domain per line. Messages and subscription requests sent
+  from one of the listed domains will be classified as spam if sender is not in
+  recipient's roster. This list of domains will be merged with the one retrieved
+  by an RTBL host if any given. The behavior is the same.
+  
 - `spam_dump_file` (default: `none`)
 
   This option specifies the path to a file that messages classified as
