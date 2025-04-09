@@ -86,7 +86,9 @@
 	 rtbl_subscribed = false	:: boolean(),
 	 rtbl_retry_timer = undefined	:: reference() | undefined,
 	 rtbl_domains_node		:: binary(),
-	 blocked_domains = #{}		:: #{binary() => any()}}).
+	 blocked_domains = #{}		:: #{binary() => any()},
+	 whitelist_domains = #{}	:: #{binary() => false}
+	}).
 
 -type state() :: #state{}.
 
@@ -133,6 +135,10 @@ mod_opt_type(spam_domains_file) ->
     econf:either(
       econf:enum([none]),
       econf:binary());
+mod_opt_type(whitelist_domains_file) ->
+    econf:either(
+      none,
+      econf:binary());
 mod_opt_type(spam_dump_file) ->
     econf:either(
       econf:enum([none]),
@@ -164,6 +170,7 @@ mod_options(_Host) ->
      {spam_dump_file, none},
      {spam_jids_file, none},
      {spam_urls_file, none},
+     {whitelist_domains_file, none},
      {access_spam, none},
      {cache_size, ?DEFAULT_CACHE_SIZE},
      {rtbl_host, none},
@@ -178,11 +185,12 @@ mod_doc() -> #{}.
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
     DumpFile = expand_host(gen_mod:get_opt(spam_dump_file, Opts), Host),
-    Files = #{domains => gen_mod:get_opt(spam_domains_file, Opts),
-	      jid     => gen_mod:get_opt(spam_jids_file, Opts),
-	      url     => gen_mod:get_opt(spam_urls_file, Opts)},
+    Files = #{domains		=> gen_mod:get_opt(spam_domains_file, Opts),
+	      jid		=> gen_mod:get_opt(spam_jids_file, Opts),
+	      url		=> gen_mod:get_opt(spam_urls_file, Opts),
+	      whitelist_domains	=> gen_mod:get_opt(whitelist_domains_file, Opts)},
     try read_files(Files) of
-	#{jid := JIDsSet, url := URLsSet, domains := SpamDomainsSet} ->
+	#{jid := JIDsSet, url := URLsSet, domains := SpamDomainsSet, whitelist_domains := WhitelistDomains} ->
 	    ejabberd_hooks:add(s2s_in_handle_info, Host, ?MODULE,
 			       s2s_in_handle_info, 90),
 	    ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE,
@@ -200,6 +208,7 @@ init([Host, Opts]) ->
 				url_set = URLsSet,
 				max_cache_size = gen_mod:get_opt(cache_size, Opts),
 				blocked_domains = set_to_map(SpamDomainsSet),
+				whitelist_domains = set_to_map(WhitelistDomains, false),
 				rtbl_host = RTBLHost,
 				rtbl_domains_node = RTBLDomainsNode},
 	    mod_spam_filter_rtbl:request_blocked_domains(RTBLHost, RTBLDomainsNode, Host),
@@ -263,10 +272,10 @@ handle_call({remove_blocked_domain, Domain}, _From, #state{blocked_domains = Blo
     BlockedDomains1 = maps:remove(Domain, BlockedDomains),
     Txt = format("~s removed from blocked domains", [Domain]),
     {reply, {spam_filter, {ok, Txt}}, State#state{blocked_domains = BlockedDomains1}};
-handle_call(get_blocked_domains, _From, #state{blocked_domains = BlockedDomains} = State) ->
-    {reply, {blocked_domains, BlockedDomains}, State};
-handle_call({is_blocked_domain, Domain}, _From, #state{blocked_domains = BlockedDomains} = State) ->
-    {reply, maps:get(Domain, BlockedDomains, false) =/= false, State};
+handle_call(get_blocked_domains, _From, #state{blocked_domains = BlockedDomains, whitelist_domains = WhitelistDomains} = State) ->
+    {reply, {blocked_domains, maps:merge(BlockedDomains, WhitelistDomains)}, State};
+handle_call({is_blocked_domain, Domain}, _From, #state{blocked_domains = BlockedDomains, whitelist_domains = WhitelistDomains} = State) ->
+    {reply, maps:get(Domain, maps:merge(BlockedDomains, WhitelistDomains), false) =/= false, State};
 handle_call(Request, From, State) ->
     ?ERROR_MSG("Got unexpected request from ~p: ~p", [From, Request]),
     {noreply, State}.
@@ -305,9 +314,10 @@ handle_cast({reload, NewOpts, OldOpts},
 		     State1
 	     end,
     ok = mod_spam_filter_rtbl:unsubscribe(OldRTBLHost, OldRTBLDomainsNode, Host),
-    Files = #{domains => gen_mod:get_opt(spam_domains_file, NewOpts),
-	      jid => gen_mod:get_opt(spam_jids_file, NewOpts),
-	      url => gen_mod:get_opt(spam_urls_file, NewOpts)},
+    Files = #{domains		=> gen_mod:get_opt(spam_domains_file, NewOpts),
+	      jid		=> gen_mod:get_opt(spam_jids_file, NewOpts),
+	      url		=> gen_mod:get_opt(spam_urls_file, NewOpts),
+	      whitelist_domains	=> gen_mod:get_opt(whitelist_domains_file, NewOpts)},
     {_Result, State3} = reload_files(Files, State2#state{blocked_domains = #{}}),
     RTBLHost = gen_mod:get_opt(rtbl_host, NewOpts),
     RTBLDomainsNode = gen_mod:get_opt(rtbl_domains_node, NewOpts),
@@ -626,7 +636,7 @@ filter_body(none, _Set, _From, State) ->
       -> {ok | {error, binary()}, state()}.
 reload_files(Files, #state{host = Host, blocked_domains = BlockedDomains} = State) ->
     try read_files(Files) of
-	#{jid := JIDsSet, url := URLsSet, domains := SpamDomainsSet} ->
+	#{jid := JIDsSet, url := URLsSet, domains := SpamDomainsSet, whitelist_domains := WhitelistDomains} ->
 	    case sets_equal(JIDsSet, State#state.jid_set) of
 		true ->
 		    ?INFO_MSG("Reloaded spam JIDs for ~s (unchanged)", [Host]);
@@ -641,7 +651,9 @@ reload_files(Files, #state{host = Host, blocked_domains = BlockedDomains} = Stat
 	    end,
 	    {ok, State#state{jid_set = JIDsSet,
 			     url_set = URLsSet,
-			     blocked_domains = maps:merge(BlockedDomains, set_to_map(SpamDomainsSet))}}
+			     blocked_domains = maps:merge(BlockedDomains, set_to_map(SpamDomainsSet)),
+			     whitelist_domains = set_to_map(WhitelistDomains, false)}
+	    }
     catch {Op, File, Reason} when Op == open;
 				  Op == read ->
 	    Txt = format("Cannot ~s ~s for ~s: ~s",
@@ -651,7 +663,10 @@ reload_files(Files, #state{host = Host, blocked_domains = BlockedDomains} = Stat
     end.
 
 set_to_map(Set) ->
-    sets:fold(fun(K, M) -> M#{K => true} end, #{}, Set).
+    set_to_map(Set, true).
+
+set_to_map(Set, V) ->
+    sets:fold(fun(K, M) -> M#{K => V} end, #{}, Set).
 
 -spec read_files(#{Type => filename()}) -> #{jid => jid_set(), url => url_set(), Type => sets:set(binary())}
 	      when Type :: atom().
@@ -967,7 +982,7 @@ reload_spam_filter_files(Host) ->
 get_blocked_domains(Host) ->
     case try_call_by_host(Host, get_blocked_domains) of
 	{blocked_domains, BlockedDomains} ->
-	    maps:keys(BlockedDomains);
+	    maps:keys(maps:filter(fun(_, false) -> false; (_, _) -> true end, BlockedDomains));
 	{error, _R} = Error ->
 	    Error
     end.

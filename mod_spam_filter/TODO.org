@@ -3,14 +3,15 @@
 #+date: 2025-04-02
 #+synopsis: Collection of todos, ideas, wishlist, comments. Feel free to contribute, any feedback appreciated.
 
-* TODOS [3/10]
+* TODOS [4/10]
 ** DONE Allow to configure node-name
 CLOSED: [2025-04-07 Mo 10:32]
 ** DONE Command to remove domain from list
 CLOSED: [2025-04-07 Mo 10:59]
 ** DONE List of blocked domains via file
 CLOSED: [2025-04-07 Mo 16:21]
-** TODO Whitelist for filtered domains
+** DONE Whitelist for blocked domains
+CLOSED: [2025-04-09 Mi 14:25]
 ** TODO Filter telegram channels (etc) via file                       :maybe:
 ** TODO Filter list of greetings (via file)                           :maybe:
 ** TODO Check if sending jid is from muc/mix service (maybe in bookmarks?)
