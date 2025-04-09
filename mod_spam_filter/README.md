@@ -52,6 +52,14 @@ The configurable `mod_spam_filter` options are:
   recipient's roster. This list of domains will be merged with the one retrieved
   by an RTBL host if any given. The behavior is the same.
   
+- `whitelist_domains_file` (default: `none`)
+
+  This option allows you to provide a path to a file containing a list of
+  domains to whitelist from being blocked, one per line. If either it is in
+  `spam_domains_file` or more realistically in a domain sent by a RTBL host (see
+  option `rtbl_host`) then this domain will be ignored and stanzas from there
+  won't be blocked.
+  
 - `spam_dump_file` (default: `none`)
 
   This option specifies the path to a file that messages classified as
