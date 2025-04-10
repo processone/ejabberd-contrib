@@ -76,31 +76,31 @@ modules:
       # Gauge for a "hook" (name of the metric in this case), value retrieved by
       # manually executing given command and args (needs mod_admin_extra in this
       # example)
-      - hook: ejabberd_uptime
-        type: gauge
-        help: "Uptime in seconds"
-        command: stats
-        args:
-          - "uptimeseconds"
+      # - hook: ejabberd_uptime
+      #   type: gauge
+      #   help: "Uptime in seconds"
+      #   command: stats
+      #   args:
+      #     - "uptimeseconds"
       # Keyword `host` will be replaced with actual hostname, needs label `host`
       # as well
-      - hook: registered_users_num
-        type: gauge
-        help: "Number of registered users per host"
-        labels:
-          - host
-        command: stats
-        args:
-          - "registeredusers"
-          - host
+      # - hook: registered_users_num
+      #   type: gauge
+      #   help: "Number of registered users per host"
+      #   labels:
+      #     - host
+      #   command: stats
+      #   args:
+      #     - "registeredusers"
+      #     - host
       # Set `result_type` to `list` if result from command is a list. Will set
       # gauge to length of list.
-      - hook: spam_filter_cache_size
-        type: gauge
-        help: "Size of spam filter cache"
-        labels:
-          - host
-        command: get_spam_filter_cache
-        args:
-          - host
-        result_type: list
+      # - hook: spam_filter_cache_size
+      #   type: gauge
+      #   help: "Size of spam filter cache"
+      #   labels:
+      #     - host
+      #   command: get_spam_filter_cache
+      #   args:
+      #     - host
+      #   result_type: list
