@@ -76,6 +76,7 @@ jobs:
       run: |
         ./autogen.sh
         ./configure --with-rebar=./rebar3 \
+                    --with-min-erlang=12.3 \
                     --prefix=/tmp/ejabberd \
                     --enable-all \
                     --disable-mssql \
