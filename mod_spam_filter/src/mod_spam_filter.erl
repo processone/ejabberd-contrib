@@ -82,7 +82,7 @@
 	 jid_set = sets:new()		:: jid_set(),
 	 jid_cache = #{}		:: map(),
 	 max_cache_size = 0		:: non_neg_integer() | unlimited,
-	 rtbl_host = undefined		:: binary() | undefined,
+	 rtbl_host = none		:: binary() | none,
 	 rtbl_subscribed = false	:: boolean(),
 	 rtbl_retry_timer = undefined	:: reference() | undefined,
 	 rtbl_domains_node		:: binary(),

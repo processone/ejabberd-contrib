@@ -21,8 +21,8 @@ subscribe(RTBLHost, RTBLDomainsNode, From) ->
     ?DEBUG("Sending subscription request:~n~p", [xmpp:encode(SubIQ)]),
     ejabberd_router:route_iq(SubIQ, subscribe_result, self()).
 
--spec unsubscribe(binary() | undefined, binary(), binary()) -> ok.
-unsubscribe(undefined, _PSNode, _From) ->
+-spec unsubscribe(binary() | none, binary(), binary()) -> ok.
+unsubscribe(none, _PSNode, _From) ->
     ok;
 unsubscribe(RTBLHost, RTBLDomainsNode, From) ->
     FromJID = jid:make(From),
@@ -31,8 +31,8 @@ unsubscribe(RTBLHost, RTBLDomainsNode, From) ->
 			   #pubsub{unsubscribe = #ps_unsubscribe{jid = FromJID, node = RTBLDomainsNode}}]},
     ejabberd_router:route_iq(SubIQ, unsubscribe_result, self()).
 
--spec request_blocked_domains(binary() | undefined, binary(), binary()) -> ok.
-request_blocked_domains(undefined, _PSNode, _From) ->
+-spec request_blocked_domains(binary() | none, binary(), binary()) -> ok.
+request_blocked_domains(none, _PSNode, _From) ->
     ok;
 request_blocked_domains(RTBLHost, RTBLDomainsNode, From) ->
     IQ = #iq{type = get, from = jid:make(From),
