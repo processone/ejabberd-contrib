@@ -295,7 +295,9 @@ handle_cast({dump, XML}, #state{dump_fd = Fd} = State) ->
 handle_cast({reload, NewOpts, OldOpts},
 	    #state{host = Host,
 		   rtbl_host = OldRTBLHost,
-		   rtbl_domains_node = OldRTBLDomainsNode} = State) ->
+		   rtbl_domains_node = OldRTBLDomainsNode,
+		   rtbl_retry_timer = RTBLRetryTimer} = State) ->
+    misc:cancel_timer(RTBLRetryTimer),
     State1 = case {gen_mod:get_opt(spam_dump_file, OldOpts),
 		   gen_mod:get_opt(spam_dump_file, NewOpts)} of
 		 {OldDumpFile, NewDumpFile} when NewDumpFile /= OldDumpFile ->
@@ -375,8 +377,13 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 -spec terminate(normal | shutdown | {shutdown, term()} | term(), state()) -> ok.
-terminate(Reason, #state{host = Host, rtbl_host = RTBLHost, rtbl_domains_node = RTBLDomainsNode} = State) ->
+terminate(Reason,
+	  #state{host = Host,
+		 rtbl_host = RTBLHost,
+		 rtbl_domains_node = RTBLDomainsNode,
+		 rtbl_retry_timer = RTBLRetryTimer} = State) ->
     ?DEBUG("Stopping spam filter process for ~s: ~p", [Host, Reason]),
+    misc:cancel_timer(RTBLRetryTimer),
     DumpFile = gen_mod:get_module_opt(Host, ?MODULE, spam_dump_file),
     DumpFile1 = expand_host(DumpFile, Host),
     close_dump_file(DumpFile1, State),
@@ -679,7 +686,7 @@ read_files(Files) ->
 -spec line_parser(Type :: atom()) -> fun((binary()) -> binary()).
 line_parser(jid) -> fun parse_jid/1;
 line_parser(url) -> fun parse_url/1;
-line_parser(_)   -> fun trim/1.			   
+line_parser(_)   -> fun trim/1.
 
 -spec read_file(filename(), fun((binary()) -> ljid() | url()))
       -> jid_set() | url_set().
@@ -934,7 +941,7 @@ get_commands_spec() ->
 			args = [{host, binary}, {domain, binary}],
 			result = {res, restuple}}
     ].
-    
+
 for_all_hosts(F, A) ->
     try lists:map(
 	  fun(Host) ->
@@ -968,13 +975,13 @@ reload_spam_filter_files(Host) ->
     LServer = jid:nameprep(Host),
     Files = #{domains => gen_mod:get_module_opt(LServer, ?MODULE, spam_domains_file),
 	      jid => gen_mod:get_module_opt(LServer, ?MODULE, spam_jids_file),
-	      url => gen_mod:get_module_opt(LServer, ?MODULE, spam_urls_file)},							     
+	      url => gen_mod:get_module_opt(LServer, ?MODULE, spam_urls_file)},
     case try_call_by_host(Host, {reload_files, Files}) of
 	{spam_filter, ok} ->
 	    ok;
 	{spam_filter, {error, Txt}} ->
 	    {error, binary_to_list(Txt)};
-	{error, _R} = Error -> 
+	{error, _R} = Error ->
 	    Error
     end.
 
@@ -1031,7 +1038,7 @@ expire_spam_filter_cache(Host, Age) ->
 	    Error
     end.
 
--spec add_to_spam_filter_cache(binary(), binary()) -> [{binary(), integer()}] | {error, string()}. 
+-spec add_to_spam_filter_cache(binary(), binary()) -> [{binary(), integer()}] | {error, string()}.
 add_to_spam_filter_cache(<<"global">>, JID) ->
     for_all_hosts(fun add_to_spam_filter_cache/2, [JID]);
 add_to_spam_filter_cache(Host, EncJID) ->
