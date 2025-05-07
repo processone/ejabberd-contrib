@@ -160,9 +160,7 @@ mod_opt_type(rtbl_host) ->
       econf:enum([none]),
       econf:host());
 mod_opt_type(rtbl_domains_node) ->
-    econf:either(
-      none,
-      econf:binary()).
+    econf:non_empty(econf:binary()).
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
