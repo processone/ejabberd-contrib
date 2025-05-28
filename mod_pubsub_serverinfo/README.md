@@ -1,8 +1,9 @@
 mod_pubsub_serverinfo - Exposes server information over Pub/Sub
 ==============================================================
 
-* Author: Guus der Kinderen <guus.der.kinderen@gmail.com>
 * Author: Stefan Strigler <stefan@strigler.de>
+
+Initially created by Guus der Kinderen.
 
 Description
 -----------

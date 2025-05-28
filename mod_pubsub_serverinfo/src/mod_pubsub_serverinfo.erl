@@ -1,11 +1,11 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_pubsub_serverinfo.erl
-%%% Author  : Guus der Kinderen <guus.der.kinderen@gmail.com>
+%%% Author  : Stefan Strigler <stefan@strigler.de>
 %%% Purpose : Exposes server information over Pub/Sub
 %%% Created : 26 Dec 2023 by Guus der Kinderen <guus.der.kinderen@gmail.com>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2023   ProcessOne
+%%% ejabberd, Copyright (C) 2023 - 2025   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@
 %%%----------------------------------------------------------------------
 
 -module(mod_pubsub_serverinfo).
--author('guus.der.kinderen@gmail.com').
+-author('stefan@strigler.de').
 -behaviour(gen_mod).
 -behaviour(gen_server).
 
