@@ -1,0 +1,50 @@
+diff --git a/specs/xmpp_codec.spec b/specs/xmpp_codec.spec
+index 3223290..dcf7424 100644
+--- a/specs/xmpp_codec.spec
++++ b/specs/xmpp_codec.spec
+@@ -452,6 +452,45 @@
+ 			  dec = {xmpp_lang, check, []},
+                           label = '$lang'}]}).
+ 
++-xml(unified_push_register,
++     #elem{name = <<"register">>,
++           xmlns = <<"http://gultsch.de/xmpp/drafts/unified-push">>,
++	   module = unifiedpush,
++           result = {unified_push_register, '$application', '$instance'},
++           attrs = [#attr{name = <<"application">>,
++			  required = true,
++			  label = '$application'},
++                    #attr{name = <<"instance">>,
++			  required = true,
++			  label = '$instance'}]}).
++
++-xml(unified_push_registered,
++     #elem{name = <<"registered">>,
++           xmlns = <<"http://gultsch.de/xmpp/drafts/unified-push">>,
++	   module = unifiedpush,
++           result = {unified_push_registered, '$expiration', '$endpoint'},
++           attrs = [#attr{name = <<"expiration">>,
++			  required = true,
++			  label = '$expiration',
++			  dec = {dec_utc, []},
++			  enc = {enc_utc, []}},
++                    #attr{name = <<"endpoint">>,
++			  required = true,
++			  label = '$endpoint'}]}).
++
++-xml(unified_push_push,
++     #elem{name = <<"push">>,
++           xmlns = <<"http://gultsch.de/xmpp/drafts/unified-push">>,
++	   module = unifiedpush,
++           result = {unified_push_push, '$application', '$instance', '$data'},
++           cdata = #cdata{label = '$data'},
++           attrs = [#attr{name = <<"application">>,
++			  required = true,
++			  label = '$application'},
++                    #attr{name = <<"instance">>,
++			  required = true,
++			  label = '$instance'}]}).
++
+ -xml(message_subject,
+      #elem{name = <<"subject">>,
+            xmlns = [<<"jabber:client">>, <<"jabber:server">>,
