@@ -87,7 +87,7 @@ init_monitors(Host) ->
 -spec fetch_public_hosts() -> list().
 fetch_public_hosts() ->
     try
-        {ok, {{_, 200, _}, _Headers, Body}} = httpc:request(?PUBLIC_HOSTS_URL),
+        {ok, {{_, 200, _}, _Headers, Body}} = httpc:request(get, {?PUBLIC_HOSTS_URL, []}, [{timeout, 1000}], [{body_format, binary}]),
         case misc:json_decode(Body) of
             PublicHosts when is_list(PublicHosts) -> PublicHosts;
             Other ->
