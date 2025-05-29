@@ -38,6 +38,13 @@ jobs:
       with:
         path: .ejabberd-modules/sources/ejabberd-contrib
 
+    - name: Get compatible Rebar3 binary when OTP 24
+      if: matrix.elixir < '1.14'
+      run: |
+        rm rebar3
+        wget https://github.com/processone/ejabberd/raw/24.12/rebar3
+        chmod +x rebar3
+
     - name: Prepare libraries
       run: |
         apt-get -qq update
