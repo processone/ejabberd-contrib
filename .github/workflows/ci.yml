@@ -38,6 +38,13 @@ jobs:
       with:
         path: .ejabberd-modules/sources/ejabberd-contrib
 
+    - name: Get compatible Rebar3 binary when OTP 24
+      if: matrix.elixir < '1.14'
+      run: |
+        rm rebar3
+        wget https://github.com/processone/ejabberd/raw/24.12/rebar3
+        chmod +x rebar3
+
     - name: Prepare libraries
       run: |
         apt-get -qq update
@@ -106,6 +113,18 @@ jobs:
     - name: Disable mod_muc_webchat_url testing (requires mod_conversejs)
       run: sed -i '/mod_muc_webchat_url/d' modules_available.txt
 
+    - name: Disable mod_prometheus testing with OTP < 26
+      if: matrix.elixir < '1.14'
+      run: sed -i '/mod_prometheus/d' modules_available.txt
+
+    - name: Add prometheus dependency only with OTP >= 26
+      if: matrix.elixir > '1.13'
+      run: |
+        sed -i 's|{deps, \[|{deps, \[ \
+                  {quantile_estimator, "1.0.2", {git, "https://github.com/odo/quantile_estimator", {branch, "master"}}}, \
+                  {prometheus, "5.0.0", {git, "https://github.com/prometheus-erl/prometheus.erl", {branch, "master"}}}, \
+                 |g' rebar.config
+
     - name: Disable mod_s3_upload testing with old OTP
       if: matrix.elixir < '1.16'
       run: sed -i '/mod_s3_upload/d' modules_available.txt
@@ -145,8 +164,6 @@ jobs:
                   {ecaptcha, ".*", {git, "https://github.com/seriyps/ecaptcha", {branch, "master"}}}, \
                   {fusco, "0.1.1", {git, "https://github.com/esl/fusco", {branch, "master"}}}, \
                   {observer_cli, "1.8.3", {git, "https://github.com/zhongwencool/observer_cli", {branch, "main"}}}, \
-                  {prometheus, "5.0.0", {git, "https://github.com/prometheus-erl/prometheus.erl", {branch, "master"}}}, \
-                  {quantile_estimator, "1.0.2", {git, "https://github.com/odo/quantile_estimator", {branch, "master"}}}, \
                   {recon, "2.5.6", {git, "https://github.com/ferd/recon", {branch, "master"}}}, \
                  |g' rebar.config
         sed -i 's|stdlib, |stdlib, cuesport, ecaptcha, fusco, observer_cli, prometheus, recon, |g' rebar.config

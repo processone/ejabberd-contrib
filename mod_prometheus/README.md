@@ -1,7 +1,7 @@
 mod_prometheus - Prometheus metrics
 ===================================
 
-- Requires: ejabberd 24.07 or higher
+- Requires: ejabberd 24.07 or higher, and Erlang/OTP 26 or higher
 - Author: [Pouriya Jahanbakhsh](https://github.com/pouriya)
 
 This module provides a web page with metrics suitable
