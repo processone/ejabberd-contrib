@@ -1,11 +1,11 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_pubsub_serverinfo.erl
-%%% Author  : Guus der Kinderen <guus.der.kinderen@gmail.com>
+%%% Author  : Stefan Strigler <stefan@strigler.de>
 %%% Purpose : Exposes server information over Pub/Sub
 %%% Created : 26 Dec 2023 by Guus der Kinderen <guus.der.kinderen@gmail.com>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2023   ProcessOne
+%%% ejabberd, Copyright (C) 2023 - 2025   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@
 %%%----------------------------------------------------------------------
 
 -module(mod_pubsub_serverinfo).
--author('guus.der.kinderen@gmail.com').
+-author('stefan@strigler.de').
 -behaviour(gen_mod).
 -behaviour(gen_server).
 
@@ -33,7 +33,7 @@
 -include_lib("xmpp/include/xmpp.hrl").
 
 %% gen_mod callbacks.
--export([start/2, stop/1, depends/2, mod_options/1, get_local_features/5, mod_doc/0]).
+-export([start/2, stop/1, depends/2, mod_options/1, mod_opt_type/1, get_local_features/5, mod_doc/0]).
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, terminate/2]).
 -export([in_auth_result/3, out_auth_result/2, get_info/5]).
 
@@ -43,12 +43,17 @@
 -record(state, {host, pubsub_host, node, monitors = #{}, timer = undefined, public_hosts = []}).
 
 start(Host, Opts) ->
-    xmpp:register_codec(pubsub_serverinfo_codec),
-    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, get_local_features, 50),
-    ejabberd_hooks:add(disco_info, Host, ?MODULE, get_info, 50),
-    ejabberd_hooks:add(s2s_out_auth_result, Host, ?MODULE, out_auth_result, 50),
-    ejabberd_hooks:add(s2s_in_auth_result, Host, ?MODULE, in_auth_result, 50),
-    gen_mod:start_child(?MODULE, Host, Opts).
+    case pubsub_host(Host, Opts) of
+	{error, _Reason} = Error  ->
+	    Error;
+	PubsubHost ->
+	    xmpp:register_codec(pubsub_serverinfo_codec),
+	    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, get_local_features, 50),
+	    ejabberd_hooks:add(disco_info, Host, ?MODULE, get_info, 50),
+	    ejabberd_hooks:add(s2s_out_auth_result, Host, ?MODULE, out_auth_result, 50),
+	    ejabberd_hooks:add(s2s_in_auth_result, Host, ?MODULE, in_auth_result, 50),
+	    gen_mod:start_child(?MODULE, Host, PubsubHost)
+    end.
 
 stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_local_features, 50),
@@ -57,11 +62,10 @@ stop(Host) ->
     ejabberd_hooks:delete(s2s_in_auth_result, Host, ?MODULE, in_auth_result, 50),
     gen_mod:stop_child(?MODULE, Host).
 
-init([Host, _Opts]) ->
+init([Host, PubsubHost]) ->
     TRef = timer:send_interval(timer:minutes(5), self(), update_pubsub),
     Monitors = init_monitors(Host),
     PublicHosts = fetch_public_hosts(),
-    PubsubHost = gen_mod:get_module_opt(Host, mod_pubsub, host),
     State = #state{host = Host,
                    pubsub_host = PubsubHost,
                    node = <<"serverinfo">>,
@@ -87,7 +91,7 @@ init_monitors(Host) ->
 -spec fetch_public_hosts() -> list().
 fetch_public_hosts() ->
     try
-        {ok, {{_, 200, _}, _Headers, Body}} = httpc:request(?PUBLIC_HOSTS_URL),
+        {ok, {{_, 200, _}, _Headers, Body}} = httpc:request(get, {?PUBLIC_HOSTS_URL, []}, [{timeout, 1000}], [{body_format, binary}]),
         case misc:json_decode(Body) of
             PublicHosts when is_list(PublicHosts) -> PublicHosts;
             Other ->
@@ -171,7 +175,10 @@ depends(_Host, _Opts) ->
     [{mod_pubsub, hard}].
 
 mod_options(_Host) ->
-    [].
+    [{pubsub_host, undefined}].
+
+mod_opt_type(pubsub_host) ->
+    econf:either(undefined, econf:host()).
 
 mod_doc() -> #{}.
 
@@ -251,7 +258,7 @@ get_local_features(Acc, _From, _To, _Node, _Lang) ->
 get_info(Acc, Host, Mod, Node, Lang) when (Mod == undefined orelse Mod == mod_disco), Node == <<"">> ->
     case mod_disco:get_info(Acc, Host, Mod, Node, Lang) of
 	[#xdata{fields = Fields} = XD | Rest] ->
-	    PubsubHost = gen_mod:get_module_opt(Host, mod_pubsub, host),
+	    PubsubHost = pubsub_host(Host),
 	    NodeField = #xdata_field{var = <<"serverinfo-pubsub-node">>,
 	                             values = [<<"xmpp:", PubsubHost/binary, "?;node=serverinfo">>]},
 	    {stop, [XD#xdata{fields = Fields ++ [NodeField]} | Rest]};
@@ -259,7 +266,7 @@ get_info(Acc, Host, Mod, Node, Lang) when (Mod == undefined orelse Mod == mod_di
 	    Acc
     end;
 get_info(Acc, Host, Mod, Node, _Lang) when Node == <<"">>, is_atom(Mod) ->
-    PubsubHost = gen_mod:get_module_opt(Host, mod_pubsub, host),
+    PubsubHost = pubsub_host(Host),
     [#xdata{type = result,
 	fields = [
 	    #xdata_field{type = hidden,
@@ -269,3 +276,37 @@ get_info(Acc, Host, Mod, Node, _Lang) when Node == <<"">>, is_atom(Mod) ->
                          values = [<<"xmpp:", PubsubHost/binary, "?;node=serverinfo">>]}]} | Acc];
 get_info(Acc, _Host, _Mod, _Node, _Lang) ->
     Acc.
+
+pubsub_host(Host) ->
+    case pubsub_host(Host, gen_mod:get_module_opts(Host, mod_pubsub)) of
+	{error, _Reason} = Error ->
+	    throw(Error);
+	PubsubHost ->
+	    PubsubHost
+    end.
+
+pubsub_host(Host, Opts) ->
+    case gen_mod:get_opt(pubsub_host, Opts) of
+	undefined ->
+	    PubsubHost = hd(get_mod_pubsub_hosts(Host)),
+	    ?INFO_MSG("No pubsub_host in configuration for ~p, choosing ~s", [?MODULE, PubsubHost]),
+	    PubsubHost;
+	PubsubHost ->
+	    case check_pubsub_host_exists(Host, PubsubHost) of
+		true ->
+		    PubsubHost;
+		false ->
+		    {error, {pubsub_host_does_not_exist, PubsubHost}}
+	    end
+    end.
+
+check_pubsub_host_exists(Host, PubsubHost) ->
+    lists:member(PubsubHost, get_mod_pubsub_hosts(Host)).
+
+get_mod_pubsub_hosts(Host) ->
+    case gen_mod:get_module_opt(Host, mod_pubsub, hosts) of
+	[] ->
+	    [gen_mod:get_module_opt(Host, mod_pubsub, host)];
+	PubsubHosts ->
+	    PubsubHosts
+    end.
