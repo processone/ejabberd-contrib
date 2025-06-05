@@ -278,7 +278,7 @@ get_info(Acc, _Host, _Mod, _Node, _Lang) ->
     Acc.
 
 pubsub_host(Host) ->
-    case pubsub_host(Host, gen_mod:get_module_opts(Host, mod_pubsub)) of
+    case pubsub_host(Host, gen_mod:get_module_opts(Host, ?MODULE)) of
 	{error, _Reason} = Error ->
 	    throw(Error);
 	PubsubHost ->
