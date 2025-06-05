@@ -1,11 +1,33 @@
-# About
+# mod_unified_push - Conversations-compatible UnifiedPush push server implementation 
 
-Please refer to the `*.spec` file.
+- Author: itd (https://codeberg.org/itd)
+- Copyright (C) 2025 itd
 
-# XMPP
+This module adds Unified Push support compatible with Conversations.
 
 To interact with the custom IQ stanzas, this project includes code generated with the xmpp library [0] using the steps outlined in [1].
 See `xmpp_spec.patch` for details on the spec update.
 
 [0]: https://github.com/processone/xmpp
 [1]: https://github.com/processone/xmpp/issues/9#issue-205855303
+
+## Configuration
+
+To use this module, load `mod_unified_push` in the `modules` section of the config file and add `/up: mod_unified_push` to a listen directive:
+
+```
+  -
+    port: 5443
+    ip: "::"
+    module: ejabberd_http
+    tls: true
+    protocol_options: 'TLS_OPTIONS'
+    request_handlers:
+      /api: mod_http_api
+      /bosh: mod_bosh
+      /upload: mod_http_upload
+      /ws: ejabberd_http_ws
+      /up: mod_unified_push
+```
+
+Once the config has been reloaded, the server can be added as a Unified Push distributor in the settings of Conversations, using the same domain used for the JID.
