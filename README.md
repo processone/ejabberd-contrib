@@ -52,7 +52,7 @@ The following organization has been set up for the development:
   ```
 
 - The module directory structure is usually the following:
-    * `README.txt`: Module description.
+    * `README.md`: Module description.
     * `COPYING`: License for the module.
     * `doc/`: Documentation directory.
     * `src/`: Erlang source directory.
@@ -61,7 +61,7 @@ The following organization has been set up for the development:
     * `conf/<module>.yml`: Configuration for your module.
     * `<module>.spec`: Yaml description file for your module.
 
-- Module developers should note in the `README.txt` file whether the
+- Module developers should note in the `README.md` file whether the
   module has requirements or known incompatibilities with other modules.
 
 - If your module project contains several erlang modules, you should export a
