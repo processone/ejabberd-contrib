@@ -37,7 +37,7 @@
 -include("ejabberd_http.hrl").
 
 %% XMPP structs such as #iq
--include_lib("p1_xmpp/include/xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 %% JOSE JWK structs such as #jose_jwk
 -include_lib("jose/include/jose_jwk.hrl").
