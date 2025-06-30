@@ -56,22 +56,6 @@
 %% IQ handler
 -export([iq_handler/1]).
 
-%% Exports for XMPP-generated code
--export([
-    do_decode/4,
-    tags/0,
-    do_encode/2,
-    do_get_name/1,
-    do_get_ns/1,
-    pp/2,
-    records/0,
-    decode_unified_push_register/3,
-    decode_unified_push_register_attrs/4,
-    encode_unified_push_register/2,
-    decode_unified_push_register_attr_application/2,
-    decode_unified_push_register_attr_instance/2
-]).
-
 %% API subpaths
 -define(ENDPOINT_PUSH, "push").
 -define(ENDPOINT_MESSAGE, "message").
@@ -334,20 +318,3 @@ mod_doc() ->
             "    jwk: {\"k\" => \"a4-...\",\"kty\" => \"oct\"}"
         ]
     }.
-
-%% FIXME The following lines add support for the custom IQ stanza.
-%%       If possible they should be moved to the xmpp package.
-%% Created automatically by XML generator (fxml_gen.erl)
-%% Source: xmpp_codec.spec
-
-do_decode(
-    <<"push">>,
-    <<"http://gultsch.de/xmpp/drafts/unified-push">>,
-    El,
-    Opts
-) ->
-    decode_unified_push_push(
-        <<"http://gultsch.de/xmpp/drafts/unified-push">>,
-        Opts,
-        El
-    );
