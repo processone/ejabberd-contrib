@@ -56,6 +56,8 @@
 %% IQ handler
 -export([iq_handler/1]).
 
+-type ttl_timeout() :: undefined | non_neg_integer().
+
 %% API subpaths
 -define(ENDPOINT_PUSH, "push").
 -define(ENDPOINT_MESSAGE, "message").
@@ -68,7 +70,7 @@
 -define(UP_INSTANCE, <<"i">>).
 
 %% called by ejabberd_http
--spec process([binary()], http_request()) -> {integer(), [{binary(), binary()}], binary()}.
+-spec process([binary()], http_request()) -> {integer(), [{binary(), binary()}], [binary()]}.
 process(_LocalPath, #request{method = 'POST', data = <<>>}) ->
     ?DEBUG("bad POST request for ~p: no data", [_LocalPath]),
     {400, [], []};
@@ -83,7 +85,7 @@ process([], #request{method = 'GET'}) ->
         [
             {<<"Content-Type">>, <<"application/json">>}
         ],
-        ["{\"unifiedpush\":{\"version\":1}}"]};
+        [<<"{\"unifiedpush\":{\"version\":1}}">>]};
 process([<<?ENDPOINT_MESSAGE>> | _], _Request) ->
     %% RFC8030: 6.2.
     {410, [], []};
@@ -91,20 +93,20 @@ process(_LocalPath, _Request) ->
     ?DEBUG("bad request for ~p: ~p", [_LocalPath, _Request]),
     {400, [], []}.
 
--spec get_ttl([{atom(), binary()}]) -> integer().
+-spec get_ttl([{atom(), binary()}]) -> ttl_timeout().
 get_ttl(Headers) ->
     try string:to_integer(proplists:get_value(<<"Ttl">>, Headers, "1")) of
-        {T, <<>>} -> T;
-        {_, _} -> -1
+        {T, <<>>} when T >= 0 -> T;
+        {_, _} -> undefined
     catch
         _:_ ->
             %% assume illegal behavior
-            -1
+            undefined
     end.
 
--spec validate_request(binary(), binary(), binary(), binary(), integer()) ->
-    {integer(), [{binary(), binary()}], binary()}.
-validate_request(_Host, _Jwk, _MaybeJwtToken, _Data, Ttl) when Ttl < 0 ->
+-spec validate_request(binary(), any(), binary(), binary(), ttl_timeout()) ->
+    {integer(), [{binary(), binary()}], []}.
+validate_request(_Host, _Jwk, _MaybeJwtToken, _Data, undefined) ->
     {400, [], []};
 validate_request(Host, Jwk, MaybeJwtToken, Data, Ttl) when Data =/= <<"">> ->
     ?DEBUG("verifying jwt validity", []),
@@ -140,8 +142,8 @@ validate_request(Host, Jwk, MaybeJwtToken, Data, Ttl) when Data =/= <<"">> ->
 validate_request(_Host, _Jwk, _MaybeJwtToken, _Data, _Ttl) ->
     {400, [], []}.
 
--spec forward_push_message(binary(), binary(), binary(), integer(), map()) ->
-    {integer(), [{binary(), binary()}], binary()}.
+-spec forward_push_message(binary(), binary(), binary(), ttl_timeout(), map()) ->
+    {integer(), [{binary(), binary()}], []}.
 forward_push_message(Host, Jwt, Data, Ttl, #{
     ?UP_APPLICATION := Application, ?UP_INSTANCE := Instance, ?UP_OWNER := To
 }) ->
@@ -163,6 +165,7 @@ forward_push_message(Host, Jwt, Data, Ttl, #{
             ?DEBUG("~p: IQ callback: ~p", [?MODULE, _Res]),
             ok
         end,
+        undefined,
         Ttl
     ),
     UrlPrefix = misc:expand_keyword(<<"@HOST@">>, guess_url_prefix(any), Host),
