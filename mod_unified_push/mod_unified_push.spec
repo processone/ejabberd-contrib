@@ -1,0 +1,5 @@
+category: "HTTP"
+summary: "Conversations-compatible UnifiedPush push server implementation"
+url: "git@github.com:processone/ejabberd-contrib.git"
+home: "https://codeberg.org/itd/mod_unified_push"
+author: "itd@net.in.tum.de"
