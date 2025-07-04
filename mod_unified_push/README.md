@@ -1,15 +1,16 @@
-# mod_unified_push - Conversations-compatible UnifiedPush push server implementation 
+# mod_unified_push - Conversations-compatible UnifiedPush push server implementation
 
 - Author: itd (https://codeberg.org/itd)
 - Copyright (C) 2025 itd
 
 This module adds Unified Push support compatible with Conversations.
 
-To interact with the custom IQ stanzas, this project includes code generated with the xmpp library [0] using the steps outlined in [1].
-See `xmpp_spec.patch` for details on the spec update.
-
-[0]: https://github.com/processone/xmpp
-[1]: https://github.com/processone/xmpp/issues/9#issue-205855303
+ejabberd newer than 25.04 is required,
+as it requires an updated version of the
+[xmpp erlang library](https://github.com/processone/xmpp)
+that includes the improvements from the file `xmpp_spec.patch`.
+Or you can
+[apply the patch yourself](https://github.com/processone/xmpp/issues/9#issue-205855303)
 
 ## Configuration
 
