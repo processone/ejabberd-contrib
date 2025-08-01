@@ -117,6 +117,9 @@ jobs:
       if: matrix.elixir < '1.14'
       run: sed -i '/mod_prometheus/d' modules_available.txt
 
+    - name: Disable mod_pubsub_serverinfo testing
+      run: sed -i '/mod_pubsub_serverinfo/d' modules_available.txt
+
     - name: Add prometheus dependency only with OTP >= 26
       if: matrix.elixir > '1.13'
       run: |

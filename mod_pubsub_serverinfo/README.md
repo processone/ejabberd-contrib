@@ -5,6 +5,9 @@ mod_pubsub_serverinfo - Exposes server information over Pub/Sub
 
 Initially created by Guus der Kinderen.
 
+NOTE: This module was included in ejabberd 25.07, you don't need to install this old version.
+
+
 Description
 -----------
 
