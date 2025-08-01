@@ -69,6 +69,8 @@
 -define(UP_APPLICATION, <<"a">>).
 -define(UP_INSTANCE, <<"i">>).
 
+-define(MODULE_XMPP_UP, unifiedpush).
+
 %% called by ejabberd_http
 -spec process([binary()], http_request()) -> {integer(), [{binary(), binary()}], [binary()]}.
 process(_LocalPath, #request{method = 'POST', data = <<>>}) ->
@@ -215,13 +217,13 @@ iq_handler(#iq{lang = Lang} = IQ) ->
 
 -spec start(binary(), gen_mod:opts()) -> ok.
 start(Host, _Opts) ->
-    xmpp:register_codec(?MODULE),
+    xmpp:register_codec(?MODULE_XMPP_UP),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?XMLNS_UNIFIED_PUSH, ?MODULE, iq_handler),
     ok.
 
 -spec stop(binary()) -> ok.
 stop(Host) ->
-    xmpp:unregister_codec(?MODULE),
+    xmpp:unregister_codec(?MODULE_XMPP_UP),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?XMLNS_UNIFIED_PUSH),
     ok.
 
