@@ -1,0 +1,9 @@
+modules:
+  mod_unified_push: {}
+
+listen:
+  -
+    port: 5283
+    module: ejabberd_http
+    request_handlers:
+      /up: mod_unified_push
