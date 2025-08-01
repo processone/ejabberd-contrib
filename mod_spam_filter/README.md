@@ -4,6 +4,9 @@ mod_spam_filter - Filter spam messages based on JID/content
 * Author: Holger Weiss <holger@zedat.fu-berlin.de>
 * Author: Stefan Strigler <stefan@strigler.de>
 
+NOTE: This module was improved, renamed to mod_antispam and included in ejabberd 25.07
+
+
 Description
 -----------
 
