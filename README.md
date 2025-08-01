@@ -28,7 +28,6 @@ To use an ejabberd module coming from this repository:
 - Run `ejabberdctl module_uninstall <module>` to remove a module from
   ejabberd.
 
-
 For developers
 --------------
 
@@ -68,6 +67,28 @@ The following organization has been set up for the development:
   function pre_uninstall/0 in the main one listing the other ones.
   See mod_statsdx as an example.
 
+Default configuration
+---------------------
+
+Some modules include default configuration files like `conf/MODULE.yml`,
+this way the module is enabled automatically and you don't need to setup anything else.
+
+But maybe that default configuration does not suit your needs and you prefer to
+configure the module yourself in your `ejabberd.yml` configuration file.
+In that case, remove all the lines in the corresponding `conf/MODULE.yml` file,
+and then you can configure manually in your `ejabberd.yml` file.
+
+Please notice: if you remove the file `conf/MODULE.yml` completely,
+ejabberd may copy the default one again when you upgrade the module in the future.
+
+Some modules with default configuration listen in specific port numbers:
+- 5282: mod_muc_log_http
+- 5283: mod_unified_push
+- 5284: mod_webpresence
+- 5285: mod_rest
+- 5286: mod_http_redirect (not enabled by default)
+- 5289: mod_prometheus
+- 8080: atom_pubsub
 
 Broken modules
 --------------
