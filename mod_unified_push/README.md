@@ -2,13 +2,14 @@
 
 - Author: itd (https://codeberg.org/itd)
 - Copyright (C) 2025 itd
+- Requires: ejabberd 25.07 or higher
 
 This module adds Unified Push support compatible with Conversations.
 When the module is enabled, the server can be added as a Unified Push distributor
 in the settings of Conversations, using the same domain used for the JID.
 
-ejabberd newer than 25.04 is required,
-as it requires an updated version of the
+ejabberd 25.07 or higher is required,
+because this module requires an updated version of the
 [xmpp erlang library](https://github.com/processone/xmpp)
 that includes the improvements from the file `xmpp_spec.patch`.
 Or you can
