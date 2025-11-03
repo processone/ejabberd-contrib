@@ -52,7 +52,7 @@ Configuration
     and when building the JavaScript code.
     It is the base part of the URL of the webpresence HTTP content.
     You can use the keyword `@HOST@`.
-    If the option is not specified, it takes as default value: `http://host:52080/presence/`
+    If the option is not specified, it takes as default value: `http://host:5280/presence/`
 
 
 Example Configuration
