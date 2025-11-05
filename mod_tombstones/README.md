@@ -3,6 +3,7 @@ mod_tombstones - Keep graveyard of accounts and rooms tombstones
 
 Requires:
 - ejabberd 24.10 or higher
+- ejabberd 25.xx or higher to keep tombstone of MUC nick registration
 
 
 Keep tombstones for accounts and rooms that were removed.
@@ -31,6 +32,12 @@ The configurable options are:
   If set to `infinity` the tombstones are kept forever.
   The default value is `365 days`.
 
+- `nickmuc_tombstone_expiry = time | infinity`
+
+  How long to keep tombstones of nick registration in MUC service.
+  If set to `infinity` the tombstones are kept forever.
+  The default value is `365 days`.
+
 
 Example Configuration
 ---------------------
@@ -42,6 +49,7 @@ modules:
   mod_tombstones:
     room_tombstone_expiry: 7 days
     user_tombstone_expiry: 30 days
+    nickmuc_tombstone_expiry: 10 days
 ```
 
 
