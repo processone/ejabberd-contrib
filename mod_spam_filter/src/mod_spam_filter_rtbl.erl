@@ -58,7 +58,7 @@ parse_blocked_domains(#iq{to = #jid{lserver = LServer}, type = result} = IQ) ->
 parse_pubsub_event(#message{to = #jid{lserver = LServer}} = Msg) ->
     RTBLDomainsNode = gen_mod:get_module_opt(LServer, ?SERVICE_MODULE, rtbl_domains_node),
     case xmpp:get_subtag(Msg, #ps_event{}) of
-	#ps_event{items = #ps_items{node = RTBLDomainsNode, retract = ID}} when ID /= undefined ->
+	#ps_event{items = #ps_items{node = RTBLDomainsNode, retract = [ID]}} ->
 	    ?DEBUG("Got item to retract:~n~p", [ID]),
 	    #{ID => false};
 	#ps_event{items = #ps_items{node = RTBLDomainsNode, items = Items}} ->
