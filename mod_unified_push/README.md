@@ -43,3 +43,6 @@ modules:
   mod_unified_push: {}
   ...
 ```
+
+For a list of options and their documentation, please check the end lines
+in the source code file `src/mod_unified_push.erl`.

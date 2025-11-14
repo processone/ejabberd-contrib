@@ -170,7 +170,7 @@ forward_push_message(Host, Jwt, Data, Ttl, #{
         undefined,
         Ttl
     ),
-    UrlPrefix = misc:expand_keyword(<<"@HOST@">>, guess_url_prefix(any), Host),
+    UrlPrefix = get_push_url(Host),
     %% XXX(RFC8030) indicate no support for receive acks / message storage
     {201,
         [
@@ -206,7 +206,7 @@ iq_handler(
     },
     Signed = jose_jwt:sign(Jwk, Jws, Jwt),
     {#{}, CompactSigned} = jose_jws:compact(Signed),
-    UrlPrefix = misc:expand_keyword(<<"@HOST@">>, guess_url_prefix(any), Host),
+    UrlPrefix = get_push_url(Host),
     xmpp:make_iq_result(IQ, #unified_push_registered{
         expiration = Expiration,
         endpoint = <<UrlPrefix/binary, "/", ?ENDPOINT_PUSH, "/", CompactSigned/binary>>
@@ -241,14 +241,27 @@ mod_opt_type(expiration) ->
     %% TODO is there an upper bound for the validity of the JWT token?
     econf:int(0, 86400); %% 60 * 60 * 24
 mod_opt_type(jwk) ->
-    econf:map(econf:binary(), econf:either(econf:binary(), econf:int())).
+    econf:map(econf:binary(), econf:either(econf:binary(), econf:int()));
+mod_opt_type(push_url) ->
+    econf:either(undefined, econf:binary()).
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
     [
         {expiration, 60 * 15},
-        {jwk, jose_jwk:to_map(jose_jwk:generate_key({oct, 128}))}
+        {jwk, jose_jwk:to_map(jose_jwk:generate_key({oct, 128}))},
+        {push_url, <<"auto">>}
     ].
+
+get_push_url(Host) ->
+    case erlang:function_exported(mod_host_meta, get_url, 4) of
+        true -> get_push_url_new(Host);
+        false -> get_push_url_old(Host)
+    end.
+
+%% ejabberd higher than 25.10
+get_push_url_new(Host) ->
+    misc:expand_keyword(<<"@HOST@">>, guess_url_prefix(any), Host).
 
 %% Based on mod_host_meta's `get_auto_url` and `find_handler_port_path` functions
 -spec guess_url_prefix(any | boolean()) -> undefined | binary().
@@ -283,6 +296,24 @@ guess_url_prefix(Tls) ->
                 (str:join(Path, <<"/">>))/binary>>
     end.
 
+%% ejabberd 25.10 and lower
+get_push_url_old(Host) ->
+    get_url(?MODULE, any, Host, push_url, ?MODULE).
+
+get_url(M, Tls, Host, Option, Module) ->
+    case get_url_preliminar(M, Tls, Host, Option, Module) of
+        undefined -> undefined;
+        Url -> misc:expand_keyword(<<"@HOST@">>, Url, Host)
+    end.
+
+-dialyzer({no_missing_calls, get_url_preliminar/5}).
+get_url_preliminar(M, Tls, Host, Option, Module) ->
+    case gen_mod:get_module_opt(Host, M, Option) of
+        <<"auto">> -> mod_host_meta:get_auto_url(Tls, Module);
+        U when is_binary(U) -> U;
+        _ -> mod_host_meta:get_auto_url(Tls, Module)
+    end.
+
 -spec mod_doc() -> map().
 mod_doc() ->
     #{
@@ -304,7 +335,16 @@ mod_doc() ->
                         "Passed to `jose_jwk:from_map` to generate the "
                         "JSON Web Key (JWK) used when generating URLs."
                     )
-            }}
+            }},
+            {push_url,
+             #{value => "undefined | auto | PushURL",
+               desc =>
+                   ?T("Push URL to announce. "
+                      "The keyword '@HOST@' is replaced with the real virtual "
+                      "host name. "
+                      "If set to 'auto', it will build the URL of the first "
+                      "configured push request handler. "
+                      "The default value is 'auto'.")}}
         ],
         example => [
             "listen:",
