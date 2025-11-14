@@ -39,7 +39,6 @@
 -import(crypto, [mac/4]).
 -import(uri_string, [compose_query/1,
                      dissect_query/1]).
--import(misc, [crypto_hmac/3]).
 
 -export([signed_url/7]).
 
@@ -68,7 +67,7 @@ signed_url(Auth, Verb, Service, URL, ExtraHeaders, Time, TTL) ->
     % generate and sign the message
     StringToSign = string_to_sign(Auth, Time, Service, Verb, UriMap, Headers),
     SigningKey = signing_key(Auth, Time, Service),
-    Signature = encode_hex(crypto_hmac(sha256, SigningKey, StringToSign)),
+    Signature = encode_hex(crypto:mac(hmac, sha256, SigningKey, StringToSign)),
     % add signature to the query list and compose URI
     SignedQueryString = compose_query([{<<"X-Amz-Signature">>, Signature}|QueryList]),
     uri_string:recompose(UriMap#{query => SignedQueryString}).
@@ -250,7 +249,7 @@ signing_key(#aws_auth{access_key = AccessKey,
                      region     = Region},
             Time,
             Service) ->
-    DateKey = crypto_hmac(sha256, <<"AWS4", AccessKey/binary>>, iso8601_date(Time)),
-    DateRegionKey = crypto_hmac(sha256, DateKey, Region),
-    DateRegionServiceKey = crypto_hmac(sha256, DateRegionKey, Service),
-    crypto_hmac(sha256, DateRegionServiceKey, <<"aws4_request">>).
+    DateKey = crypto:mac(hmac, sha256, <<"AWS4", AccessKey/binary>>, iso8601_date(Time)),
+    DateRegionKey = crypto:mac(hmac, sha256, DateKey, Region),
+    DateRegionServiceKey = crypto:mac(hmac, sha256, DateRegionKey, Service),
+    crypto:mac(hmac, sha256, DateRegionServiceKey, <<"aws4_request">>).
