@@ -189,4 +189,4 @@ check_digest(#scram{storedkey = StoredKey}, Digest, DigestGen, Password) ->
     end.
 
 crypto_hmac(sha, Key, Data) ->
-    misc:crypto_hmac(sha, Key, Data).
+    crypto:mac(hmac, sha, Key, Data).
