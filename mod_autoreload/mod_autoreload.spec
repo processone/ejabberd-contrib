@@ -1,0 +1,5 @@
+author: "Blieb <blieb84 at icloud.com>"
+category: "admin"
+summary: "Automatic reload on configuration and certificate file changes"
+home: "https://github.com/processone/ejabberd-contrib/tree/master/"
+url: "git@github.com:processone/ejabberd-contrib.git"
