@@ -1,4 +1,4 @@
 modules:
   mod_autoreload:
     watch_ssl: true
-    watch_config: true
+    watch_config: false
