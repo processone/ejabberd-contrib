@@ -32,6 +32,8 @@
 %% API
 -export([start_link/0]).
 
+-export([web_menu_system/3]).
+
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
@@ -51,6 +53,7 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 start(Host, Opts) ->
+    ejabberd_hooks:add(webadmin_menu_system_post, global, ?MODULE, web_menu_system, 1000-$p),
     Dir = case gen_mod:get_opt(pixmaps_path, Opts) of
               auto ->
                   Package = atom_to_list(?MODULE),
@@ -71,6 +74,7 @@ start(Host, Opts) ->
     end.
 
 stop(Host) ->
+    ejabberd_hooks:delete(webadmin_menu_system_post, global, ?MODULE, web_menu_system, 1000-$p),
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     gen_server:call(Proc, stop),
     gen_mod:stop_child(?MODULE, Host),
@@ -960,8 +964,12 @@ serve_web_presence(TypeURL, User, Server, Tail, #request{lang = Lang1, q = Q}) -
 %%%% Web Admin
 %%%% ---------------------
 
+web_menu_system(Result, _Request, _Level) ->
+    Els = ejabberd_web_admin:make_menu_system(?MODULE, "👁️", "Presence Web", ""),
+    Els ++ Result.
+
 web_menu_host(Acc, _Host, Lang) ->
-    [{<<"webpresence">>, translate:translate(Lang, ?T("Web Presence"))} | Acc].
+    [{<<"webpresence">>, translate:translate(Lang, ?T("Presence Web"))} | Acc].
 
 web_page_host(_, _Host,
 	      #request{path = [<<"webpresence">>],

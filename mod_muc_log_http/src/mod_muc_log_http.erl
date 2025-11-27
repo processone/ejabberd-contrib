@@ -14,6 +14,8 @@
 
 -export([process/2]).
 
+-export([web_menu_system/3]).
+
 -include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_http.hrl").
 -include("mod_muc_room.hrl").
@@ -236,7 +238,7 @@ last_modified(FileName) ->
 %%%----------------------------------------------------------------------
 
 start(_Host, _Opts) ->
-    ok.
+    {ok, [{hook, webadmin_menu_system_post, web_menu_system, 1000-$m, global}]}.
 
 stop(_Host) ->
     ok.
@@ -281,3 +283,11 @@ find_handler_port_path(Tls, Module) ->
               end;
          (_) -> false
       end, ets:tab2list(ejabberd_listener)).
+
+%%----------------------------------------------------------------------
+%% WebAdmin
+%%----------------------------------------------------------------------
+
+web_menu_system(Result, _Request, _Level) ->
+    Els = ejabberd_web_admin:make_menu_system(?MODULE, "💬", "MUC Log", ""),
+    Els ++ Result.
