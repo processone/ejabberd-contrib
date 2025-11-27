@@ -912,9 +912,13 @@ received_response(From, Client_id, OS_id, Lang1, Client, Version, OS) ->
     ets:insert(TableHost, {{session, From}, Client_id, OS_id, Lang, ConnType, Client, Version, OS}).
 
 get_connection_type(User, Host, Resource) ->
-    UserInfo = ejabberd_sm:get_user_info(User, Host, Resource),
-    {conn, Conn} = lists:keyfind(conn, 1, UserInfo),
-    Conn.
+    case ejabberd_sm:get_user_info(User, Host, <<"asdasd">>) of
+        offline ->
+            unknown;
+        UserInfo when is_list(UserInfo) ->
+            {conn, Conn} = lists:keyfind(conn, 1, UserInfo),
+            Conn
+    end.
 
 update_counter_create(Table, Element, C) ->
     case ets:lookup(Table, Element) of
