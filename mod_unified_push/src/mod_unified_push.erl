@@ -243,7 +243,7 @@ mod_opt_type(expiration) ->
 mod_opt_type(jwk) ->
     econf:map(econf:binary(), econf:either(econf:binary(), econf:int()));
 mod_opt_type(push_url) ->
-    econf:either(undefined, econf:binary()).
+    econf:binary().
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
@@ -253,65 +253,20 @@ mod_options(_Host) ->
         {push_url, <<"auto">>}
     ].
 
+-dialyzer({no_missing_calls, get_push_url/1}).
 get_push_url(Host) ->
-    case erlang:function_exported(mod_host_meta, get_url, 4) of
-        true -> get_push_url_new(Host);
-        false -> get_push_url_old(Host)
-    end.
-
-%% ejabberd higher than 25.10
-get_push_url_new(Host) ->
-    misc:expand_keyword(<<"@HOST@">>, guess_url_prefix(any), Host).
-
-%% Based on mod_host_meta's `get_auto_url` and `find_handler_port_path` functions
--spec guess_url_prefix(any | boolean()) -> undefined | binary().
-guess_url_prefix(Tls) ->
-    case
-        lists:filtermap(
-            fun
-                (
-                    {{Port, _, _}, ejabberd_http, #{tls := ThisTls, request_handlers := Handlers}}
-                ) when
-                    (Tls == any) or (Tls == ThisTls)
-                ->
-                    case lists:keyfind(?MODULE, 2, Handlers) of
-                        false -> false;
-                        {Path, ?MODULE} -> {true, {ThisTls, Port, Path}}
-                    end;
-                (_) ->
-                    false
-            end,
-            ets:tab2list(ejabberd_listener)
-        )
-    of
-        [] ->
-            undefined;
-        [{ThisTls, Port, Path} | _] ->
-            Protocol =
-                case ThisTls of
-                    false -> <<"http">>;
-                    true -> <<"https">>
-                end,
-            <<Protocol/binary, "://@HOST@:", (integer_to_binary(Port))/binary, "/",
-                (str:join(Path, <<"/">>))/binary>>
-    end.
-
-%% ejabberd 25.10 and lower
-get_push_url_old(Host) ->
-    get_url(?MODULE, any, Host, push_url, ?MODULE).
-
-get_url(M, Tls, Host, Option, Module) ->
-    case get_url_preliminar(M, Tls, Host, Option, Module) of
-        undefined -> undefined;
-        Url -> misc:expand_keyword(<<"@HOST@">>, Url, Host)
-    end.
-
--dialyzer({no_missing_calls, get_url_preliminar/5}).
-get_url_preliminar(M, Tls, Host, Option, Module) ->
-    case gen_mod:get_module_opt(Host, M, Option) of
-        <<"auto">> -> mod_host_meta:get_auto_url(Tls, Module);
-        U when is_binary(U) -> U;
-        _ -> mod_host_meta:get_auto_url(Tls, Module)
+    case gen_mod:get_module_opt(Host, ?MODULE, push_url) of
+        <<"auto">> ->
+            AutoUrl = case erlang:function_exported(ejabberd_http, get_auto_url, 2) of
+                          false ->
+                              mod_host_meta:get_auto_url(any, ?MODULE);
+                          true ->
+                              [{_, Http} | _] = ejabberd_http:get_auto_urls(any, ?MODULE),
+                              Http
+                      end,
+            misc:expand_keyword(<<"@HOST@">>, AutoUrl, Host);
+        U when is_binary(U) ->
+            U
     end.
 
 -spec mod_doc() -> map().
@@ -338,7 +293,7 @@ mod_doc() ->
                     )
             }},
             {push_url,
-             #{value => "undefined | auto | PushURL",
+             #{value => "auto | PushURL",
                desc =>
                    ?T("Push URL to announce. "
                       "The keyword '@HOST@' is replaced with the real virtual "
