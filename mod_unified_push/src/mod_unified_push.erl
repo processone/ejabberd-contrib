@@ -325,7 +325,8 @@ mod_doc() ->
                 desc =>
                     ?T(
                         "Every generated push URL will be valid only "
-                        "for the specified interval, in seconds."
+                        "for the specified interval, in seconds. "
+                        "The default value is 15 minutes: '900'"
                     )
             }},
             {jwk, #{
