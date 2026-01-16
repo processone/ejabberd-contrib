@@ -963,6 +963,8 @@ list_elem(clients, full) ->
      {"mcabber", mcabber},
      {"miranda", miranda},
      {"monal", monal},
+     {"monocles chat", monocles},
+     {"movim", movim},
      {"pandion", pandion},
      {"pidgin", pidgin},
      {"poezio", poezio},
