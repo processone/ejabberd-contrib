@@ -238,8 +238,7 @@ get_jwk(Host) ->
 
 -spec mod_opt_type(atom()) -> econf:validator().
 mod_opt_type(expiration) ->
-    %% TODO is there an upper bound for the validity of the JWT token?
-    econf:int(0, 86400); %% 60 * 60 * 24
+    econf:int(0, 5184000); %% 86400 * 60
 mod_opt_type(jwk) ->
     econf:map(econf:binary(), econf:either(econf:binary(), econf:int()));
 mod_opt_type(push_url) ->
@@ -248,7 +247,7 @@ mod_opt_type(push_url) ->
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
     [
-        {expiration, 60 * 15},
+        {expiration, 86400 * 7},
         {jwk, jose_jwk:to_map(jose_jwk:generate_key({oct, 128}))},
         {push_url, <<"auto">>}
     ].
@@ -281,7 +280,7 @@ mod_doc() ->
                     ?T(
                         "Every generated push URL will be valid only "
                         "for the specified interval, in seconds. "
-                        "The default value is 15 minutes: '900'"
+                        "The default value is 7 days: '604800'"
                     )
             }},
             {jwk, #{
@@ -315,7 +314,7 @@ mod_doc() ->
             "",
             "modules:",
             "  mod_unified_push:",
-            "    expiration: 120",
+            "    expiration: 259200",
             "    jwk: {\"k\" => \"a4-...\",\"kty\" => \"oct\"}"
         ]
     }.
