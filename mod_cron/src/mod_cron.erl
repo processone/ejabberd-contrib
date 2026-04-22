@@ -148,8 +148,15 @@ update_timer_ref(TaskId, NewTimerRef) ->
     NewTask = Task#task{timerref=NewTimerRef},
     ets:insert(cron_tasks, NewTask).
 
+set_default_task_values(Task) ->
+    case proplists:is_defined(timer_type, Task) of
+        false -> [{timer_type, interval} | Task];
+        true -> Task
+    end.
+
 %% Method to add new task
-add_task(Host, Task) ->
+add_task(Host, TaskPreliminary) ->
+    Task = set_default_task_values(TaskPreliminary),
     [TimeNum, TimeUnit, Mod1, Fun1, ArgsType, Args1, InTimerType, Command, Ctl] =
 	[proplists:get_value(Key, Task) || Key <- [time, units, module, function,
                                                    args_type, arguments, timer_type,
@@ -300,22 +307,28 @@ web_page_host(Acc, _, _) -> Acc.
 make_tasks_table(Tasks, Lang) ->
     TList = lists:map(
 	      fun(T) ->
-		      [TimeNum, TimeUnit, Mod, Fun, Args, InTimerType] =
+		      [TimeNum, TimeUnit, Com, Ctl, Mod, Fun, Args, InTimerType] =
 			  [proplists:get_value(Key, T#task.task)
-			   || Key <- [time, units, module, function, arguments, timer_type]],
+			   || Key <- [time, units, command, ctl, module, function, arguments, timer_type]],
+                      What = build_what(Com, Ctl, Mod, Fun),
 		      ?XE(<<"tr">>,
 			  [?XC(<<"td">>, list_to_binary(integer_to_list(TimeNum)++" "
 							++atom_to_list(TimeUnit)++" "
 							++atom_to_list(InTimerType))),
-			   ?XC(<<"td">>, list_to_binary(atom_to_list(Mod))),
-			   ?XC(<<"td">>, list_to_binary(atom_to_list(Fun))),
+			   ?XC(<<"td">>, list_to_binary(What)),
 			   ?XC(<<"td">>, list_to_binary(io_lib:format("~p", [Args])))])
 	      end, Tasks),
     [?XE(<<"table">>,
 	 [?XE(<<"thead">>,
 	      [?XE(<<"tr">>,
-		   [?XCT(<<"td">>, <<"Periodicity">>),
-		    ?XCT(<<"td">>, <<"Module">>),
-		    ?XCT(<<"td">>, <<"Function">>),
+		   [?XCT(<<"td">>, <<"When">>),
+		    ?XCT(<<"td">>, <<"What">>),
 		    ?XCT(<<"td">>, <<"Arguments">>)])]),
 	  ?XE(<<"tbody">>, TList)])].
+
+build_what(Com, undefined, undefined, undefined) ->
+    atom_to_list(Com);
+build_what(undefined, Ctl, undefined, undefined) ->
+    atom_to_list(Ctl);
+build_what(undefined, undefined, Mod, Fun) ->
+    atom_to_list(Mod) ++ ":" ++ atom_to_list(Fun).
