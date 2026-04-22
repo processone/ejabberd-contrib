@@ -80,8 +80,7 @@ jobs:
                     --with-min-erlang=12.3 \
                     --prefix=/tmp/ejabberd \
                     --enable-all \
-                    --disable-mssql \
-                    --disable-odbc
+                    --disable-mssql
         make
 
     - name: Start ejabberd
