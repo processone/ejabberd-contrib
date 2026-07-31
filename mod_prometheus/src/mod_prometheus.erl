@@ -1,6 +1,7 @@
 -module(mod_prometheus).
 -author('pouriya.jahanbakhsh@gmail.com').
 -author('stefan@strigler.de').
+-author('zzzZLRzzz').
 -behaviour(gen_mod).
 -behaviour(gen_server).
 
@@ -22,7 +23,7 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_http.hrl").
 
--define(INTERVAL, 1000).
+-define(DEFAULT_COLLECT_INTERVAL, 1000).
 
 start(Host, Opts) ->
   case lists:member({subscribe, 5}, ejabberd_hooks:module_info(exports)) of
@@ -42,7 +43,8 @@ start(Host, Opts) ->
 init([Host|_]) ->
   process_flag(trap_exit, true),
   Opts = gen_mod:get_module_opts(Host, ?MODULE),
-  TRef = start_timer(),
+  Interval = maps:get(collect_interval, Opts, ?DEFAULT_COLLECT_INTERVAL),
+  TRef = start_timer(Interval),
   {ok, [Host, Opts, TRef]}.
 
 terminate(_Reason, _State) ->
@@ -57,13 +59,17 @@ handle_call(Request, From, State) ->
 
 handle_cast({reload, NewOpts}, [Host, _OldOpts, TRef]) ->
   ?DEBUG("Reloading opts: ~p", [NewOpts]),
-  {noreply, [Host, NewOpts, TRef]};
+  misc:cancel_timer(TRef),
+  Interval = maps:get(collect_interval, NewOpts, ?DEFAULT_COLLECT_INTERVAL),
+  NewTRef = start_timer(Interval),
+  {noreply, [Host, NewOpts, NewTRef]};
 handle_cast(Msg, State) ->
   ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
   {noreply, State}.
 
 handle_info({timeout, _TRef, ping}, [Host, Opts, OldTRef]) ->
   ?DEBUG("Running commands for ~p", [Host]),
+  Interval = maps:get(collect_interval, Opts, ?DEFAULT_COLLECT_INTERVAL),
   lists:foreach(
     fun(#{type := gauge, hook := Hook, command := Cmd} = Opt) ->
         OptArgs = maps:get(args, Opt, []),
@@ -78,7 +84,7 @@ handle_info({timeout, _TRef, ping}, [Host, Opts, OldTRef]) ->
     maps:get(hooks, Opts)
    ),
   misc:cancel_timer(OldTRef),
-  TRef = start_timer(),
+  TRef = start_timer(Interval),
   {noreply, [Host, Opts, TRef]};
 handle_info(Info, State) ->
   ?WARNING_MSG("Unexpected info: ~p", [Info]),
@@ -86,8 +92,8 @@ handle_info(Info, State) ->
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
-start_timer() ->
-  erlang:start_timer(?INTERVAL, self(), ping).
+start_timer(Interval) ->
+  erlang:start_timer(Interval, self(), ping).
 
 replace_host([], _Host, Res) ->
   lists:reverse(Res);
@@ -131,6 +137,8 @@ mod_opt_type(vm) ->
   );
 mod_opt_type(mnesia) ->
   econf:bool();
+mod_opt_type(collect_interval) ->
+  econf:timeout(millisecond);
 mod_opt_type(hooks) ->
   econf:list(
     econf:options(
@@ -166,10 +174,31 @@ mod_opt_type(hooks) ->
   ).
 
 mod_options(_Host) ->
-  [{vm, #{}}, {mnesia, false}, {hooks, []}].
+  [{vm, #{}}, {mnesia, false}, {hooks, []}, {collect_interval, timer:seconds(1)}].
 
 mod_doc() ->
-  #{desc => [<<"TODO">>], opts => []}.
+  #{desc => [<<"This module provides a web page with metrics suitable for "
+               "Prometheus (https://prometheus.io/), using the prometheus "
+               "Erlang library "
+               "(https://github.com/prometheus-erl/prometheus.erl).">>],
+    opts =>
+      [{collect_interval,
+        #{value => <<"timeout()">>,
+          desc => <<"Interval for periodic gauge collection (executing "
+                    "configured commands via ejabberdctl). Examples: '5s', "
+                    "'1000'. Default: '1s' (1000 milliseconds).">>}},
+       {mnesia,
+        #{value => <<"true | false">>,
+          desc => <<"Enable mnesia metrics. Default: false.">>}},
+       {vm,
+        #{value => <<"map()">>,
+          desc => <<"Enable Erlang VM metrics. Available keys: memory, "
+                    "system_info, statistics, distribution, "
+                    "microstate_accounting. Default: empty map.">>}},
+       {hooks,
+        #{value => <<"[Hook]">>,
+          desc => <<"List of hooks to investigate. Default: [].">>}}
+      ]}.
 
 get_opt(Key, #{}=Opts) ->
   gen_mod:get_opt(Key, Opts);
@@ -214,7 +243,7 @@ update_vm(Opts) ->
     [
       {distribution, vm_dist_collector_metrics, prometheus_vm_dist_collector},
       {memory, vm_memory_collector_metrics, prometheus_vm_memory_collector},
-      {microstate_accounting, prometheus_vm_dist_collector, prometheus_vm_msacc_collector},
+      {microstate_accounting, vm_msacc_collector_metrics, prometheus_vm_msacc_collector},
       {statistics, vm_statistics_collector_metrics, prometheus_vm_statistics_collector},
       {system_info, vm_system_info_collector_metrics, prometheus_vm_system_info_collector}
     ]

@@ -6,13 +6,19 @@ mod_prometheus - Prometheus metrics
 
 This module provides a web page with metrics suitable
 for [Prometheus](https://prometheus.io/),
-using the [prometheus](https://github.com/deadtrickster/prometheus.erl) erlang library.
+using the [prometheus](https://github.com/prometheus-erl/prometheus.erl) erlang library.
 
 
 Options
 -------
 
 The configurable options are:
+
+- `collect_interval: timeout()`
+
+  Interval for periodic gauge collection (executing configured `command`s
+  via `ejabberdctl`), e.g. `5s`, `1000`.
+  Default: `1s` (1000 milliseconds)
 
 - `mnesia: true | false`
 
@@ -25,7 +31,7 @@ The configurable options are:
   Available ones are:
   `memory`, `system_info`, `statistics`, `distribution`, `microstate_accounting`.
   For details please consult
-  [prometheus.erl collectors](https://github.com/deadtrickster/prometheus.erl?tab=readme-ov-file#erlang-vm--otp-collectors).
+  [prometheus.erl collectors](https://github.com/prometheus-erl/prometheus.erl?tab=readme-ov-file#erlang-vm--otp-collectors).
   Default: `[]`
 
 - `hooks: [Hook]`
@@ -34,16 +40,21 @@ The configurable options are:
   Default is an empty list: `[]`
 
   Each Hook is:
-  - `hook: atom()`: the name of the hook
-  - `type: counter | histogram`
+  - `hook: atom()`: the name of the hook (required)
+  - `type: counter | histogram | gauge`
   - `help: "Explanation"`
-  - `stanza_label: true | false`
-  - `host_label: true | false`
+  - `labels: [host | stanza | module]`
+  - `buckets: [integer()]`: only for `histogram`, bucket upper bounds in milliseconds (0..150000)
+  - `command: atom()`: only for `gauge`, an `ejabberdctl` command to execute periodically
+  - `args: [host | binary()]`: only for `gauge`, arguments passed to `command`; the atom `host` is replaced with the actual virtual host
+  - `result_type: raw | list`: only for `gauge`, set to `list` to use the length of the returned list as the gauge value
   - `collect: all | [Callback]`
       where each Callback is:
-      - `module: atom()`
-      - `function: atom()`
+      - `module: atom()` (required)
+      - `function: atom()` (required)
+      - `type: counter | histogram`
       - `help: "Explanation"`
+      - `labels: [host | stanza]`
       - `buckets: [integer()]`
 
 Quick Start Guide
