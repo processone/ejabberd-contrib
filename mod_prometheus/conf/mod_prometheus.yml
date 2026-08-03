@@ -8,6 +8,7 @@ listen:
 
 modules:
   mod_prometheus:
+    collect_interval: 5s
     mnesia: true
     vm:
       memory: true
