@@ -90,7 +90,7 @@ modules:
       #   help: "Number of registered users per host"
       #   labels:
       #     - host
-      #   command: stats
+      #   command: stats_host
       #   args:
       #     - "registeredusers"
       #     - host
