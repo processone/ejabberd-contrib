@@ -105,3 +105,13 @@ modules:
       #   args:
       #     - host
       #   result_type: list
+      # One more "number of users connected" because that's what you might want
+      # - hook: users_connected
+      #    type: gauge
+      #    help: "Number of users connected"
+      #    command: connected_users_vhost
+      #    labels:
+      #      - host
+      #    args:
+      #      - host
+      #    result_type: list
