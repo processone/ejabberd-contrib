@@ -36,7 +36,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, mod_options/1, depends/2, mod_doc/0]).
+-export([start/2, stop/1, reload/3, mod_opt_type/1, mod_options/1, depends/2, mod_doc/0]).
 
 -include("logger.hrl").
 
@@ -132,8 +132,31 @@ reload(_Host, _NewOpts, _OldOpts) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_options(_) ->
-    [].
+mod_opt_type(option_atom) ->
+    econf:atom();
+mod_opt_type(option_binary) ->
+    econf:binary();
+mod_opt_type(option_boolean) ->
+    econf:bool();
+mod_opt_type(option_enum) ->
+    econf:enum([always, never, roster]);
+mod_opt_type(option_integer) ->
+    econf:pos_int(infinity);
+mod_opt_type(option_list_binaries) ->
+    econf:list(
+        econf:binary());
+mod_opt_type(option_timeout) ->
+    econf:timeout(second, infinity).
+
+-spec mod_options(binary()) -> [{atom(), any()}].
+mod_options(_Host) ->
+    [{option_atom, atom1},
+     {option_binary, <<"binary1">>},
+     {option_boolean, false},
+     {option_enum, never},
+     {option_integer, 0},
+     {option_list_binaries, [<<"one">>, <<"two">>]},
+     {option_timeout, 5000}].
 
 mod_doc() ->
     #{desc =>
