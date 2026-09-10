@@ -483,13 +483,22 @@ example_hook_global_function3(Arg1, Arg2) ->
 %%%% hooks: add host
 
 example_hook_host_subs(InitArgs, Time, Host, Hook, Args) ->
+    {First, Last} =
+        case Time of
+            before ->
+                {"InitArg", "HookArgs"};
+            'after' ->
+                {"State", "HookArgs"};
+            _ ->
+                {"State", "{Mod, Arg, Seq, HookArgs}"}
+        end,
     io:format("~nexample_hook_host_subs: ~n"
-              "  InitArgs: ~p~n"
+              "  ~ts: ~p~n"
               "  Time: ~p~n"
               "  Host: ~p~n"
               "  Hook: ~p~n"
-              "  Args: ~p~n",
-              [InitArgs, Time, Host, Hook, Args]),
+              "  ~ts:~n    ~p~n",
+              [First, InitArgs, Time, Host, Hook, Last, Args]),
     ok.
 
 example_hook_host_function1(Arg1, Arg2) ->
