@@ -964,8 +964,8 @@ serve_web_presence(TypeURL, User, Server, Tail, #request{lang = Lang1, q = Q}) -
 %%%% Web Admin
 %%%% ---------------------
 
-web_menu_system(Result, _Request, _Level) ->
-    Els = ejabberd_web_admin:make_menu_system(?MODULE, "👁️", "Presence Web", ""),
+web_menu_system(Result, #request{host = Host}, _Level) ->
+    Els = ejabberd_web_admin:make_menu_system(Host, ?MODULE, "👁️", "Presence Web", ""),
     Els ++ Result.
 
 web_menu_host(Acc, _Host, Lang) ->

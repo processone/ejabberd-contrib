@@ -288,6 +288,6 @@ find_handler_port_path(Tls, Module) ->
 %% WebAdmin
 %%----------------------------------------------------------------------
 
-web_menu_system(Result, _Request, _Level) ->
-    Els = ejabberd_web_admin:make_menu_system(?MODULE, "💬", "MUC Log", ""),
+web_menu_system(Result, #request{host = Host}, _Level) ->
+    Els = ejabberd_web_admin:make_menu_system(Host, ?MODULE, "💬", "MUC Log", ""),
     Els ++ Result.
