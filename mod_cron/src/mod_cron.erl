@@ -63,7 +63,17 @@ depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(tasks) ->
-    econf:list(econf:any()).
+    econf:list(econf:options(
+                 #{time => econf:timeout(millisecond),
+                   units => econf:enum([seconds, minutes, hours, days]),
+                   timer_type => econf:enum([interval, fixed]),
+                   command => econf:atom(),
+                   ctl => econf:atom(),
+                   module => econf:atom(),
+                   function => econf:atom(),
+                   args_type => econf:enum([string]),
+                   arguments => econf:list(econf:any())}
+                )).
 
 mod_options(_Host) ->
     [{tasks, []}].
