@@ -65,16 +65,13 @@ arguments:
   - 0
 ```
 
-This requires a recent ejabberd version that includes
-[this commit](https://github.com/processone/ejabberd/commit/10481ed895016893ee9dc3fe23cd937fdc46ded6),
+This requires ejabberd 22.05 or higher
 and `api_permissions` configured to allow mod_cron, for example:
 
 ```yaml
 api_permissions:
-  "console commands":
-    from:
-      - ejabberd_ctl
-      - mod_cron
+  "cron commands":
+    from: mod_cron
     who: all
     what: "*"
 ```
