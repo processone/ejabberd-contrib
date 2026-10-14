@@ -84,7 +84,7 @@ time_to_ms(IntervalUnit, IntervalNum) ->
     end.
 
 time_until_event(IntervalMS) ->
-    NowMS = p1_time_compat:system_time(micro_seconds),
+    NowMS = p1_time_compat:system_time(milli_seconds),
     MSSinceLastEvent = (NowMS rem IntervalMS),
     (IntervalMS - MSSinceLastEvent).
 
